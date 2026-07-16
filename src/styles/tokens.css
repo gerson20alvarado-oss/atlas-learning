@@ -1,0 +1,134 @@
+/**
+ * styles/tokens.css
+ *
+ * Tokens de Design System v1.0 §24 — arquitectura de tres niveles
+ * (Primitivo → Semántico → Componente). Los componentes consumen
+ * SOLO tokens semánticos o de componente, nunca primitivos
+ * directamente (§24.1) — eso es lo que deja el sistema listo para un
+ * futuro tema sin tocar ningún componente (§26.1).
+ *
+ * Valores copiados literalmente de Design System §24.2–24.4. Este
+ * archivo es la única fuente de verdad de tokens en el proyecto —
+ * ningún otro archivo CSS debe declarar un valor de color, espacio,
+ * tipografía, radio o duración fuera de aquí.
+ */
+
+:root {
+  /* ---- Primitivos: color — paper ---- */
+  --al-paper-0: #FCFBF8;
+  --al-paper-1: #F5F4EF;
+
+  /* ---- Primitivos: color — ink ---- */
+  --al-ink-900: #211F1C;
+  --al-ink-700: #4A473F;
+  --al-ink-500: #6E6A61;
+  --al-ink-400: #8B877D;
+  --al-ink-200: #D9D6CE;
+  --al-ink-100: #EBE9E3;
+
+  /* ---- Primitivos: color — feedback ---- */
+  --al-green-700: #2E6B4F;
+  --al-green-100: #EDF3EF;
+  --al-red-700: #9E3F35;
+  --al-red-100: #F7EEEC;
+
+  /* ---- Primitivos: tipografía ---- */
+  --al-font-reading: "Source Serif 4", Charter, "Iowan Old Style", Georgia, serif;
+  --al-font-ui: Inter, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --al-size-13: 13px;
+  --al-size-14: 14px;
+  --al-size-15: 15px;
+  --al-size-16: 16px;
+  --al-size-18: 18px;
+  --al-size-21: 21px;
+  --al-size-22: 22px;
+  --al-size-30: 30px;
+  --al-weight-regular: 400;
+  --al-weight-medium: 500;
+  --al-weight-semibold: 600;
+  --al-leading-tight: 1.3;
+  --al-leading-ui: 1.45;
+  --al-leading-reading: 1.65;
+
+  /* ---- Primitivos: espacio (base 4px) ---- */
+  --al-space-1: 4px;
+  --al-space-2: 8px;
+  --al-space-3: 12px;
+  --al-space-4: 16px;
+  --al-space-6: 24px;
+  --al-space-8: 32px;
+  --al-space-12: 48px;
+  --al-space-16: 64px;
+  --al-space-24: 96px;
+
+  /* ---- Primitivos: forma ---- */
+  --al-radius-sm: 4px;
+  --al-radius-md: 6px;
+  --al-radius-lg: 10px;
+  --al-border-hairline: 1px;
+  --al-border-active: 2px;
+
+  /* ---- Primitivos: elevación ---- */
+  --al-shadow-dialog: 0 8px 32px rgba(33, 31, 28, 0.18);
+
+  /* ---- Primitivos: motion ---- */
+  --al-duration-fast: 140ms;
+  --al-duration-base: 240ms;
+  --al-duration-gentle: 360ms;
+  --al-duration-progress: 600ms;
+  --al-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --al-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---- Primitivos: layout ---- */
+  --al-measure-reading: 680px;
+  --al-measure-ui: 560px;
+  --al-measure-shelf: 960px;
+  --al-bp-medium: 600px;
+  --al-bp-expanded: 1024px;
+
+  /* ---- Semánticos: superficies ---- */
+  --al-surface-app: var(--al-paper-0);
+  --al-surface-recessed: var(--al-paper-1);
+  --al-surface-scrim: rgb(33 31 28 / 0.4);
+
+  /* ---- Semánticos: texto ---- */
+  --al-text-content: var(--al-ink-900);
+  --al-text-ui: var(--al-ink-700);
+  --al-text-muted: var(--al-ink-500);
+  --al-text-disabled: var(--al-ink-400);
+  --al-text-on-action: var(--al-paper-0);
+
+  /* ---- Semánticos: bordes ---- */
+  --al-border-default: var(--al-ink-200);
+  --al-border-whisper: var(--al-ink-100);
+  --al-border-focus: var(--al-ink-900);
+
+  /* ---- Semánticos: acciones ---- */
+  --al-action-primary: var(--al-ink-900);
+  --al-action-primary-hover: var(--al-ink-700);
+  --al-action-disabled: var(--al-ink-200);
+
+  /* ---- Semánticos: progreso ---- */
+  --al-progress-track: var(--al-ink-100);
+  --al-progress-fill: var(--al-ink-500);
+
+  /* ---- Semánticos: feedback ---- */
+  --al-feedback-correct: var(--al-green-700);
+  --al-feedback-correct-surface: var(--al-green-100);
+  --al-feedback-incorrect: var(--al-red-700);
+  --al-feedback-incorrect-surface: var(--al-red-100);
+
+  /* ---- Componente (representativos, §24.4) ---- */
+  --al-button-primary-height: 52px;
+  --al-button-primary-height-session: 50px;
+  --al-input-height: 44px;
+  --al-hit-target-min: 44px;
+  --al-progress-height: 2px;
+  --al-audio-scrub-height: 4px;
+  --al-audio-block-height: 56px;
+  --al-cover-aspect: 2 / 3;
+  --al-dialog-max-width: 360px;
+  --al-icon-inline: 20px;
+  --al-icon-target: 24px;
+  --al-loading-delay: 400ms;
+}

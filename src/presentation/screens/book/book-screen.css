@@ -1,0 +1,31 @@
+/**
+ * book-screen.css
+ *
+ * Book screen (Design System §7.2 — measure-ui, más angosto que
+ * reading para que el chrome nunca se sienta más grande que el
+ * contenido; §7.4 — estructura vertical: navegación, título,
+ * contenido).
+ */
+
+[data-component="book-screen"] {
+  max-width: var(--al-measure-ui);
+  margin: 0 auto;
+}
+
+[data-component="book-screen"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-22);
+  font-weight: var(--al-weight-semibold);
+  color: var(--al-text-ui);
+  margin: 0 0 var(--al-space-4);
+  text-align: left;
+}
+
+[data-component="book-screen"] [data-part="book-progress"] {
+  margin-bottom: var(--al-space-8);
+}
+
+[data-component="book-screen"] [data-part="unit-list"] {
+  display: flex;
+  flex-direction: column;
+}

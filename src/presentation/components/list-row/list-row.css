@@ -1,0 +1,47 @@
+/**
+ * list-row.css
+ *
+ * List row (Design System §13.2): fila a measure completo, padding
+ * vertical space-3, divisor hairline debajo, chevron final en
+ * text-muted cuando la fila navega. Sin chevron cuando la fila no es
+ * interactiva (Sprint 2: filas de Unit dentro de Book — ver
+ * book-screen.js).
+ */
+
+[data-component="list-row"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  width: 100%;
+  padding: var(--al-space-3) 0;
+  border-bottom: var(--al-border-hairline) solid var(--al-border-default);
+  text-align: left;
+}
+
+[data-component="list-row"] [data-part="main"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+[data-component="list-row"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  font-weight: var(--al-weight-regular);
+  line-height: var(--al-leading-ui);
+  color: var(--al-text-ui);
+}
+
+[data-component="list-row"] [data-part="progress"] {
+  max-width: 240px;
+}
+
+[data-component="list-row"] [data-part="chevron"] {
+  color: var(--al-text-muted);
+  font-size: var(--al-size-18);
+  line-height: 1;
+  flex-shrink: 0;
+}

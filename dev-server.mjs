@@ -62,5 +62,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Atlas Learning (Sprint 1) sirviendo en http://localhost:${PORT}/`);
+  console.log(`Atlas Learning sirviendo en http://localhost:${PORT}/`);
 });

@@ -1,0 +1,20 @@
+/**
+ * back-nav.css
+ *
+ * Back-nav (Design System §15.1): type-ui-caption, text-muted,
+ * hit area 44px, alineado arriba a la izquierda de su screen.
+ */
+
+[data-component="back-nav"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--al-hit-target-min);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+  margin-bottom: var(--al-space-2);
+}
+
+[data-component="back-nav"]:hover {
+  color: var(--al-text-ui);
+}

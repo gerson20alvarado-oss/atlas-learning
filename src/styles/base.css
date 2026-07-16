@@ -1,0 +1,101 @@
+/**
+ * styles/base.css
+ *
+ * Reset mínimo + las dos voces tipográficas (Design System §5.1) +
+ * reglas de estado globales (§22). No define nada específico de un
+ * componente — eso vive junto a cada componente.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--al-surface-app);
+  color: var(--al-text-ui);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  line-height: var(--al-leading-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Type scale (Design System §5.3) — nombrados 1:1 con los tokens de
+   la tabla; cada componente aplica la clase que corresponda a su
+   uso, nunca un tamaño suelto. */
+
+.al-type-display {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-30);
+  font-weight: var(--al-weight-semibold);
+  line-height: var(--al-leading-tight);
+}
+
+.al-type-title {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-22);
+  font-weight: var(--al-weight-semibold);
+  line-height: var(--al-leading-tight);
+  color: var(--al-text-ui);
+}
+
+.al-type-ui-body {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  font-weight: var(--al-weight-regular);
+  line-height: var(--al-leading-ui);
+}
+
+.al-type-ui-label {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  line-height: 1.4;
+}
+
+.al-type-ui-caption {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-regular);
+  line-height: 1.4;
+}
+
+.al-type-wordmark-signature {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-medium);
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+/* Foco (Design System §22.3): siempre visible cuando el origen es
+   teclado, nunca suprimido. */
+:focus-visible {
+  outline: var(--al-border-active) solid var(--al-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--al-radius-md);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+/* Objetivo táctil mínimo de 44×44px para todo elemento interactivo
+   (Design System §23.1), incluidos los botones de solo texto. */
+button,
+[role="listitem"] button {
+  min-height: var(--al-hit-target-min);
+}

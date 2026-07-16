@@ -1,0 +1,30 @@
+/**
+ * styles/main.css
+ *
+ * Único punto de entrada de estilos, enlazado una vez desde
+ * index.html — igual que bootstrap.js es el único script de la SPA.
+ * @import es CSS nativo: cero bundler, cero build step (Software
+ * Architecture C1, C9). El costo de red de varios @import es
+ * aceptable al tamaño actual del proyecto; revisar en Phase 7
+ * (Roadmap, Production Readiness — Performance review) si la lista
+ * crece mucho.
+ *
+ * Orden: tokens y base primero (todo lo demás depende de las
+ * variables que declaran); luego componentes; luego screens, que
+ * componen varios componentes.
+ */
+
+@import url('./tokens.css');
+@import url('./base.css');
+
+@import url('../presentation/components/app-shell/app-shell.css');
+@import url('../presentation/components/nav-secondary/nav-secondary.css');
+@import url('../presentation/components/state-views/state-views.css');
+@import url('../presentation/components/progress-bar/progress-bar.css');
+@import url('../presentation/components/ghost-slot/ghost-slot.css');
+@import url('../presentation/components/book-card/book-card.css');
+@import url('../presentation/components/list-row/list-row.css');
+@import url('../presentation/components/back-nav/back-nav.css');
+
+@import url('../presentation/screens/library/library-screen.css');
+@import url('../presentation/screens/book/book-screen.css');

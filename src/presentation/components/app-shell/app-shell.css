@@ -1,0 +1,53 @@
+/**
+ * app-shell.css
+ *
+ * Margen de borde de pantalla por breakpoint (Design System §8.3):
+ * space-6 (compact) → space-16 (medium) → space-24 (expanded). El
+ * margen crece, el contenido nunca (§6.2, "the margin-first rule").
+ */
+
+[data-component="app-shell"] {
+  min-height: 100vh;
+  background: var(--al-surface-app);
+}
+
+[data-region="shell-header"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  padding: var(--al-space-4) var(--al-space-6);
+}
+
+[data-region="shell-main"] {
+  padding: var(--al-space-4) var(--al-space-6) var(--al-space-16);
+}
+
+[data-role="wordmark-signature"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-medium);
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: var(--al-text-muted);
+}
+
+@media (min-width: 600px) {
+  [data-region="shell-header"] {
+    padding: var(--al-space-6) var(--al-space-16);
+  }
+
+  [data-region="shell-main"] {
+    padding: var(--al-space-6) var(--al-space-16) var(--al-space-16);
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-region="shell-header"] {
+    padding: var(--al-space-6) var(--al-space-24);
+  }
+
+  [data-region="shell-main"] {
+    padding: var(--al-space-6) var(--al-space-24) var(--al-space-24);
+  }
+}

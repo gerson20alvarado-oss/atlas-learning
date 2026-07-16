@@ -1,0 +1,41 @@
+/**
+ * library-screen.css
+ *
+ * Shelf grid (Design System §7.3): 2 columnas (compact) / 3 (medium)
+ * / 4 (expanded), gutter space-6, ancho máximo measure-shelf,
+ * centrado (§7.2). Los breakpoints aquí deben coincidir exactamente
+ * con SHELF_BREAKPOINTS en library-screen.js — ese módulo calcula en
+ * JS cuántos ghost slots completan la primera fila, y debe ver la
+ * misma cuadrícula que el usuario ve.
+ */
+
+[data-component="library-screen"] {
+  max-width: var(--al-measure-shelf);
+  margin: 0 auto;
+}
+
+[data-component="library-screen"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-22);
+  font-weight: var(--al-weight-semibold);
+  color: var(--al-text-ui);
+  margin: 0 0 var(--al-space-8);
+}
+
+[data-component="library-screen"] [data-part="shelf"] {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--al-space-6);
+}
+
+@media (min-width: 600px) {
+  [data-component="library-screen"] [data-part="shelf"] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-component="library-screen"] [data-part="shelf"] {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

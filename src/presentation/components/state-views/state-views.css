@@ -1,0 +1,25 @@
+/**
+ * state-views.css
+ *
+ * Empty state (Design System §22.6): una frase en text-muted, en la
+ * posición del contenido, sin ilustraciones. Es el único kind que
+ * Sprint 2 dispara en la práctica (home todavía sin Continue
+ * Learning, Book id no encontrado) — la carga de contenido en
+ * Sprint 2 es síncrona (domain/content/content-repository.js), así
+ * que el kind "loading" y su regla de los 400ms (§22.5) no tiene
+ * ningún caso real que disparar todavía. Se deja un estilo mínimo
+ * para "loading"/"error" por consistencia del componente, a
+ * completarse cuando un sprint futuro introduzca una carga
+ * realmente asíncrona (p. ej. Sync, Sprint 6+).
+ */
+
+[data-component="state-view"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  color: var(--al-text-muted);
+  padding: var(--al-space-8) 0;
+}
+
+[data-component="state-view"][data-state-kind="error"] {
+  color: var(--al-text-ui);
+}

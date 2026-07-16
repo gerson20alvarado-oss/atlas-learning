@@ -1,0 +1,38 @@
+/**
+ * book-card.css
+ *
+ * Book cover card (Design System §13.1): 2:3, border-hairline,
+ * radius-lg, título type-ui-label/text-ui debajo de la portada +
+ * whisper bar. Toda la card es el tap target (min 44px de alto ya
+ * garantizado por el aspect-ratio a los anchos del shelf grid).
+ */
+
+[data-component="book-card"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-2);
+  width: 100%;
+  text-align: left;
+}
+
+[data-component="book-card"] [data-part="cover"] {
+  aspect-ratio: var(--al-cover-aspect);
+  background: var(--al-surface-recessed);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="book-card"]:hover [data-part="cover"] {
+  border-color: var(--al-ink-900);
+}
+
+[data-component="book-card"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  line-height: 1.4;
+  color: var(--al-text-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

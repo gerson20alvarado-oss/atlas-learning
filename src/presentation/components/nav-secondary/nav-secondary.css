@@ -1,0 +1,26 @@
+/**
+ * nav-secondary.css
+ *
+ * Fila de navegación secundaria (Design System §15.2): ítems de
+ * texto plano, mismo peso visual entre sí.
+ */
+
+[data-component="nav-secondary"] {
+  display: flex;
+  gap: var(--al-space-6);
+}
+
+[data-component="nav-secondary"] [data-nav-item] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-ui);
+  cursor: pointer;
+  min-height: var(--al-hit-target-min);
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-component="nav-secondary"] [data-nav-item]:hover {
+  color: var(--al-ink-900);
+}

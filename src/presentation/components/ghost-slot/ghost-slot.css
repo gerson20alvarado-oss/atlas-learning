@@ -1,0 +1,16 @@
+/**
+ * ghost-slot.css
+ *
+ * Celda fantasma (Design System §13.3): 2:3, borde punteado
+ * border-whisper, fill surface-recessed. Mismo radius-lg que
+ * book-card para que ambas formas de celda compartan la geometría
+ * del shelf grid — el ghost slot es "la misma forma, sin contenido",
+ * no una forma distinta.
+ */
+
+[data-component="ghost-slot"] {
+  aspect-ratio: var(--al-cover-aspect);
+  background: var(--al-surface-recessed);
+  border: var(--al-border-hairline) dashed var(--al-border-whisper);
+  border-radius: var(--al-radius-lg);
+}

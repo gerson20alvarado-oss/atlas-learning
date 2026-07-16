@@ -1,0 +1,27 @@
+/**
+ * progress-bar.css
+ *
+ * Whisper progress bar (Design System §14.1): altura 2px, radius-sm,
+ * track border-whisper, fill progress-fill. Un único estilo en todo
+ * el sistema — nunca más gruesa ni más brillante a otro nivel de la
+ * jerarquía (WR P5). El cambio de fill anima a duration-progress /
+ * ease-standard (§14.2, §21).
+ */
+
+[data-component="progress-bar"] {
+  width: 100%;
+}
+
+[data-component="progress-bar"] [data-part="track"] {
+  height: var(--al-progress-height);
+  background: var(--al-progress-track);
+  border-radius: var(--al-radius-sm);
+  overflow: hidden;
+}
+
+[data-component="progress-bar"] [data-part="fill"] {
+  height: 100%;
+  background: var(--al-progress-fill);
+  border-radius: var(--al-radius-sm);
+  transition: width var(--al-duration-progress) var(--al-ease-standard);
+}

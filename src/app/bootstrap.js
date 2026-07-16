@@ -6,12 +6,14 @@
  * — ningún otro módulo debería necesitar hacerlo (regla de vecinos,
  * Software Architecture §9.3).
  *
- * Pasos (Sprint 1 Plan §7):
+ * Pasos (Sprint 1 Plan §7, extendido en Sprint 2):
  *   a. Config pública
  *   b. Event bus
  *   c. Router (inicializado, sin resolver ruta todavía)
  *   d. Monta el app shell
- *   e. (la suscripción a route:changed ocurre dentro de mountAppShell)
+ *   e. Monta screen-router (Sprint 2) — resuelve qué screen renderiza
+ *      cada route:changed; ambas suscripciones (shell y screen
+ *      router) deben existir antes del paso (f)
  *   f. El router resuelve la ruta inicial → publica route:changed
  *   g. Aplicación arrancada e interactiva → Exit Criteria cumplida
  */
@@ -24,6 +26,7 @@ import { createRouter } from '../core/router/router.js';
 import { createStorageContract } from '../persistence/storage-contract.js';
 import { createLocalStorageAdapter } from '../persistence/adapters/local-storage-adapter.js';
 import { mountAppShell } from './app-shell.js';
+import { mountScreenRouter } from './screen-router.js';
 
 function bootstrap() {
   // a. Config pública — resuelve base path para GitHub Pages.
@@ -54,7 +57,14 @@ function bootstrap() {
     return;
   }
 
-  mountAppShell({ eventBus, mountElement });
+  const { contentRegion } = mountAppShell({ eventBus, mountElement, router });
+
+  // Sprint 2: resuelve qué screen se monta en contentRegion según
+  // route:changed (Library, Book, o el placeholder de Home). Se
+  // suscribe antes de router.start() para no perderse la resolución
+  // de la ruta inicial (mismo orden que la suscripción de
+  // mountAppShell arriba).
+  mountScreenRouter({ eventBus, contentRegion, router, errorBoundary });
 
   // f. El router resuelve la ruta inicial y publica route:changed.
   router.start();
