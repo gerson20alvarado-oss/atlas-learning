@@ -19,9 +19,6 @@
  */
 
 export const envPublic = Object.freeze({
-  // Clave pública "anon" de Supabase — segura para exponerse en un
-  // build estático (nunca una service key). Pendiente de un proyecto
-  // real.
-  supabaseUrl: null,
-  supabaseAnonKey: null,
+  supabaseUrl: "https://malfoakgbhjmeobamhrn.supabase.co",
+  supabaseAnonKey: "sb_publishable_8RiV5oThVATRDPiCncWDRw_CpQktBRg",
 });
