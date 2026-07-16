@@ -156,3 +156,135 @@
 [data-component="media-block"][data-part="unsupported"] {
   color: var(--al-text-muted);
 }
+
+/* ---- Practice (Design System §17.1 shared anatomy) ---- */
+
+[data-component="practice-block"] [data-part="question"] {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-4);
+}
+
+/* ---- Feedback block (§17.2) — shared visual language across types ---- */
+
+[data-component="typing-block"] [data-part="feedback"],
+[data-component="fill-blank-block"] [data-part="feedback"],
+[data-component="multiple-choice-block"] [data-part="feedback"] {
+  display: block;
+  margin-top: var(--al-space-4);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  animation: al-feedback-in var(--al-duration-fast) ease-out;
+}
+
+[data-part="feedback"][data-verdict="correct"] {
+  color: var(--al-feedback-correct);
+}
+
+[data-part="feedback"][data-verdict="incorrect"] {
+  color: var(--al-feedback-incorrect);
+}
+
+@keyframes al-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Typing (§17.5) ---- */
+
+[data-component="typing-block"] [data-part="input"] {
+  display: block;
+  width: 100%;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  border: none;
+  border-bottom: var(--al-border-hairline) solid var(--al-border-default);
+  padding: var(--al-space-2) 0;
+  background: transparent;
+  color: var(--al-text-content);
+}
+
+[data-component="typing-block"] [data-part="input"]:focus {
+  outline: none;
+  border-bottom-width: var(--al-border-active);
+  border-bottom-color: var(--al-action-primary);
+}
+
+[data-component="typing-block"] [data-part="input"]:disabled {
+  color: var(--al-text-muted);
+}
+
+/* ---- Fill in the blank (§17.4) — inline within the sentence ---- */
+
+[data-component="fill-blank-block"] {
+  display: inline-block;
+}
+
+[data-component="fill-blank-block"] [data-part="blank"] {
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  border: none;
+  border-bottom: var(--al-border-hairline) solid var(--al-border-default);
+  background: transparent;
+  color: var(--al-text-content);
+  text-align: center;
+}
+
+[data-component="fill-blank-block"] [data-part="blank"]:focus {
+  outline: none;
+  border-bottom-width: var(--al-border-active);
+  border-bottom-color: var(--al-action-primary);
+}
+
+[data-component="fill-blank-block"] [data-part="feedback"] {
+  margin-left: var(--al-space-2);
+}
+
+/* ---- Multiple choice (§17.3) ---- */
+
+[data-component="multiple-choice-block"] [data-part="options"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-2);
+}
+
+[data-component="multiple-choice-block"] [data-part="option"] {
+  width: 100%;
+  text-align: left;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  color: var(--al-text-content);
+  background: transparent;
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-md);
+  padding: var(--al-space-4);
+  cursor: pointer;
+}
+
+[data-component="multiple-choice-block"] [data-part="option"][data-state="selected"] {
+  border-width: var(--al-border-active);
+  border-color: var(--al-action-primary);
+}
+
+[data-component="multiple-choice-block"] [data-part="option"][data-state="chosen-correct"],
+[data-component="multiple-choice-block"] [data-part="option"][data-state="actual-correct"] {
+  background: var(--al-feedback-correct-surface);
+  border-color: var(--al-feedback-correct);
+  color: var(--al-feedback-correct);
+}
+
+[data-component="multiple-choice-block"] [data-part="option"][data-state="chosen-incorrect"] {
+  background: var(--al-feedback-incorrect-surface);
+  border-color: var(--al-feedback-incorrect);
+  color: var(--al-feedback-incorrect);
+}
+
+[data-component="multiple-choice-block"] [data-part="option"]:disabled {
+  cursor: default;
+}

@@ -3,21 +3,31 @@
  *
  * Forma de la entidad Session (Software Architecture §4.2, §14.2):
  * "the live, resumable state of one continuous act of studying" —
- * posición Book/Unit/Lesson, sección activa, scroll, y los puntos de
- * extensión reservados para Exercise (Sprint 5) y audio (cuando exista
- * un asset real de Media tipo audio).
+ * posición Book/Unit/Lesson, sección activa, scroll, y el punto de
+ * extensión reservado para audio (cuando exista un asset real de
+ * Media tipo audio).
  *
- * Mismo criterio que entity-shapes.js: la forma se declara COMPLETA
- * desde ahora — incluidos campos que hoy solo pueden valer `null`
- * (currentExercise, currentAudio) — para que Sprint 5 y la futura
- * llegada de audio real solo necesiten empezar a poblarlos, nunca
- * rediseñar el esquema ni romper compatibilidad con Sessions ya
- * persistidas (Sprint 4 Plan; Software Architecture §10.4, §14.3).
+ * CORRECCIÓN (Sprint 5 Plan, decisión #5): Sprint 4 reservó aquí un
+ * campo `currentExercise` asumiendo un único ejercicio activo a la
+ * vez. Al diseñar el Exercise Engine se confirmó que el Session
+ * Container ya renderiza TODOS los bloques de una Section juntos
+ * (§18.1) — una Section puede tener varios `practice` a la vez, cada
+ * uno en su propio estado. Restaurar eso con un puntero singular no
+ * alcanza, y mantenerlo habría sido persistir información duplicada
+ * sin necesidad. Se eliminó: el estado de cada ejercicio (respondido
+ * o no, y con qué resultado) se deriva consultando los Attempts ya
+ * registrados para esa Lesson (domain/learning-data/attempt-
+ * repository.js) — la misma filosofía "derivado, nunca duplicado"
+ * que ya rige Progress (§15.2). `currentAudio` no se ve afectado por
+ * este cambio — sigue reservado para cuando exista un asset real.
  *
- * `mode` reserva el valor 'learn' desde ahora; 'review' se añadirá
- * cuando Review Mode exista (Sprint 5+, Design System §18, WR P8) —
- * no es un campo nuevo entonces, es el mismo campo con un segundo
- * valor válido.
+ * Compatibilidad: una Session ya persistida por un Sprint 4 real
+ * (con la clave `currentExercise` todavía presente) deja de cumplir
+ * `isValidSessionShape` (chequeo exhaustivo de claves) y
+ * session-repository.js la trata como cualquier forma inválida — se
+ * degrada a `null` (mismo criterio que content-repository.js aplica
+ * a contenido inválido), nunca se rompe. No hace falta ninguna
+ * migración explícita.
  */
 
 const SESSION_KEYS = Object.freeze([
@@ -27,7 +37,6 @@ const SESSION_KEYS = Object.freeze([
   'mode',
   'sectionIndex',
   'scrollPosition',
-  'currentExercise',
   'currentAudio',
   'updatedAt',
 ]);
@@ -46,7 +55,6 @@ export function createEmptySession() {
     mode: null,
     sectionIndex: null,
     scrollPosition: null,
-    currentExercise: null, // reservado — Exercise Engine, Roadmap Phase 5
     currentAudio: null, // reservado — Media tipo audio, cuando exista un asset real
     updatedAt: null,
   });

@@ -1,7 +1,7 @@
 {
   "name": "atlas-learning",
-  "version": "0.4.0",
-  "description": "Atlas Learning — Sprint 4 (Progress). Static SPA, ES Modules, sin framework (Software Architecture C1).",
+  "version": "0.5.0",
+  "description": "Atlas Learning — Sprint 5 (Exercise Engine). Static SPA, ES Modules, sin framework (Software Architecture C1).",
   "type": "module",
   "private": true,
   "scripts": {

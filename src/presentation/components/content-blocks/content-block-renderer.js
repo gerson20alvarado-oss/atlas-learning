@@ -3,24 +3,19 @@
  *
  * Despacha cada Content Block a su primitivo de presentación (Design
  * System §19.1: ocho primitivos, contenedores visuales agnósticos de
- * materia — nunca "el estilo de Grammar" o "el estilo de
- * Vocabulary"). Sprint 3 implementó seis: prose, term, dialogue,
- * aside, example, table. Sprint 4 añade "media" (media-block.js),
- * porque el primer libro real (Hi! Korean 3A) aporta el primer asset
- * legítimo del Content Import Pipeline (un mapa extraído del propio
- * libro) — ver media-block.js para el alcance exacto (solo `image`;
- * `audio`/`video` siguen sin asset real).
+ * materia). Sprint 3: prose, term, dialogue, aside, example, table.
+ * Sprint 4 añadió media (variante image). Sprint 5 (Exercise Engine)
+ * añade "practice" (practice-block.js) — el primitivo ya existía en
+ * el contrato de datos desde Sprint 3 (C5) y en el contenido real
+ * desde Sprint 4, pero sin motor que le diera vida; ahora despacha
+ * internamente por `exercise.type` (multipleChoice/fillBlank/typing,
+ * Design System §17.3–17.5) o cae al mismo aviso neutral de siempre
+ * si el bloque no tiene un Exercise resuelto (actividades abiertas,
+ * dependientes de audio real, o tipos aún no soportados — ver
+ * domain/content/exercise-catalog.js).
  *
- * "practice" (Exercise Engine, Roadmap Phase 5) sigue siendo un
- * primitivo válido en el contrato de datos (entity-shapes.js ya lo
- * reconoce, C5) pero sin renderer todavía — Sprint 4 Plan, decisión
- * explícita: los bloques Practice se incluyen en el contenido real
- * desde ahora (con `exerciseId` estable) pero siguen mostrando el
- * mismo aviso neutral y en calma hasta que Sprint 5 les dé un motor.
- * "Silencio es una decisión de diseño válida" aplicado a un tipo de
- * contenido que este sprint no cubre, no un error del sistema. Este
- * componente es completamente puro — no reporta al error boundary ni
- * al event bus; eso pertenece a app/, no a Presentation.
+ * Este componente es completamente puro — no reporta al error
+ * boundary ni al event bus; eso pertenece a app/, no a Presentation.
  */
 
 import { createProseBlock } from './prose-block.js';
@@ -30,6 +25,7 @@ import { createAsideBlock } from './aside-block.js';
 import { createExampleBlock } from './example-block.js';
 import { createTableBlock } from './table-block.js';
 import { createMediaBlock } from './media-block.js';
+import { createPracticeBlock } from './practice-block.js';
 
 const RENDERERS_BY_TYPE = Object.freeze({
   prose: createProseBlock,
@@ -39,6 +35,7 @@ const RENDERERS_BY_TYPE = Object.freeze({
   example: createExampleBlock,
   table: createTableBlock,
   media: createMediaBlock,
+  practice: createPracticeBlock,
 });
 
 function createUnsupportedBlock() {

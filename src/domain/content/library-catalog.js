@@ -45,6 +45,33 @@
  *     autoral (el libro no declara un tiempo de estudio) — 40
  *     minutos, dado el volumen de contenido (2 puntos de gramática +
  *     vocabulario + diálogo + 2 actividades de escucha).
+ * Sprint 5 (Exercise Engine) reestructuró los bloques `practice` de
+ * esta Lesson: cada pregunta numerada que antes vivía agrupada en un
+ * solo bloque ahora es un bloque `practice` independiente, con su
+ * propio `exerciseId` (Sprint 5 Plan, decisión "B1" — mejora la
+ * fidelidad al libro, cada ejercicio real del libro es un Exercise
+ * real en Atlas). La clave de corrección de cada uno vive en
+ * `exercise-catalog.js`, nunca aquí — este archivo sigue siendo solo
+ * la forma en que el contenido se presenta, nunca cómo se evalúa.
+ *
+ * Tres categorías de `practice` quedan deliberadamente SIN Exercise
+ * (exercise-repository.getExerciseById devuelve `null` para ellos a
+ * propósito, documentado en cada bloque con un comentario):
+ *   - **Actividades abiertas**: producción libre, opinión personal,
+ *     sin una respuesta única y correcta (p. ej. "mi lista de deseos
+ *     en Seúl"). Nunca se fuerza una clave de corrección falsa.
+ *   - **Dependientes de audio real**: preguntas de comprensión
+ *     auditiva cuya respuesta correcta depende de un audio que Atlas
+ *     todavía no tiene (Sprint 4, Track 01/02/03) — distinto de
+ *     "actividad abierta": SÍ tienen respuesta correcta en el libro,
+ *     pero Atlas no puede verificarla sin el asset real.
+ *   - **Tipos de ejercicio aún no soportados**: el ejercicio de
+ *     matching término-definición (p.22) — "matching" es PRD §24
+ *     "Should Have v1.x", no uno de los tres tipos de Sprint 5.
+ * Ninguna de las tres participa en el cómputo de Progress (domain/
+ * content/progress.js) ni genera Attempts — son puntos de extensión
+ * documentados para una capacidad futura de Atlas, no implementados
+ * todavía (Sprint 5 Plan, decisión explícita).
  */
 
 export const LIBRARY_CATALOG = Object.freeze({
@@ -310,11 +337,22 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: '엠마 씨는 친구들과 한국어로만 이야기한대요. 마크 씨는 취미가 쇼핑이래요. 룸메이트가 주말에 같이 마트에 가재요.',
                     },
                     {
-                      id: 'block-hikorean-1-1-gram1-practice',
+                      id: 'block-hikorean-1-1-gram1-practice-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-gram1-01',
-                      prompt:
-                        '문장을 만들어 보세요. (1) 첸: "오늘 날씨가 좋아요." (2) 레나: "저는 비빔밥을 좋아해요." (3) 선생님: "시험은 다음 주입니다."',
+                      exerciseId: 'ex-hikorean-1-1-gram1-01a',
+                      prompt: '문장을 만들어 보세요. 첸: "오늘 날씨가 좋아요."',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-gram1-practice-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-gram1-01b',
+                      prompt: '문장을 만들어 보세요. 레나: "저는 비빔밥을 좋아해요."',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-gram1-practice-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-gram1-01c',
+                      prompt: '문장을 만들어 보세요. 선생님: "시험은 다음 주입니다."',
                     },
                   ],
                 },
@@ -332,11 +370,28 @@ export const LIBRARY_CATALOG = Object.freeze({
                       ],
                     },
                     {
-                      id: 'block-hikorean-1-1-activity1-practice',
+                      id: 'block-hikorean-1-1-activity1-practice-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-activity1-01',
-                      prompt:
-                        '보기와 같이 이야기해 보세요. (1) "한국에 사는 동안 여행을 많이 할 거예요." (2) "이 문법을 모르는데 좀 가르쳐 주세요." (3) "이따가 같이 도서관에 갈래요?" (4) "집이 어디예요?"',
+                      exerciseId: 'ex-hikorean-1-1-activity1-01a',
+                      prompt: '보기와 같이 이야기해 보세요. "한국에 사는 동안 여행을 많이 할 거예요."',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-01b',
+                      prompt: '보기와 같이 이야기해 보세요. "이 문법을 모르는데 좀 가르쳐 주세요."',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-01c',
+                      prompt: '보기와 같이 이야기해 보세요. "이따가 같이 도서관에 갈래요?"',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice-d',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-01d',
+                      prompt: '보기와 같이 이야기해 보세요. "집이 어디예요?"',
                     },
                   ],
                 },
@@ -356,11 +411,28 @@ export const LIBRARY_CATALOG = Object.freeze({
                       ],
                     },
                     {
-                      id: 'block-hikorean-1-1-activity1-practice2',
+                      id: 'block-hikorean-1-1-activity1-practice2-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-activity1-02',
-                      prompt:
-                        '안내문을 보고 보기와 같이 이야기해 보세요. (1) 강아지를 찾습니다 (2) 독서 동아리 회원 모집 (3) 입장 전 마스크를 착용해 주세요 (4) 추석 연휴 휴무 안내',
+                      exerciseId: 'ex-hikorean-1-1-activity1-02a',
+                      prompt: '안내문을 보고 보기와 같이 이야기해 보세요. "강아지를 찾습니다"',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice2-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-02b',
+                      prompt: '안내문을 보고 보기와 같이 이야기해 보세요. "독서 동아리 회원 모집"',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice2-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-02c',
+                      prompt: '안내문을 보고 보기와 같이 이야기해 보세요. "입장 전 마스크를 착용해 주세요"',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity1-practice2-d',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity1-02d',
+                      prompt: '안내문을 보고 보기와 같이 이야기해 보세요. "추석 연휴 휴무 안내 (9월 12일 목 ~ 15일 일)"',
                     },
                   ],
                 },
@@ -382,11 +454,22 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: '너무 늦어서 택시를 타도 약속 시간까지 도착 못 해요. 아무리 피곤해도 숙제는 꼭 하고 자요. 단어를 아무리 외워도 시험 볼 때 생각이 안 나요.',
                     },
                     {
-                      id: 'block-hikorean-1-1-gram2-practice',
+                      id: 'block-hikorean-1-1-gram2-practice-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-gram2-01',
-                      prompt:
-                        '문장을 만들어 보세요. (1) 시험이 어렵다 / 꼭 합격할 것이다 (2) 커피를 마시다 / 계속 졸리다 (3) 외국인이다 / 지하철을 쉽게 이용할 수 있다',
+                      exerciseId: 'ex-hikorean-1-1-gram2-01a',
+                      prompt: '문장을 만들어 보세요. 시험이 어렵다 / 꼭 합격할 것이다',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-gram2-practice-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-gram2-01b',
+                      prompt: '문장을 만들어 보세요. 커피를 마시다 / 계속 졸리다',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-gram2-practice-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-gram2-01c',
+                      prompt: '문장을 만들어 보세요. 외국인이다 / 지하철을 쉽게 이용할 수 있다',
                     },
                   ],
                 },
@@ -403,11 +486,32 @@ export const LIBRARY_CATALOG = Object.freeze({
                       ],
                     },
                     {
-                      id: 'block-hikorean-1-1-activity2-practice',
+                      id: 'block-hikorean-1-1-activity2-practice-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-activity2-01',
-                      prompt:
-                        '보기와 같이 이야기해 보세요. (1) 책이 비싸다, 친구에게 빌릴까 하다 → 비싸다, 사야 하다 (2) 일이 바쁘다, 점심을 못 먹었다 → 바쁘다, 밥을 먹어야 하다 (3) 감기에 걸리다, 병원에 다닌다고 들었다 → 약을 먹다, (자유 응답) (4) 가수가 되고 싶다, 노력한다고 들었다 → (자유 응답), 꿈을 이룰 것이다',
+                      exerciseId: 'ex-hikorean-1-1-activity2-01a',
+                      prompt: '보기와 같이 이야기해 보세요. 책이 비싸다, 친구에게 빌릴까 하다',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-activity2-practice-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity2-01b',
+                      prompt: '보기와 같이 이야기해 보세요. 일이 바쁘다, 점심을 못 먹었다',
+                    },
+                    {
+                      // Actividad abierta (Sprint 5 Plan): "약을 먹다, (자유 응답)" — el
+                      // propio libro deja el desenlace a elección del estudiante. Sin
+                      // Exercise en exercise-catalog.js a propósito — ver docstring allí.
+                      id: 'block-hikorean-1-1-activity2-practice-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity2-01c',
+                      prompt: '보기와 같이 이야기해 보세요. 감기에 걸리다, 병원에 다닌다고 들었다 → 약을 먹다, (자유 응답)',
+                    },
+                    {
+                      // Actividad abierta — "(자유 응답), 꿈을 이룰 것이다": misma razón que arriba.
+                      id: 'block-hikorean-1-1-activity2-practice-d',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-activity2-01d',
+                      prompt: '보기와 같이 이야기해 보세요. 가수가 되고 싶다, 노력한다고 들었다 → (자유 응답), 꿈을 이룰 것이다',
                     },
                   ],
                 },
@@ -421,6 +525,9 @@ export const LIBRARY_CATALOG = Object.freeze({
                       turns: [{ speaker: '보기', text: '저는 아무리 연습해도 발음이 안 좋아요.' }],
                     },
                     {
+                      // Actividad abierta completa (Sprint 5 Plan): producción personal
+                      // libre sobre la propia vida del estudiante, sin clave de
+                      // corrección posible. Sin Exercise a propósito.
                       id: 'block-hikorean-1-1-activity2-practice2',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-activity2-02',
@@ -495,11 +602,38 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: '얼마나 A/V-(으)ㄴ/는데(요): 다른 사람에게 그 정도를 강조해서 알려 줄 때 사용한다. 예: 한강이 얼마나 아름다운데요. 제가 서울을 얼마나 좋아하는데요.',
                     },
                     {
-                      id: 'block-hikorean-1-1-vocab-practice',
+                      id: 'block-hikorean-1-1-vocab-practice-a',
                       type: 'practice',
-                      exerciseId: 'ex-hikorean-1-1-vocab-01',
+                      exerciseId: 'ex-hikorean-1-1-vocab-01a',
+                      prompt: '빈칸에 알맞은 말을 쓰세요. ( ): 서울에 있는 큰 강',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-vocab-practice-b',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-vocab-01b',
+                      prompt: '빈칸에 알맞은 말을 쓰세요. ( ): 강의 북쪽 지역',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-vocab-practice-c',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-vocab-01c',
+                      prompt: '빈칸에 알맞은 말을 쓰세요. ( ): 강을 건널 수 있는 큰 다리',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-vocab-practice-d',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-vocab-01d',
+                      prompt: '빈칸에 알맞은 말을 쓰세요. ( ): 강의 남쪽 지역',
+                    },
+                    {
+                      // Tipo de ejercicio futuro (Sprint 5 Plan): matching término-
+                      // definición. "Matching" es PRD §24 "Should Have v1.x", no uno
+                      // de los 3 tipos de Sprint 5 — sin Exercise a propósito.
+                      id: 'block-hikorean-1-1-vocab-practice-matching',
+                      type: 'practice',
+                      exerciseId: 'ex-hikorean-1-1-vocab-01-matching',
                       prompt:
-                        '지도를 보고 빈칸에 알맞은 말을 쓰세요 (한강/강남/강북/대교). 다음 단어와 의미가 맞는 것을 연결하세요 (수도/대도시/중심지/도심/인구).',
+                        '다음 단어와 의미가 맞는 것을 연결하세요: 수도 / 대도시 / 중심지 / 도심 / 인구.',
                     },
                   ],
                 },
@@ -519,6 +653,9 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: 'Esta sección usa audio en el libro original (Track 02). El asset de audio real todavía no está integrado en Atlas.',
                     },
                     {
+                      // Sin audio real (Sprint 4) no hay forma de derivar la respuesta
+                      // correcta de (1)/(2), y (3) además es una pregunta personal
+                      // abierta. Sin Exercise a propósito — ver exercise-catalog.js.
                       id: 'block-hikorean-1-1-listen1-practice',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-listen1-01',
@@ -538,6 +675,7 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: 'Esta sección usa audio en el libro original (Track 03). El asset de audio real todavía no está integrado en Atlas.',
                     },
                     {
+                      // Misma razón que listen1: sin audio real, sin Exercise.
                       id: 'block-hikorean-1-1-listen2-practice',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-listen2-01',
@@ -545,6 +683,7 @@ export const LIBRARY_CATALOG = Object.freeze({
                         '다음을 잘 듣고 대답해 보세요. (1) 파비우는 어렸을 때 서울에서 어디에 가 봤습니까? (2) 파비우는 서울의 어떤 점을 좋다고 생각합니까? (3) 서울의 특징은 무엇입니까? (4) 파티마가 서울을 좋아하는 이유는 무엇입니까?',
                     },
                     {
+                      // Actividad abierta: preguntas de opinión personal.
                       id: 'block-hikorean-1-1-listen2-practice2',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-listen2-02',
@@ -571,10 +710,12 @@ export const LIBRARY_CATALOG = Object.freeze({
                       body: '광화문 광장부터 청계천까지 빌딩과 도심 산책하기. 예쁜 한복 빌려 입고 고궁에 가서 멋진 사진 찍기. 인사동에서 전통 기념품 사기. 홍대 걷고 싶은 거리에서 길거리 공연 즐기기.',
                     },
                     {
+                      // Actividad abierta: lista de deseos personal, sin clave de
+                      // corrección posible. Sin Exercise a propósito.
                       id: 'block-hikorean-1-1-production-practice',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-production-01',
-                      prompt: "나의 서울 관광 버킷 리스트를 4가지 써 보세요.",
+                      prompt: '나의 서울 관광 버킷 리스트를 4가지 써 보세요.',
                     },
                   ],
                 },

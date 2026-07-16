@@ -5,65 +5,95 @@
  * (Software Architecture §3, §15.2): se computa a partir del
  * historial de Attempts, jamás mantenido aparte.
  *
- * Sprint 2/3 todavía no tienen Attempts — Progress & Memory
- * Architecture (Attempt, Error Record) llega en Sprint 4 (Roadmap,
- * Phase 4). Estas funciones son el punto único donde ese cambio
- * ocurrirá: hoy computan honestamente 0 completadas (no existe
- * ningún Attempt que contar), nunca un valor inventado u oculto. La
- * whisper bar (Design System §14.2) sigue siendo correcta con estos
- * números — un libro recién publicado, sin sesiones de estudio
- * todavía, se ve exactamente como lo que es: 0 de N.
+ * Sprint 5 (Exercise Engine) introduce el historial de Attempts real
+ * — Sprint 5 Plan, decisión #1: una Lesson se considera completada
+ * ÚNICAMENTE cuando TODOS sus bloques `practice` con un Exercise
+ * evaluable (getExerciseById lo resuelve) tienen al menos un Attempt
+ * correcto. Llegar a "Finish" no basta — Atlas mide aprendizaje, no
+ * navegación. Las "actividades abiertas" y los ejercicios de tipos
+ * aún no soportados (matching, o los que dependen de audio real que
+ * todavía no existe — ver exercise-catalog.js) no tienen Exercise
+ * resuelto, así que quedan fuera del cómputo por completo: ni ayudan
+ * ni bloquean la completitud de la Lesson.
  *
- * Cuando Sprint 4 introduzca el historial de Attempts real, solo
- * estas funciones cambian de implementación — ningún componente de
- * presentación que las consume necesita cambiar (mismo contrato de
- * salida).
+ * Caso límite (documentado, no decidido explícitamente por ningún
+ * documento): una Lesson sin ningún ejercicio evaluable (0 bloques
+ * `practice` con Exercise real — el caso del libro de muestra
+ * "Español Esencial") nunca se marca como completada por esta vía.
+ * Es la lectura más conservadora de la decisión #1 ("Atlas debe medir
+ * aprendizaje") — evita el extremo contraintuitivo de marcar una
+ * lección como "completa" antes incluso de abrirla, por vacuidad
+ * lógica. Señalado en el resumen técnico del sprint para su revisión.
  */
 
-export function computeUnitProgress(unit) {
+import { getExerciseById } from '../exercise/exercise-repository.js';
+
+/**
+ * Los exerciseId de una Lesson que realmente participan en Progress
+ * — solo los que resuelven a un Exercise real (Sprint 5 Plan,
+ * decisión sobre actividades abiertas/tipos futuros).
+ */
+function getGradedExerciseIds(lesson) {
+  const ids = [];
+  for (const section of lesson.sections) {
+    for (const block of section.blocks) {
+      if (block.type === 'practice' && getExerciseById(block.exerciseId)) {
+        ids.push(block.exerciseId);
+      }
+    }
+  }
+  return ids;
+}
+
+/**
+ * `attemptRepository` se inyecta (nunca se importa un storage
+ * concreto aquí) — mismo criterio de dependencia explícita que ya
+ * usa session-repository.js.
+ */
+export function isLessonComplete(lesson, attemptRepository) {
+  const gradedIds = getGradedExerciseIds(lesson);
+  if (gradedIds.length === 0) return false; // ver caso límite documentado arriba
+  return gradedIds.every((exerciseId) => attemptRepository.hasCorrectAttempt(lesson.id, exerciseId));
+}
+
+export function computeUnitProgress(unit, attemptRepository) {
   const total = unit.lessons.length;
-  // Sin Attempts todavía (Sprint 4): ninguna lección puede estar
-  // marcada como completada por el motor, sea cual sea su título.
-  const completed = 0;
+  const completed = unit.lessons.filter((lesson) => isLessonComplete(lesson, attemptRepository)).length;
   return Object.freeze({ completed, total });
 }
 
-export function computeBookProgress(book) {
-  const total = book.units.reduce((sum, unit) => sum + unit.lessons.length, 0);
-  const completed = 0;
+export function computeBookProgress(book, attemptRepository) {
+  const allLessons = book.units.flatMap((unit) => unit.lessons);
+  const total = allLessons.length;
+  const completed = allLessons.filter((lesson) => isLessonComplete(lesson, attemptRepository)).length;
   return Object.freeze({ completed, total });
 }
 
 /**
  * Marcador binario por Lesson dentro de una Unit (Design System
- * §14.3): "next" en la primera lección incompleta, "completed" en
- * las completadas, ausencia de marcador en las no alcanzadas
- * todavía. Con 0 Attempts (Sprint 4 no existe aún), ninguna lección
- * está completa — así que, honestamente, la primera lección de CADA
- * unidad es "la primera incompleta" de esa unidad, y el resto no
- * tiene marcador. No es un caso especial: es la misma regla aplicada
- * al estado real (nada completado todavía).
- *
- * Alcance explícitamente por Unit (Wireframe Review §2.4 describe el
- * marcador "dentro de una unidad") — no hay una regla documentada de
- * "un único next en todo el libro" en ningún documento frozen.
+ * §14.3): "completed" en las ya completadas (Attempts correctos en
+ * todo lo evaluable), "next" en la primera incompleta, sin marcador
+ * en el resto — igual que antes, ahora con completitud real en vez
+ * de siempre 0.
  */
-export function computeLessonMarkers(lessons) {
-  return lessons.map((lesson, index) => ({
-    lessonId: lesson.id,
-    marker: index === 0 ? 'next' : 'none',
-  }));
+export function computeLessonMarkers(lessons, attemptRepository) {
+  let nextAssigned = false;
+  return lessons.map((lesson) => {
+    const completed = isLessonComplete(lesson, attemptRepository);
+    if (completed) return { lessonId: lesson.id, marker: 'completed' };
+    if (!nextAssigned) {
+      nextAssigned = true;
+      return { lessonId: lesson.id, marker: 'next' };
+    }
+    return { lessonId: lesson.id, marker: 'none' };
+  });
 }
 
 /**
  * Progreso fraccional dentro de una Learning Session activa (Design
- * System §14.4): completed = secciones ya recorridas, total =
- * secciones declaradas por la Lesson. A diferencia de Book/Unit
- * progress, esto NO depende de Attempts — es simplemente "dónde
- * estoy dentro de esta sesión ahora mismo", vive en memoria dentro
- * de la screen de Learning Session (Session & Navigation State,
- * Software Architecture §9.2) y se pierde al salir, porque la
- * persistencia de Session llega en Sprint 4.
+ * System §14.4) — sin cambios en Sprint 5: sigue siendo "dónde estoy
+ * dentro de esta sesión ahora mismo" (secciones recorridas), no
+ * depende de Attempts.
  */
 export function computeSessionProgress(currentSectionIndex, totalSections) {
   return Object.freeze({

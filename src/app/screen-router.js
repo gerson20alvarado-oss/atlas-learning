@@ -2,31 +2,25 @@
  * app/screen-router.js
  *
  * Resuelve qué screen se monta en el content-region según la
- * Navigation State publicada por el router (route:changed). Junto a
- * app-shell.js y bootstrap.js, es de los pocos módulos que conocen
- * varias capas a la vez (Sprint 1 Plan §6) — content-repository
- * (Domain), session-repository (Domain), las screens (Presentation),
- * runtimeConfig (Core/Config) y el router/event bus (Core) —
- * precisamente para que ninguna de esas capas tenga que conocerse
- * entre sí directamente (regla de vecinos, Software Architecture
- * §9.3).
+ * Navigation State publicada por el router. Junto a app-shell.js y
+ * bootstrap.js, es de los pocos módulos que conocen varias capas a
+ * la vez (Sprint 1 Plan §6) — precisamente para que ninguna de esas
+ * capas tenga que conocerse entre sí (regla de vecinos, Software
+ * Architecture §9.3).
  *
- * Sprint 4 (Progress, Roadmap Phase 4) añade:
- *   - Home real ("Continue Learning", Wireframe Review §2.1),
- *     construida sobre la Session persistida — reemplaza el
- *     placeholder que Sprint 2/3 usaban por no existir todavía
- *     ninguna Session que restaurar.
- *   - Restore Session en Learning Session: sectionIndex/scrollPosition
- *     persistidos vía session-repository, granular (Software
- *     Architecture §10.4) — no solo al salir.
- *   - Resolución de assets de Media contra el base path real
- *     (Software Architecture §21.2) — el único lugar que lo hace,
- *     para que presentation/components/content-blocks/media-block.js
- *     permanezca puro (no conoce runtimeConfig).
+ * Sprint 5 (Exercise Engine) añade:
+ *   - Resolución de Exercise/Attempt para cada bloque `practice`
+ *     (análoga a la resolución de assets de Media de Sprint 4): el
+ *     Exercise Engine (domain/exercise/exercise-evaluator.js) nunca
+ *     conoce Session ni Router (Sprint 5 Plan, regla explícita) — es
+ *     este módulo el que compone evaluación + registro de Attempt en
+ *     un único callback `onCheck` inyectado en cada bloque, antes de
+ *     que la Session container exista siquiera.
+ *   - Progress real: computeBookProgress/computeUnitProgress/
+ *     computeLessonMarkers ahora reciben attemptRepository.
  *
- * Sin cambios de alcance en Sprint 4 para Progress numérico real: no
- * hay Attempts (Exercise Engine, Sprint 5), así que computeUnitProgress
- * / computeBookProgress / computeLessonMarkers no se tocan.
+ * Sin cambios en la resolución de Media (Sprint 4) ni en Restore
+ * Session de sección/scroll — Sprint 5 no toca esa parte.
  */
 
 import {
@@ -40,6 +34,8 @@ import {
   computeUnitProgress,
   computeLessonMarkers,
 } from '../domain/content/progress.js';
+import { getExerciseById } from '../domain/exercise/exercise-repository.js';
+import { evaluateExercise } from '../domain/exercise/exercise-evaluator.js';
 import { createLibraryScreen } from '../presentation/screens/library/library-screen.js';
 import { createBookScreen } from '../presentation/screens/book/book-screen.js';
 import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
@@ -56,16 +52,8 @@ function notFoundView({ errorBoundary, reason, context, message }) {
 
 /**
  * Resuelve el src final de cada Content Block `media` contra el base
- * path real (Software Architecture §21.2), y deja todo lo demás sin
- * tocar. Es el único lugar del proyecto que conoce a la vez el
- * contenido (Domain) y runtimeConfig (Core/Config) — media-block.js
- * (Presentation) recibe siempre un `src` ya resuelto, nunca calcula
- * rutas por su cuenta (regla de vecinos, §9.3; Presentation puro).
- *
- * No muta `lesson` — devuelve una copia superficial con las
- * Sections/Content Blocks necesarias reconstruidas, consistente con
- * cómo screen-router.js ya compone `bookWithProgress` /
- * `unitWithProgress` en las funciones de arriba.
+ * path real (Software Architecture §21.2) — sin cambios desde
+ * Sprint 4.
  */
 function resolveLessonMediaAssets(lesson, runtimeConfig) {
   return {
@@ -80,12 +68,63 @@ function resolveLessonMediaAssets(lesson, runtimeConfig) {
   };
 }
 
-function buildLibraryScreen({ router }) {
+/**
+ * Resuelve, para cada Content Block `practice`, su Exercise (o `null`
+ * si es una actividad abierta, dependiente de audio real, o un tipo
+ * aún no soportado — domain/content/exercise-catalog.js), su
+ * `priorAttempt` (Sprint 5 Plan, decisión #5: solo se restaura en
+ * estado "ya respondido" cuando el último Attempt fue CORRECTO —
+ * uno incorrecto no bloquea un reintento genuino al reabrir la
+ * Lesson; Design System §17.3 ya exige que, DENTRO de una misma
+ * instancia, todas las opciones queden deshabilitadas tras responder,
+ * sea cual sea el resultado, así que el reintento real ocurre al
+ * volver a entrar, nunca dentro de la misma sesión de pantalla), y
+ * `onCheck` — el único puente entre Presentation y el evaluador puro
+ * del Exercise Engine + el registro de Attempt.
+ *
+ * El evaluador (domain/exercise/exercise-evaluator.js) y el registro
+ * de Attempt (domain/learning-data/attempt-repository.js) se
+ * componen AQUÍ, nunca dentro de practice-block.js ni de
+ * learning-session-screen.js — ninguno de los dos conoce Session,
+ * Router ni Persistence (Sprint 5 Plan, regla explícita).
+ */
+function resolveLessonExercises(lesson, attemptRepository) {
+  return {
+    ...lesson,
+    sections: lesson.sections.map((section) => ({
+      ...section,
+      blocks: section.blocks.map((block) => {
+        if (block.type !== 'practice') return block;
+
+        const exercise = getExerciseById(block.exerciseId);
+        if (!exercise) return { ...block, exercise: null, priorAttempt: null, onCheck: null };
+
+        const latestAttempt = attemptRepository.getLatestAttempt(lesson.id, block.exerciseId);
+        const priorAttempt = latestAttempt?.isCorrect ? latestAttempt : null;
+
+        const onCheck = (response) => {
+          const result = evaluateExercise(exercise, response);
+          attemptRepository.recordAttempt({
+            exerciseId: block.exerciseId,
+            lessonId: lesson.id,
+            response,
+            isCorrect: result.isCorrect,
+          });
+          return result;
+        };
+
+        return { ...block, exercise, priorAttempt, onCheck };
+      }),
+    })),
+  };
+}
+
+function buildLibraryScreen({ router, attemptRepository }) {
   const library = getLibrary();
   const books = library.books.map((book) => ({
     id: book.id,
     title: book.title,
-    progress: computeBookProgress(book),
+    progress: computeBookProgress(book, attemptRepository),
   }));
 
   return createLibraryScreen({
@@ -94,7 +133,7 @@ function buildLibraryScreen({ router }) {
   });
 }
 
-function buildBookScreen({ router, errorBoundary, bookId }) {
+function buildBookScreen({ router, errorBoundary, attemptRepository, bookId }) {
   const book = getBookById(bookId);
 
   if (!book) {
@@ -108,10 +147,10 @@ function buildBookScreen({ router, errorBoundary, bookId }) {
 
   const bookWithProgress = {
     ...book,
-    progress: computeBookProgress(book),
+    progress: computeBookProgress(book, attemptRepository),
     units: book.units.map((unit) => ({
       ...unit,
-      progress: computeUnitProgress(unit),
+      progress: computeUnitProgress(unit, attemptRepository),
     })),
   };
 
@@ -122,7 +161,7 @@ function buildBookScreen({ router, errorBoundary, bookId }) {
   });
 }
 
-function buildUnitScreen({ router, errorBoundary, bookId, unitId }) {
+function buildUnitScreen({ router, errorBoundary, attemptRepository, bookId, unitId }) {
   const unit = getUnitById(bookId, unitId);
 
   if (!unit) {
@@ -134,10 +173,10 @@ function buildUnitScreen({ router, errorBoundary, bookId, unitId }) {
     });
   }
 
-  const markers = computeLessonMarkers(unit.lessons);
+  const markers = computeLessonMarkers(unit.lessons, attemptRepository);
   const unitWithProgress = {
     ...unit,
-    progress: computeUnitProgress(unit),
+    progress: computeUnitProgress(unit, attemptRepository),
     lessons: unit.lessons.map((lesson, index) => ({
       ...lesson,
       marker: markers[index].marker,
@@ -175,6 +214,7 @@ function buildLearningSessionScreen({
   router,
   errorBoundary,
   sessionRepository,
+  attemptRepository,
   runtimeConfig,
   bookId,
   unitId,
@@ -191,14 +231,9 @@ function buildLearningSessionScreen({
     });
   }
 
-  const resolvedLesson = resolveLessonMediaAssets(lesson, runtimeConfig);
+  const withMedia = resolveLessonMediaAssets(lesson, runtimeConfig);
+  const resolvedLesson = resolveLessonExercises(withMedia, attemptRepository);
 
-  // Restaura solo si la Session persistida apunta EXACTAMENTE a esta
-  // Lesson — si el estudiante navegó aquí por Library/Unit hacia una
-  // lección distinta a la que tenía en curso, empezar en la sección 0
-  // es lo honesto (no hay nada que restaurar para ESTA lección
-  // todavía); la Session se sobrescribirá con esta posición en cuanto
-  // el componente monte (ver learning-session-screen.js).
   const persisted = sessionRepository.getSession();
   const matchesThisLesson =
     persisted?.bookId === bookId && persisted?.unitId === unitId && persisted?.lessonId === lessonId;
@@ -212,14 +247,6 @@ function buildLearningSessionScreen({
     onScrollChange: (scrollPosition) => sessionRepository.saveSession({ scrollPosition }),
     onExit: ({ reason }) => {
       if (reason === 'finished') {
-        // Sin Attempts/Progress real todavía (Sprint 5): terminar de
-        // leer una Lesson no es "completarla" en el sentido de
-        // Progress (Software Architecture §15.2). Pero, desde la
-        // óptica de Restore Session, no queda un punto intermedio
-        // honesto al que volver — se limpia la Session para que Home
-        // vuelva a su estado vacío en vez de apuntar a una lección ya
-        // leída por completo (Sprint 4 Plan, decisión de diseño
-        // documentada en el resumen técnico del sprint).
         sessionRepository.clearSession();
       }
       router.navigateTo('/');
@@ -244,11 +271,6 @@ function buildHomeScreen({ router, sessionRepository }) {
           ),
       });
     }
-    // La Session apunta a contenido que ya no existe o no es válido
-    // (p. ej. el Content Import Pipeline republicó el libro sin esa
-    // Lesson). Degradar al estado vacío, igual que content-repository
-    // degrada un Book inválido a null — nunca fingir un "Continue"
-    // hacia algo que ya no está.
   }
 
   return createStateView({
@@ -299,6 +321,7 @@ export function mountScreenRouter({
   router,
   errorBoundary,
   sessionRepository,
+  attemptRepository,
   runtimeConfig,
 }) {
   function handleRouteChanged(navigationState) {
@@ -306,6 +329,7 @@ export function mountScreenRouter({
       router,
       errorBoundary,
       sessionRepository,
+      attemptRepository,
       runtimeConfig,
     });
     contentRegion.render(screen);

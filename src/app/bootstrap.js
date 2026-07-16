@@ -26,6 +26,7 @@ import { createRouter } from '../core/router/router.js';
 import { createStorageContract } from '../persistence/storage-contract.js';
 import { createLocalStorageAdapter } from '../persistence/adapters/local-storage-adapter.js';
 import { createSessionRepository } from '../domain/session/session-repository.js';
+import { createAttemptRepository } from '../domain/learning-data/attempt-repository.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
 
@@ -38,13 +39,14 @@ function bootstrap() {
   const eventBus = createEventBus();
   const errorBoundary = createErrorBoundary(eventBus);
 
-  // Persistence: el contrato queda listo y consumible desde Sprint 1
-  // (Sprint 1 Plan §12). Sprint 4 (Progress, Roadmap Phase 4) es el
-  // primer sprint que persiste un dato de dominio real a través de
-  // él: la Session (ver domain/session/session-repository.js).
+  // Persistence: el contrato queda listo desde Sprint 1. Sprint 4
+  // añadió la Session; Sprint 5 (Exercise Engine) añade Attempts —
+  // el historial append-only del que Progress (real, por fin) y
+  // Error Record (vista derivada, nunca almacenada aparte) dependen.
   const storageAdapter = createLocalStorageAdapter();
   const storage = createStorageContract(storageAdapter, errorBoundary);
   const sessionRepository = createSessionRepository(storage);
+  const attemptRepository = createAttemptRepository(storage);
 
   // c. Router — inicializado pero sin resolver ninguna ruta todavía;
   //    eso ocurre explícitamente en el paso (f).
@@ -75,6 +77,7 @@ function bootstrap() {
     router,
     errorBoundary,
     sessionRepository,
+    attemptRepository,
     runtimeConfig,
   });
 
@@ -87,7 +90,7 @@ function bootstrap() {
   // Expuesto solo para verificación manual en Sprint 1 (§7 del plan:
   // "validación manual del flujo de arranque"), nunca para que otro
   // módulo del proyecto dependa de un global.
-  window.__atlasLearning = Object.freeze({ router, eventBus, storage, sessionRepository });
+  window.__atlasLearning = Object.freeze({ router, eventBus, storage, sessionRepository, attemptRepository });
 }
 
 bootstrap();

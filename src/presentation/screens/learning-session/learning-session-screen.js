@@ -3,37 +3,39 @@
  *
  * Session container (Design System §18): "one component, two
  * consumers" — Learn Mode y Review Mode comparten este mismo
- * componente, diferenciados solo por el label de fuente y el modo.
- * Sprint 3 solo construye el consumidor Learn Mode (Review Mode
- * depende de Error Records, que no existen hasta el Exercise Engine
- * — Roadmap Phase 5); no se añaden props especulativas para Review
- * todavía (YAGNI, Wireframe Review P10 — "silencio es una decisión
- * de diseño válida"). Cuando Review Mode llegue, es este mismo
- * archivo el que se extiende, no uno nuevo.
+ * componente. Sprint 5 solo construye el consumidor Learn Mode
+ * (Review Mode queda fuera de este sprint a pedido explícito).
  *
- * Alcance de Sprint 3: lineal, sellado (§18.2) — solo Lecture-type
- * content, sin Session Summary con resultados (no hay Attempts que
- * resumir). Al terminar la última sección, "Continue" se convierte en
- * "Finish" y sale — no hay pantalla de resultados todavía (eso sigue
- * sin cambiar en Sprint 4: no hay Attempts, Sprint 5).
+ * Sprint 5 (Exercise Engine) añade la anatomía compartida de todo
+ * ejercicio (§17.1): el botón "Continue" de la Session pasa a hacer
+ * doble función de "Check/Continue" cuando la sección activa tiene
+ * bloques `practice` sin responder — "One tap selects; the session's
+ * continue/check action confirms" (§17.3), "submit via the continue/
+ * check action" (§17.5). El flujo, por click:
+ *   1. Si existe un bloque `practice` de la sección activa que
+ *      todavía no fue verificado (`isAnswered() === false`): el botón
+ *      dice "Check"; deshabilitado mientras no haya una respuesta
+ *      pendiente (`getPendingResponse() === null`); al hacer click
+ *      verifica ESE bloque (`checkNow()`, que dispara `block.onCheck`
+ *      — inyectado desde app/screen-router.js, nunca calculado aquí)
+ *      y muestra su Feedback (§17.2), sin avanzar de sección todavía.
+ *   2. Si todos los `practice` de la sección ya están verificados (o
+ *      no hay ninguno): el botón vuelve a ser "Continue"/"Finish" y
+ *      avanza exactamente como en Sprint 3/4.
  *
- * Sprint 4 (Progress, Roadmap Phase 4) añade lo que Sprint 3 dejó
- * explícitamente pendiente: la posición de sección y el scroll ya no
- * viven solo en memoria (Software Architecture §10.4, §14.3) —
- * `restoreSectionIndex`/`restoreScrollPosition` permiten reanudar
- * exactamente donde quedó el estudiante, y `onSectionChange` /
- * `onScrollChange` (inyectados desde app/screen-router.js, que ya
- * conoce el Session repository) persisten cada cambio granular, no
- * solo al salir. `onExit` ahora recibe `{ reason }` ('finished' |
- * 'exited') para que quien orquesta decida qué hacer con la Session
- * persistida en cada caso (ver screen-router.js: 'finished' limpia la
- * Session, 'exited' no toca nada más — ya quedó guardada
- * incrementalmente).
+ * Este componente NUNCA evalúa una respuesta ni conoce el Exercise
+ * Engine (evaluator) directamente — solo orquesta CUÁNDO se invoca
+ * `checkNow()` de cada bloque, que a su vez llama al callback ya
+ * inyectado. Sigue siendo Presentation puro: `onCheck` por bloque,
+ * `onSectionChange`, `onScrollChange` y `onExit` llegan todos como
+ * props, compuestos por app/screen-router.js.
  *
- * currentExercise/currentAudio del esquema de Session (Sprint 4 Plan)
- * no se popula todavía desde aquí: no hay Exercises reales (Sprint 5)
- * ni Media de audio real en el contenido de este sprint — permanecen
- * en `null`, honestamente, hasta que exista algo real que registrar.
+ * Restauración de ejercicios (Sprint 5 Plan, decisión #5): no existe
+ * ningún puntero de "ejercicio actual" en Session. Cada bloque
+ * `practice` recibe su propio `priorAttempt` ya resuelto (o `null`)
+ * desde app/screen-router.js, consultando Attempts — este componente
+ * no sabe de dónde salió ese dato, solo lo pasa a través de
+ * content-block-renderer.js.
  */
 
 import { createSessionExit } from '../../components/session-exit/session-exit.js';
@@ -85,16 +87,16 @@ export function createLearningSessionScreen({
   element.appendChild(contentColumn);
   element.appendChild(continueButton.element);
 
-  // Restaura dentro de los límites válidos de la Lesson actual — una
-  // Session persistida podría apuntar a un índice que ya no existe si
-  // el contenido de la Lesson cambió entre sesiones (Content Import
-  // Pipeline republicó la Lesson con menos secciones). Degradar a 0
-  // es la misma postura que content-repository.js aplica a contenido
-  // inválido: nunca romper, nunca fingir una posición que no existe.
   const lastValidIndex = lesson.sections.length - 1;
   let currentIndex = Math.min(Math.max(restoreSectionIndex, 0), lastValidIndex);
-  let currentSectionWrapper = null;
+  let currentSectionWrapper = null; // { wrapper, blockComponents, practiceComponents }
   let scrollSaveTimer = null;
+
+  function practiceComponentsOf(section, blockComponents) {
+    return section.blocks
+      .map((block, i) => (block.type === 'practice' ? blockComponents[i] : null))
+      .filter(Boolean);
+  }
 
   function renderSection(index, { animateIncoming = false, restoredScroll = null } = {}) {
     const section = lesson.sections[index];
@@ -121,28 +123,43 @@ export function createLearningSessionScreen({
     contentColumn.appendChild(wrapper);
 
     if (animateIncoming) {
-      // Fuerza un reflow antes de quitar el estado "entering" para
-      // que la transición CSS realmente se dispare (§21.3).
       requestAnimationFrame(() => {
         wrapper.removeAttribute('data-motion');
       });
     }
 
-    currentSectionWrapper = { wrapper, blockComponents };
+    currentSectionWrapper = {
+      wrapper,
+      blockComponents,
+      practiceComponents: practiceComponentsOf(section, blockComponents),
+    };
 
-    const isLast = index === lesson.sections.length - 1;
-    continueButton.update({ label: isLast ? 'Finish' : 'Continue' });
     sessionProgress.update(computeSessionProgress(index, lesson.sections.length));
+    updateContinueButtonState();
 
     if (restoredScroll !== null) {
-      // Restaurar el scroll exacto requiere que el layout de la
-      // sección ya esté pintado — se usa un rAF; es una restauración
-      // "mejor esfuerzo", nunca bloqueante (Software Architecture C6:
-      // nada debe interrumpir el aprendizaje esperando una
-      // restauración perfecta).
       requestAnimationFrame(() => {
         window.scrollTo(0, restoredScroll);
       });
+    }
+  }
+
+  /**
+   * Decide la etiqueta y el estado del botón compartido según los
+   * `practice` de la sección activa (Design System §17.1, §17.3,
+   * §17.5) — "Check" mientras quede alguno sin verificar, "Continue"/
+   * "Finish" cuando todos ya muestran su Feedback (o no hay ninguno).
+   */
+  function updateContinueButtonState() {
+    if (!currentSectionWrapper) return;
+    const firstUnanswered = currentSectionWrapper.practiceComponents.find((c) => !c.isAnswered());
+    const isLast = currentIndex === lesson.sections.length - 1;
+
+    if (firstUnanswered) {
+      const hasPendingResponse = firstUnanswered.getPendingResponse() !== null;
+      continueButton.update({ label: 'Check', disabled: !hasPendingResponse });
+    } else {
+      continueButton.update({ label: isLast ? 'Finish' : 'Continue', disabled: false });
     }
   }
 
@@ -161,7 +178,23 @@ export function createLearningSessionScreen({
   window.addEventListener('scroll', handleScroll, { passive: true });
   window.addEventListener('beforeunload', flushScrollSave);
 
+  // Delegación de eventos: cualquier tecleo o selección dentro de un
+  // ejercicio puede habilitar el botón "Check" (una respuesta recién
+  // se volvió disponible) — un único listener por sección en vez de
+  // que cada tipo de ejercicio conozca al botón compartido.
+  contentColumn.addEventListener('input', () => updateContinueButtonState());
+  contentColumn.addEventListener('click', () => updateContinueButtonState());
+
   function handleContinue() {
+    const firstUnanswered = currentSectionWrapper.practiceComponents.find((c) => !c.isAnswered());
+
+    if (firstUnanswered) {
+      if (firstUnanswered.getPendingResponse() === null) return; // defensivo: el botón ya debería estar disabled
+      firstUnanswered.checkNow();
+      updateContinueButtonState();
+      return;
+    }
+
     const isLast = currentIndex === lesson.sections.length - 1;
     if (isLast) {
       flushScrollSave();
@@ -181,21 +214,11 @@ export function createLearningSessionScreen({
       }, PAGE_TURN_MS);
     }
     currentIndex = nextIndex;
-    // Cambiar de sección es un punto de guardado granular explícito
-    // (Software Architecture §10.4) — el scroll de la nueva sección
-    // empieza en 0, nunca hereda el de la sección anterior.
     onSectionChange?.(currentIndex);
     window.scrollTo(0, 0);
     renderSection(currentIndex, { animateIncoming: true });
   }
 
-  // Primer render: restaura la sección exacta (si había una Session
-  // válida para esta Lesson) y persiste inmediatamente la posición
-  // resultante — así, aunque el estudiante haya llegado por Library/
-  // Unit en vez de "Continue Learning", la Session queda apuntando a
-  // esta Lesson desde el primer instante (postura "most-recent-write-
-  // wins" ya aceptada para el puntero de Session, Software
-  // Architecture §11.4).
   onSectionChange?.(currentIndex);
   renderSection(currentIndex, {
     restoredScroll: restoreScrollPosition > 0 ? restoreScrollPosition : null,
