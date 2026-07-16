@@ -16,6 +16,14 @@
  *      router) deben existir antes del paso (f)
  *   f. El router resuelve la ruta inicial → publica route:changed
  *   g. Aplicación arrancada e interactiva → Exit Criteria cumplida
+ *
+ * Sprint 6 (Authentication) añade Auth y la vinculación de cuenta
+ * ANTES del paso (c) — no porque bloqueen el arranque técnico, sino
+ * porque screen-router.js (paso e) los necesita para decidir, en su
+ * primer render, si el estudiante ve Entry/Login o el resto de la
+ * app. Ninguna otra capa (Domain, Presentation) importa nada de
+ * `auth/` ni de `remote-account-snapshot/` — solo bootstrap.js y
+ * screen-router.js los conocen, igual que ya ocurre con Persistence.
  */
 
 import { createRuntimeConfig } from '../config/runtime-config.js';
@@ -27,6 +35,11 @@ import { createStorageContract } from '../persistence/storage-contract.js';
 import { createLocalStorageAdapter } from '../persistence/adapters/local-storage-adapter.js';
 import { createSessionRepository } from '../domain/session/session-repository.js';
 import { createAttemptRepository } from '../domain/learning-data/attempt-repository.js';
+import { createAuthContract } from '../auth/auth-contract.js';
+import { createSupabaseAuthAdapter } from '../auth/adapters/supabase-auth-adapter.js';
+import { createAccountSnapshotService } from '../remote-account-snapshot/account-snapshot-contract.js';
+import { createSupabaseAccountSnapshotAdapter } from '../remote-account-snapshot/adapters/supabase-account-snapshot-adapter.js';
+import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
 
@@ -47,6 +60,34 @@ function bootstrap() {
   const storage = createStorageContract(storageAdapter, errorBoundary);
   const sessionRepository = createSessionRepository(storage);
   const attemptRepository = createAttemptRepository(storage);
+
+  // Sprint 6 (Authentication): capa desacoplada del proveedor —
+  // Supabase es la primera (y hoy única) implementación real del
+  // contrato de auth. Sustituir el proveedor en el futuro se limita
+  // a construir un adapter distinto aquí; auth-contract.js, el resto
+  // de app/ y toda otra capa permanecen sin cambios.
+  const supabaseAuthAdapter = createSupabaseAuthAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const authContract = createAuthContract({ adapter: supabaseAuthAdapter, storage, errorBoundary });
+
+  // Capacidad remota MÍNIMA (Sprint 6 Plan, Opción A) — solo lo que
+  // el flujo de vinculación de cuenta necesita para leer/escribir el
+  // snapshot de una cuenta una sola vez. Deliberadamente no es la
+  // capa de Sync (todavía sin diseñar); vive fuera de app/ porque es
+  // infraestructura, no un flujo de aplicación.
+  const supabaseSnapshotAdapter = createSupabaseAccountSnapshotAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const accountSnapshotService = createAccountSnapshotService(supabaseSnapshotAdapter, errorBoundary);
+
+  const accountLinkingFlow = createAccountLinkingFlow({
+    sessionRepository,
+    attemptRepository,
+    accountSnapshotService,
+  });
 
   // c. Router — inicializado pero sin resolver ninguna ruta todavía;
   //    eso ocurre explícitamente en el paso (f).
@@ -79,6 +120,8 @@ function bootstrap() {
     sessionRepository,
     attemptRepository,
     runtimeConfig,
+    authContract,
+    accountLinkingFlow,
   });
 
   // f. El router resuelve la ruta inicial y publica route:changed.
@@ -90,7 +133,14 @@ function bootstrap() {
   // Expuesto solo para verificación manual en Sprint 1 (§7 del plan:
   // "validación manual del flujo de arranque"), nunca para que otro
   // módulo del proyecto dependa de un global.
-  window.__atlasLearning = Object.freeze({ router, eventBus, storage, sessionRepository, attemptRepository });
+  window.__atlasLearning = Object.freeze({
+    router,
+    eventBus,
+    storage,
+    sessionRepository,
+    attemptRepository,
+    authContract,
+  });
 }
 
 bootstrap();

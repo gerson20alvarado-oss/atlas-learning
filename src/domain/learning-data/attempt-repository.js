@@ -4,19 +4,26 @@
  * Único punto de entrada del dominio hacia Persistence para
  * Attempts — mismo patrón que session-repository.js. Append-only
  * (Software Architecture §11.4): ningún Attempt se edita ni se
- * borra, solo se añaden nuevos. Error Record (Sprint 5 Plan, decisión
- * #4) es una vista derivada de esta misma colección filtrada por
- * `isCorrect === false` — no existe un repositorio ni una colección
- * separada para Error Record; `getErrorRecordsForLesson` de aquí
- * abajo ES esa vista, calculada en el momento, nunca almacenada
+ * borra salvo los dos campos de metadato de Sprint 6 (`userId`,
+ * `syncedAt` — ver attempt-shape.js). Error Record (Sprint 5 Plan,
+ * decisión #4) es una vista derivada de esta misma colección
+ * filtrada por `isCorrect === false` — `getErrorRecordsForLesson` de
+ * aquí abajo ES esa vista, calculada en el momento, nunca almacenada
  * aparte.
  *
+ * Sprint 6 (Authentication) añade los métodos que el flujo de
+ * vinculación de cuenta (app/account-linking/) necesita para
+ * distinguir Attempts huérfanos/propios/ajenos y reconciliarlos con
+ * un snapshot remoto. Ninguno de estos métodos implementa política
+ * de sincronización continua — eso sigue siendo, deliberadamente,
+ * responsabilidad de una futura capa Sync todavía no diseñada
+ * (Sprint 6 Plan, Opción A: alcance mínimo y controlado).
+ *
  * Regla de vecinos: conoce el storage contract inyectado, nunca el
- * mecanismo real detrás de él. No conoce Session, Router ni
- * Presentation — desconoce por completo cómo o cuándo se dispara un
- * Attempt; solo sabe cómo guardarlo y consultarlo una vez que ya
- * existe (esa creación ocurre en app/screen-router.js, que es quien
- * conoce el evaluador, este repositorio, y la UI a la vez).
+ * mecanismo real detrás de él. No conoce Auth, Router ni
+ * Presentation — desconoce por completo cuándo o por qué se crea un
+ * Attempt o se ejecuta una vinculación; solo sabe cómo guardar y
+ * consultar estos datos una vez que existen.
  */
 
 import { isValidAttemptShape } from '../contracts/attempt-shape.js';
@@ -29,14 +36,20 @@ function readAllAttempts(storage) {
   return raw.filter(isValidAttemptShape);
 }
 
+function writeAllAttempts(storage, attempts) {
+  return storage.write(ATTEMPTS_STORAGE_KEY, attempts);
+}
+
 export function createAttemptRepository(storage) {
   /**
-   * Registra un nuevo Attempt. Recibe los datos ya evaluados
-   * (exerciseId, lessonId, response, isCorrect) — este repositorio
-   * no evalúa nada, solo estampa `id`/`timestamp` y persiste
-   * (append, nunca sobrescribe intentos previos).
+   * Registra un nuevo Attempt. `userId` es `null` por defecto —
+   * huérfano — hasta que exista una sesión de Auth real; quien
+   * orquesta (app/screen-router.js) pasa el `userId` de la sesión
+   * activa si existe. `syncedAt` siempre nace en `null`: un Attempt
+   * recién creado, con o sin conexión, es indistinguible hasta que
+   * algo confirme su subida (Sprint 6 Plan, punto 1).
    */
-  function recordAttempt({ exerciseId, lessonId, response, isCorrect }) {
+  function recordAttempt({ exerciseId, lessonId, response, isCorrect, userId = null }) {
     const attempt = {
       id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       exerciseId,
@@ -44,13 +57,15 @@ export function createAttemptRepository(storage) {
       response,
       isCorrect,
       timestamp: new Date().toISOString(),
+      userId,
+      syncedAt: null,
     };
 
     if (!isValidAttemptShape(attempt)) return null;
 
     const all = readAllAttempts(storage);
     all.push(attempt);
-    const wrote = storage.write(ATTEMPTS_STORAGE_KEY, all);
+    const wrote = writeAllAttempts(storage, all);
     return wrote ? attempt : null;
   }
 
@@ -62,12 +77,6 @@ export function createAttemptRepository(storage) {
     return getAttemptsForLesson(lessonId).filter((attempt) => attempt.exerciseId === exerciseId);
   }
 
-  /**
-   * El intento más reciente para un ejercicio dado, o `null` si
-   * nunca se respondió — es lo que permite restaurar el estado de un
-   * bloque `practice` sin depender de ningún puntero en Session
-   * (Sprint 5 Plan, decisión #5).
-   */
   function getLatestAttempt(lessonId, exerciseId) {
     const attempts = getAttemptsForExercise(lessonId, exerciseId);
     if (attempts.length === 0) return null;
@@ -78,17 +87,76 @@ export function createAttemptRepository(storage) {
     return getAttemptsForExercise(lessonId, exerciseId).some((attempt) => attempt.isCorrect);
   }
 
-  /**
-   * Vista derivada — Error Record (Sprint 5 Plan, decisión #4): todo
-   * Attempt incorrecto de una Lesson. No es una entidad persistida;
-   * se recalcula cada vez a partir de Attempts, la única fuente de
-   * verdad. Sin consumidor todavía (Review Mode queda fuera de
-   * Sprint 5 a pedido explícito) — se expone ya para que ese futuro
-   * sprint no necesite ningún cambio de esquema, solo empezar a
-   * llamarla.
-   */
   function getErrorRecordsForLesson(lessonId) {
     return getAttemptsForLesson(lessonId).filter((attempt) => !attempt.isCorrect);
+  }
+
+  // ---- Sprint 6: propiedad (huérfano / propio / ajeno) ----
+
+  function getOrphanAttempts() {
+    return readAllAttempts(storage).filter((attempt) => attempt.userId === null);
+  }
+
+  function getOwnAttempts(userId) {
+    return readAllAttempts(storage).filter((attempt) => attempt.userId === userId);
+  }
+
+  function getForeignAttempts(userId) {
+    return readAllAttempts(storage).filter(
+      (attempt) => attempt.userId !== null && attempt.userId !== userId,
+    );
+  }
+
+  /** Caso 1 de la vinculación: reclama todos los huérfanos para `userId`, en un solo write. */
+  function claimOrphanAttempts(userId) {
+    const all = readAllAttempts(storage);
+    const claimed = all.map((attempt) =>
+      attempt.userId === null ? { ...attempt, userId } : attempt,
+    );
+    return writeAllAttempts(storage, claimed);
+  }
+
+  /** Descarta (Caso 4 / rama "descartar" del Caso 3) todos los Attempts huérfanos, sin preguntar de nuevo — la decisión ya se tomó. */
+  function discardOrphanAttempts() {
+    const all = readAllAttempts(storage);
+    const kept = all.filter((attempt) => attempt.userId !== null);
+    return writeAllAttempts(storage, kept);
+  }
+
+  /** Dispositivo compartido: descarta silenciosamente todo lo que pertenezca a otra cuenta — nunca se fusiona, nunca se muestra. */
+  function discardForeignAttempts(userId) {
+    const all = readAllAttempts(storage);
+    const kept = all.filter((attempt) => attempt.userId === null || attempt.userId === userId);
+    return writeAllAttempts(storage, kept);
+  }
+
+  /**
+   * Incorpora Attempts que ya existían en el snapshot remoto de la
+   * cuenta (Casos 2 y 3). Deduplicado por `id`: un Attempt remoto que
+   * ya existe localmente (p. ej. porque ya se había subido en una
+   * vinculación anterior) nunca se duplica. Los Attempts remotos
+   * llegan ya `syncedAt` — por definición ya estaban en Supabase, no
+   * hace falta volver a subirlos.
+   */
+  function mergeRemoteAttempts(userId, remoteAttempts) {
+    const all = readAllAttempts(storage);
+    const localIds = new Set(all.map((a) => a.id));
+    const toAdd = remoteAttempts
+      .filter((remote) => !localIds.has(remote.id))
+      .map((remote) => ({ ...remote, userId, syncedAt: remote.syncedAt ?? new Date().toISOString() }))
+      .filter(isValidAttemptShape);
+    if (toAdd.length === 0) return true;
+    return writeAllAttempts(storage, [...all, ...toAdd]);
+  }
+
+  /** Marca como sincronizados los Attempts dados, tras una escritura remota exitosa. */
+  function markAttemptsSynced(ids, timestamp = new Date().toISOString()) {
+    const idSet = new Set(ids);
+    const all = readAllAttempts(storage);
+    const updated = all.map((attempt) =>
+      idSet.has(attempt.id) ? { ...attempt, syncedAt: timestamp } : attempt,
+    );
+    return writeAllAttempts(storage, updated);
   }
 
   return Object.freeze({
@@ -98,5 +166,13 @@ export function createAttemptRepository(storage) {
     getLatestAttempt,
     hasCorrectAttempt,
     getErrorRecordsForLesson,
+    getOrphanAttempts,
+    getOwnAttempts,
+    getForeignAttempts,
+    claimOrphanAttempts,
+    discardOrphanAttempts,
+    discardForeignAttempts,
+    mergeRemoteAttempts,
+    markAttemptsSynced,
   });
 }

@@ -1,0 +1,28 @@
+/**
+ * entry-screen.css
+ *
+ * Entry (Design System, wordmark natural size — Wireframe Review
+ * Principio 9). Estructura vertical simple, centrada.
+ */
+
+[data-component="entry-screen"] {
+  max-width: var(--al-measure-ui);
+  margin: 0 auto;
+  text-align: center;
+  padding-top: var(--al-space-12);
+}
+
+[data-component="entry-screen"] [data-part="wordmark"] {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-4);
+}
+
+[data-component="entry-screen"] [data-part="promise"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-8);
+}
+
+[data-component="entry-screen"] [data-part="sign-in"] {
+  max-width: 320px;
+  margin: 0 auto;
+}

@@ -21,13 +21,14 @@
  * que ya rige Progress (§15.2). `currentAudio` no se ve afectado por
  * este cambio — sigue reservado para cuando exista un asset real.
  *
- * Compatibilidad: una Session ya persistida por un Sprint 4 real
- * (con la clave `currentExercise` todavía presente) deja de cumplir
- * `isValidSessionShape` (chequeo exhaustivo de claves) y
- * session-repository.js la trata como cualquier forma inválida — se
- * degrada a `null` (mismo criterio que content-repository.js aplica
- * a contenido inválido), nunca se rompe. No hace falta ninguna
- * migración explícita.
+ * Sprint 6 (Authentication) añade `userId` — metadato de propiedad,
+ * no de contenido de la Session en sí (Sprint 6 Plan, diseño del
+ * flujo de vinculación de cuenta): distingue una Session huérfana
+ * (`null`, creada antes de cualquier login — el caso real que
+ * generaron los Sprints 1-5), propia (pertenece a la cuenta que
+ * inició sesión) o ajena (pertenece a otra cuenta, en un dispositivo
+ * compartido — nunca se fusiona, se descarta). Domain nunca lee este
+ * campo con lógica propia; solo `app/account-linking/` lo interpreta.
  */
 
 const SESSION_KEYS = Object.freeze([
@@ -38,6 +39,7 @@ const SESSION_KEYS = Object.freeze([
   'sectionIndex',
   'scrollPosition',
   'currentAudio',
+  'userId',
   'updatedAt',
 ]);
 
@@ -56,6 +58,7 @@ export function createEmptySession() {
     sectionIndex: null,
     scrollPosition: null,
     currentAudio: null, // reservado — Media tipo audio, cuando exista un asset real
+    userId: null, // huérfana hasta que una vinculación de cuenta la reclame
     updatedAt: null,
   });
 }

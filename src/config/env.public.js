@@ -6,16 +6,22 @@
  * pueden vivir aquí — nunca una credencial de servicio ni nada capaz
  * de escribir datos como un usuario arbitrario.
  *
- * En Sprint 1 no existe Auth ni Sync (llegan en Sprint 6), así que
- * los valores de Supabase quedan como placeholders explícitos. No se
- * inventa una forma "por si acaso" — Wireframe Review: "el silencio
- * es una decisión de diseño válida", aplicado aquí a configuración.
+ * Sprint 6 (Authentication) ya consume estos dos valores
+ * (auth/adapters/supabase-auth-adapter.js,
+ * remote-account-snapshot/adapters/supabase-account-snapshot-adapter.js)
+ * pero siguen en `null` aquí: ningún proyecto Supabase real fue
+ * provisto durante este sprint, y no se inventa un valor de relleno
+ * — "el silencio es una decisión de diseño válida" aplicado a
+ * configuración. Completar estos dos valores con los de un proyecto
+ * Supabase real es una decisión operativa/de despliegue, no de
+ * código — ningún archivo de `auth/` ni de `remote-account-snapshot/`
+ * necesita cambiar cuando eso ocurra.
  */
 
 export const envPublic = Object.freeze({
-  // Placeholder — se completa en Sprint 6 (Authentication).
-  // Cuando exista, será la clave pública "anon" de Supabase, segura
-  // para exponerse en un build estático — nunca una service key.
+  // Clave pública "anon" de Supabase — segura para exponerse en un
+  // build estático (nunca una service key). Pendiente de un proyecto
+  // real.
   supabaseUrl: null,
   supabaseAnonKey: null,
 });

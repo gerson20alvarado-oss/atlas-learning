@@ -1,26 +1,34 @@
 /**
  * app/screen-router.js
  *
- * Resuelve qué screen se monta en el content-region según la
- * Navigation State publicada por el router. Junto a app-shell.js y
- * bootstrap.js, es de los pocos módulos que conocen varias capas a
- * la vez (Sprint 1 Plan §6) — precisamente para que ninguna de esas
- * capas tenga que conocerse entre sí (regla de vecinos, Software
- * Architecture §9.3).
+ * Resuelve qué screen se monta en el content-region. Junto a
+ * app-shell.js y bootstrap.js, es de los pocos módulos que conocen
+ * varias capas a la vez (Sprint 1 Plan §6) — precisamente para que
+ * ninguna de esas capas tenga que conocerse entre sí (regla de
+ * vecinos, Software Architecture §9.3).
  *
- * Sprint 5 (Exercise Engine) añade:
- *   - Resolución de Exercise/Attempt para cada bloque `practice`
- *     (análoga a la resolución de assets de Media de Sprint 4): el
- *     Exercise Engine (domain/exercise/exercise-evaluator.js) nunca
- *     conoce Session ni Router (Sprint 5 Plan, regla explícita) — es
- *     este módulo el que compone evaluación + registro de Attempt en
- *     un único callback `onCheck` inyectado en cada bloque, antes de
- *     que la Session container exista siquiera.
- *   - Progress real: computeBookProgress/computeUnitProgress/
- *     computeLessonMarkers ahora reciben attemptRepository.
+ * Sprint 6 (Authentication) añade el primer chequeo de la función de
+ * resolución: si no hay una AuthSession válida, se ignora por
+ * completo la Navigation State derivada de la URL y se muestra
+ * Entry/Login (Wireframe Review §2.11–2.12) — el modelo de cuentas
+ * provisionadas (Decision Log Entry 001) no tiene registro, así que
+ * solo existen estas dos pantallas antes de autenticarse. Entry/
+ * Login NO son rutas de hash — son un estado transitorio de UI
+ * (`authUiStage`), porque no forman parte de la jerarquía de
+ * contenido que Navigation State modela (Software Architecture
+ * §16.2) y no hay necesidad real de deep-linking a ellas en un
+ * modelo sin registro.
  *
- * Sin cambios en la resolución de Media (Sprint 4) ni en Restore
- * Session de sección/scroll — Sprint 5 no toca esa parte.
+ * Justo después de un login exitoso, si el flujo de vinculación de
+ * cuenta (app/account-linking/) encuentra el Caso 3 (datos locales Y
+ * remotos), se muestra su pantalla de confirmación ANTES que
+ * cualquier otra cosa — ninguna Section, ninguna Session, ningún
+ * Home se renderiza hasta que esa decisión se resuelva.
+ *
+ * Todo Attempt y Session que se crea desde este módulo en adelante
+ * lleva el `userId` de la sesión de Auth activa (o `null` si por
+ * algún motivo no hay ninguna, defensivo) — así ningún dato nuevo
+ * nace huérfano una vez que Authentication existe.
  */
 
 import {
@@ -42,6 +50,9 @@ import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
 import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/lesson-entry-screen.js';
 import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
+import { createEntryScreen } from '../presentation/screens/entry/entry-screen.js';
+import { createLoginScreen } from '../presentation/screens/login/login-screen.js';
+import { createLinkingDecisionScreen } from '../presentation/screens/account-linking/linking-decision-screen.js';
 import { createStateView } from '../presentation/components/state-views/state-views.js';
 import { EVENT_NAMES } from '../core/events/event-names.js';
 
@@ -50,11 +61,6 @@ function notFoundView({ errorBoundary, reason, context, message }) {
   return createStateView({ kind: 'empty', message });
 }
 
-/**
- * Resuelve el src final de cada Content Block `media` contra el base
- * path real (Software Architecture §21.2) — sin cambios desde
- * Sprint 4.
- */
 function resolveLessonMediaAssets(lesson, runtimeConfig) {
   return {
     ...lesson,
@@ -68,27 +74,7 @@ function resolveLessonMediaAssets(lesson, runtimeConfig) {
   };
 }
 
-/**
- * Resuelve, para cada Content Block `practice`, su Exercise (o `null`
- * si es una actividad abierta, dependiente de audio real, o un tipo
- * aún no soportado — domain/content/exercise-catalog.js), su
- * `priorAttempt` (Sprint 5 Plan, decisión #5: solo se restaura en
- * estado "ya respondido" cuando el último Attempt fue CORRECTO —
- * uno incorrecto no bloquea un reintento genuino al reabrir la
- * Lesson; Design System §17.3 ya exige que, DENTRO de una misma
- * instancia, todas las opciones queden deshabilitadas tras responder,
- * sea cual sea el resultado, así que el reintento real ocurre al
- * volver a entrar, nunca dentro de la misma sesión de pantalla), y
- * `onCheck` — el único puente entre Presentation y el evaluador puro
- * del Exercise Engine + el registro de Attempt.
- *
- * El evaluador (domain/exercise/exercise-evaluator.js) y el registro
- * de Attempt (domain/learning-data/attempt-repository.js) se
- * componen AQUÍ, nunca dentro de practice-block.js ni de
- * learning-session-screen.js — ninguno de los dos conoce Session,
- * Router ni Persistence (Sprint 5 Plan, regla explícita).
- */
-function resolveLessonExercises(lesson, attemptRepository) {
+function resolveLessonExercises(lesson, attemptRepository, userId) {
   return {
     ...lesson,
     sections: lesson.sections.map((section) => ({
@@ -109,6 +95,7 @@ function resolveLessonExercises(lesson, attemptRepository) {
             lessonId: lesson.id,
             response,
             isCorrect: result.isCorrect,
+            userId,
           });
           return result;
         };
@@ -216,6 +203,7 @@ function buildLearningSessionScreen({
   sessionRepository,
   attemptRepository,
   runtimeConfig,
+  userId,
   bookId,
   unitId,
   lessonId,
@@ -232,7 +220,7 @@ function buildLearningSessionScreen({
   }
 
   const withMedia = resolveLessonMediaAssets(lesson, runtimeConfig);
-  const resolvedLesson = resolveLessonExercises(withMedia, attemptRepository);
+  const resolvedLesson = resolveLessonExercises(withMedia, attemptRepository, userId);
 
   const persisted = sessionRepository.getSession();
   const matchesThisLesson =
@@ -243,7 +231,15 @@ function buildLearningSessionScreen({
     restoreSectionIndex: matchesThisLesson ? persisted.sectionIndex ?? 0 : 0,
     restoreScrollPosition: matchesThisLesson ? persisted.scrollPosition ?? 0 : 0,
     onSectionChange: (sectionIndex) =>
-      sessionRepository.saveSession({ bookId, unitId, lessonId, mode: 'learn', sectionIndex, scrollPosition: 0 }),
+      sessionRepository.saveSession({
+        bookId,
+        unitId,
+        lessonId,
+        mode: 'learn',
+        sectionIndex,
+        scrollPosition: 0,
+        userId,
+      }),
     onScrollChange: (scrollPosition) => sessionRepository.saveSession({ scrollPosition }),
     onExit: ({ reason }) => {
       if (reason === 'finished') {
@@ -281,10 +277,12 @@ function buildHomeScreen({ router, sessionRepository }) {
 
 function resolveScreen(navigationState, deps) {
   const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition } = navigationState;
+  const userId = deps.authContract.getSession()?.userId ?? null;
+  const fullDeps = { ...deps, userId };
 
   if (bookPosition && unitPosition && lessonPosition && mode === 'learn') {
     return buildLearningSessionScreen({
-      ...deps,
+      ...fullDeps,
       bookId: bookPosition,
       unitId: unitPosition,
       lessonId: lessonPosition,
@@ -293,7 +291,7 @@ function resolveScreen(navigationState, deps) {
 
   if (bookPosition && unitPosition && lessonPosition) {
     return buildLessonEntryScreen({
-      ...deps,
+      ...fullDeps,
       bookId: bookPosition,
       unitId: unitPosition,
       lessonId: lessonPosition,
@@ -301,18 +299,18 @@ function resolveScreen(navigationState, deps) {
   }
 
   if (bookPosition && unitPosition) {
-    return buildUnitScreen({ ...deps, bookId: bookPosition, unitId: unitPosition });
+    return buildUnitScreen({ ...fullDeps, bookId: bookPosition, unitId: unitPosition });
   }
 
   if (bookPosition) {
-    return buildBookScreen({ ...deps, bookId: bookPosition });
+    return buildBookScreen({ ...fullDeps, bookId: bookPosition });
   }
 
   if (libraryPosition === 'library') {
-    return buildLibraryScreen(deps);
+    return buildLibraryScreen(fullDeps);
   }
 
-  return buildHomeScreen(deps);
+  return buildHomeScreen(fullDeps);
 }
 
 export function mountScreenRouter({
@@ -323,19 +321,96 @@ export function mountScreenRouter({
   sessionRepository,
   attemptRepository,
   runtimeConfig,
+  authContract,
+  accountLinkingFlow,
 }) {
-  function handleRouteChanged(navigationState) {
+  let lastNavigationState = null;
+  let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
+
+  function render() {
+    const authSession = authContract.getSession();
+
+    if (!authSession) {
+      const screen =
+        authUiStage === 'login'
+          ? createLoginScreen({
+              onBack: () => {
+                authUiStage = 'entry';
+                render();
+              },
+              onSubmit: async (email, password) => {
+                const { error } = await authContract.signIn(email, password);
+                return { error };
+              },
+            })
+          : createEntryScreen({
+              onSignIn: () => {
+                authUiStage = 'login';
+                render();
+              },
+            });
+      contentRegion.render(screen);
+      return;
+    }
+
+    if (accountLinkingFlow.hasPendingDecision()) {
+      const screen = createLinkingDecisionScreen({
+        onMerge: async () => {
+          await accountLinkingFlow.resolvePendingDecision('merge');
+          render();
+        },
+        onDiscard: async () => {
+          await accountLinkingFlow.resolvePendingDecision('discard');
+          render();
+        },
+      });
+      contentRegion.render(screen);
+      return;
+    }
+
+    authUiStage = 'entry'; // reset para un futuro logout
+    const navigationState = lastNavigationState ?? { libraryPosition: null, bookPosition: null, unitPosition: null, lessonPosition: null, mode: null };
     const screen = resolveScreen(navigationState, {
       router,
       errorBoundary,
       sessionRepository,
       attemptRepository,
       runtimeConfig,
+      authContract,
     });
     contentRegion.render(screen);
   }
 
-  const unsubscribe = eventBus.subscribe(EVENT_NAMES.ROUTE_CHANGED, handleRouteChanged);
+  function handleRouteChanged(navigationState) {
+    lastNavigationState = navigationState;
+    render();
+  }
 
-  return Object.freeze({ unsubscribe });
+  const unsubscribeRoute = eventBus.subscribe(EVENT_NAMES.ROUTE_CHANGED, handleRouteChanged);
+  const unsubscribeAuth = authContract.onAuthStateChange(async (authSession) => {
+    if (authSession) {
+      await accountLinkingFlow.run(authSession);
+    }
+    render();
+  });
+
+  // Un token ya cacheado en el arranque (estudiante que vuelve, no un
+  // login fresco) nunca dispara `onAuthStateChange` — pero si una
+  // vinculación anterior se interrumpió antes de completarse (cierre
+  // de la app a mitad de camino), sigue habiendo datos huérfanos por
+  // reconciliar. `run()` es idempotente (no-op si no hay nada que
+  // hacer), así que es seguro invocarlo aquí también, en cada
+  // arranque con sesión ya cacheada — es lo que garantiza que una
+  // interrupción eventualmente se resuelva, sin exigir un nuevo login.
+  const cachedSession = authContract.getSession();
+  if (cachedSession) {
+    accountLinkingFlow.run(cachedSession).then(render);
+  }
+
+  return Object.freeze({
+    unsubscribe: () => {
+      unsubscribeRoute();
+      unsubscribeAuth();
+    },
+  });
 }

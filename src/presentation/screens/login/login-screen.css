@@ -1,0 +1,58 @@
+/**
+ * login-screen.css
+ *
+ * Login (Design System — la pantalla más restringida del sistema:
+ * dos campos, una acción, ningún adorno).
+ */
+
+[data-component="login-screen"] {
+  max-width: 360px;
+  margin: 0 auto;
+  padding-top: var(--al-space-12);
+}
+
+[data-component="login-screen"] [data-part="back"] {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--al-text-muted);
+  padding: 0;
+  margin-bottom: var(--al-space-8);
+  cursor: pointer;
+}
+
+[data-component="login-screen"] label {
+  display: block;
+  color: var(--al-text-muted);
+  margin-bottom: var(--al-space-2);
+}
+
+[data-component="login-screen"] input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--al-space-4);
+  margin-bottom: var(--al-space-4);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  color: var(--al-text-content);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-md);
+  background: transparent;
+}
+
+[data-component="login-screen"] input:focus {
+  outline: none;
+  border-width: var(--al-border-active);
+  border-color: var(--al-action-primary);
+}
+
+[data-component="login-screen"] [data-part="error"] {
+  color: var(--al-feedback-incorrect);
+  margin: 0 0 var(--al-space-4);
+}
+
+[data-component="login-screen"] [data-part="sign-in"] {
+  width: 100%;
+  margin-top: var(--al-space-2);
+}
