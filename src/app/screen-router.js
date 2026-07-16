@@ -10,17 +10,36 @@
  * entre sí directamente (regla de vecinos, Software Architecture
  * §9.3).
  *
- * Alcance de Sprint 2 (Roadmap Phase 2 — Library): resuelve
- * únicamente las posiciones "library" y "book". Ninguna otra
- * posición de la jerarquía tiene screen propia todavía.
+ * Sprint 3 (Roadmap Phase 3 — Reader) resuelve las posiciones "unit",
+ * "lesson" (entry) y "lesson + mode=learn" (Learning Session), además
+ * de las de Sprint 2. El Book screen ahora recibe un onSelectUnit
+ * real — el punto de extensión que book-screen.js ya dejó listo
+ * desde Sprint 2.
  */
 
-import { getLibrary, getBookById } from '../domain/content/content-repository.js';
-import { computeBookProgress, computeUnitProgress } from '../domain/content/progress.js';
+import {
+  getLibrary,
+  getBookById,
+  getUnitById,
+  getLessonById,
+} from '../domain/content/content-repository.js';
+import {
+  computeBookProgress,
+  computeUnitProgress,
+  computeLessonMarkers,
+} from '../domain/content/progress.js';
 import { createLibraryScreen } from '../presentation/screens/library/library-screen.js';
 import { createBookScreen } from '../presentation/screens/book/book-screen.js';
+import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
+import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/lesson-entry-screen.js';
+import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
 import { createStateView } from '../presentation/components/state-views/state-views.js';
 import { EVENT_NAMES } from '../core/events/event-names.js';
+
+function notFoundView({ errorBoundary, reason, context, message }) {
+  errorBoundary.reportRecoverable({ reason, ...context });
+  return createStateView({ kind: 'empty', message });
+}
 
 function buildLibraryScreen({ router }) {
   const library = getLibrary();
@@ -40,14 +59,10 @@ function buildBookScreen({ router, errorBoundary, bookId }) {
   const book = getBookById(bookId);
 
   if (!book) {
-    // Un id de Book que no corresponde a ningún Book publicado no es
-    // una ruta rota (la forma de la Navigation State es válida) —
-    // es contenido no encontrado. Recuperable: la navegación sigue
-    // funcionando, solo este contenido no existe (Software
-    // Architecture §18.2).
-    errorBoundary.reportRecoverable({ reason: 'book-not-found', bookId });
-    return createStateView({
-      kind: 'empty',
+    return notFoundView({
+      errorBoundary,
+      reason: 'book-not-found',
+      context: { bookId },
       message: 'Este libro no está disponible. Vuelve a la Library para elegir otro.',
     });
   }
@@ -64,9 +79,77 @@ function buildBookScreen({ router, errorBoundary, bookId }) {
   return createBookScreen({
     book: bookWithProgress,
     onBack: () => router.navigateTo('/library'),
-    // Sin handler todavía — ver la nota en book-screen.js y en
-    // route-table.js: la screen de Unit llega en Sprint 3.
-    onSelectUnit: null,
+    onSelectUnit: (unitId) => router.navigateTo(`/book/${bookId}/unit/${unitId}`),
+  });
+}
+
+function buildUnitScreen({ router, errorBoundary, bookId, unitId }) {
+  const unit = getUnitById(bookId, unitId);
+
+  if (!unit) {
+    return notFoundView({
+      errorBoundary,
+      reason: 'unit-not-found',
+      context: { bookId, unitId },
+      message: 'Esta unidad no está disponible. Vuelve al libro para elegir otra.',
+    });
+  }
+
+  const markers = computeLessonMarkers(unit.lessons);
+  const unitWithProgress = {
+    ...unit,
+    progress: computeUnitProgress(unit),
+    lessons: unit.lessons.map((lesson, index) => ({
+      ...lesson,
+      marker: markers[index].marker,
+    })),
+  };
+
+  return createUnitScreen({
+    unit: unitWithProgress,
+    onBack: () => router.navigateTo(`/book/${bookId}`),
+    onSelectLesson: (lessonId) =>
+      router.navigateTo(`/book/${bookId}/unit/${unitId}/lesson/${lessonId}`),
+  });
+}
+
+function buildLessonEntryScreen({ router, errorBoundary, bookId, unitId, lessonId }) {
+  const lesson = getLessonById(bookId, unitId, lessonId);
+
+  if (!lesson) {
+    return notFoundView({
+      errorBoundary,
+      reason: 'lesson-not-found',
+      context: { bookId, unitId, lessonId },
+      message: 'Esta lección no está disponible. Vuelve a la unidad para elegir otra.',
+    });
+  }
+
+  return createLessonEntryScreen({
+    lesson,
+    onBack: () => router.navigateTo(`/book/${bookId}/unit/${unitId}`),
+    onBegin: () => router.navigateTo(`/book/${bookId}/unit/${unitId}/lesson/${lessonId}/learn`),
+  });
+}
+
+function buildLearningSessionScreen({ router, errorBoundary, bookId, unitId, lessonId }) {
+  const lesson = getLessonById(bookId, unitId, lessonId);
+
+  if (!lesson) {
+    return notFoundView({
+      errorBoundary,
+      reason: 'lesson-not-found',
+      context: { bookId, unitId, lessonId },
+      message: 'Esta lección no está disponible. Vuelve a la unidad para elegir otra.',
+    });
+  }
+
+  return createLearningSessionScreen({
+    lesson,
+    // Sprint 3: sin Session persistida (Sprint 4) — salir (o
+    // terminar la última sección) navega directo a Home, sin
+    // "guardar silenciosamente" todavía (Design System §15.3).
+    onExit: () => router.navigateTo('/'),
   });
 }
 
@@ -78,7 +161,29 @@ function buildHomePlaceholder() {
 }
 
 function resolveScreen(navigationState, deps) {
-  const { bookPosition, libraryPosition } = navigationState;
+  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition } = navigationState;
+
+  if (bookPosition && unitPosition && lessonPosition && mode === 'learn') {
+    return buildLearningSessionScreen({
+      ...deps,
+      bookId: bookPosition,
+      unitId: unitPosition,
+      lessonId: lessonPosition,
+    });
+  }
+
+  if (bookPosition && unitPosition && lessonPosition) {
+    return buildLessonEntryScreen({
+      ...deps,
+      bookId: bookPosition,
+      unitId: unitPosition,
+      lessonId: lessonPosition,
+    });
+  }
+
+  if (bookPosition && unitPosition) {
+    return buildUnitScreen({ ...deps, bookId: bookPosition, unitId: unitPosition });
+  }
 
   if (bookPosition) {
     return buildBookScreen({ ...deps, bookId: bookPosition });

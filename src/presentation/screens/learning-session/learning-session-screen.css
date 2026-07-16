@@ -1,0 +1,81 @@
+/**
+ * learning-session-screen.css
+ *
+ * Chrome bar quieta (exit + whisper bar, Design System §18.1.1);
+ * columna de contenido measure-reading centrada (§18.1.2, §7.2);
+ * continue anclado abajo con space-6 (§18.1.4). Page-turn grammar
+ * (§21.3): saliente se desvanece y desliza 12px a la izquierda
+ * (easing-exit), entrante se desvanece desde 12px a la derecha
+ * (easing-standard), duration-gentle total. El chrome nunca se
+ * mueve — solo la página.
+ */
+
+[data-component="learning-session-screen"] {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--al-space-24));
+}
+
+[data-component="learning-session-screen"] [data-part="chrome"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  margin-bottom: var(--al-space-8);
+}
+
+[data-component="learning-session-screen"] [data-part="session-progress"] {
+  flex: 1;
+  max-width: 240px;
+}
+
+[data-component="learning-session-screen"] [data-part="content-column"] {
+  flex: 1;
+  max-width: var(--al-measure-reading);
+  margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+}
+
+[data-component="learning-session-screen"] [data-part="section"] {
+  transition: opacity var(--al-duration-gentle) var(--al-ease-standard),
+    transform var(--al-duration-gentle) var(--al-ease-standard);
+  opacity: 1;
+  transform: translateX(0);
+}
+
+[data-component="learning-session-screen"] [data-part="section"][data-motion="entering"] {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+[data-component="learning-session-screen"] [data-part="section"][data-motion="exiting"] {
+  opacity: 0;
+  transform: translateX(-12px);
+  transition-timing-function: var(--al-ease-exit);
+}
+
+[data-component="learning-session-screen"] [data-part="section-label"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-4);
+}
+
+[data-component="learning-session-screen"] [data-part="block"] {
+  margin-bottom: var(--al-space-8);
+}
+
+[data-component="learning-session-screen"] [data-part="block"]:last-child {
+  margin-bottom: 0;
+}
+
+[data-component="learning-session-screen"] [data-part="continue"] {
+  max-width: var(--al-measure-reading);
+  margin: var(--al-space-6) auto 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="learning-session-screen"] [data-part="section"] {
+    transition: opacity var(--al-duration-gentle) var(--al-ease-standard);
+    transform: none !important;
+  }
+}

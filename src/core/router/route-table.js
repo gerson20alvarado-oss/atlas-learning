@@ -6,24 +6,22 @@
  * real — solo la forma de la jerarquía (Software Architecture §16.2;
  * C8: "N libros es la regla", nunca un singleton hardcodeado).
  *
- * Sprint 2 añade "library" y "book/:bookId" — el alcance exacto de
- * Phase 2 del Roadmap ("Library, Book cards, Book loading"). La fila
- * de Unit dentro de Book screen se muestra (con su whisper bar,
- * Design System §13.2) pero deliberadamente no navega todavía: no
- * hay screen de Unit que la reciba hasta Reader (Sprint 3, Roadmap
- * Phase 3), y crear una ruta "unit/:id" sin destino real produciría
- * una pantalla sin salida — lo que violaría "navigation never
- * surprises" (PDD §1.2) más de lo que lo preserva. "unit/:id",
- * "lesson/:id" y "review" llegan cuando sus sprints lo requieran —
- * sin tocar router.js, que es el punto de extensión que este
- * archivo existe para habilitar.
+ * Sprint 2 añadió "library" y "book/:bookId". Sprint 3 completa la
+ * "Navigation" que el Roadmap asigna a Phase 3 (Reader): "unit/:id",
+ * "lesson/:id" y el modo de sesión activa — exactamente los tres
+ * niveles que el comentario de Sprint 2 dejó documentados como
+ * pendientes. "review" (Review Mode) sigue sin ruta — depende de
+ * Error Records, que no existen hasta el Exercise Engine (Sprint 5).
  *
- * Semántica de los campos poblados aquí (antes todos null desde
- * Sprint 1): `libraryPosition` es un marcador fijo `'library'` que
- * indica "el estudiante está navegando el árbol Library → Book" (hay
- * una única Library, nunca varias que seleccionar — C8 la modela
- * como colección de Books, no de Libraries). `bookPosition` es el id
- * real del Book seleccionado.
+ * Semántica de los campos poblados aquí: `libraryPosition` es un
+ * marcador fijo `'library'` (hay una única Library — C8 la modela
+ * como colección de Books, no de Libraries). `bookPosition`,
+ * `unitPosition` y `lessonPosition` son los id reales de cada nivel
+ * seleccionado. `mode` distingue "en la puerta de la lección"
+ * (`null`) de "dentro de la sesión de estudio activa" (`'learn'`) —
+ * el mismo campo que Software Architecture §4.2 reserva para
+ * distinguir Learn Mode de Review Mode, poblado por primera vez
+ * aquí.
  */
 
 import { createEmptyNavigationState } from './navigation-state.js';
@@ -58,6 +56,40 @@ const ROUTES = Object.freeze([
       ...createEmptyNavigationState(),
       libraryPosition: 'library',
       bookPosition: match[1],
+    }),
+  },
+  {
+    // Unit: un miembro concreto dentro del Book seleccionado.
+    pattern: /^\/book\/([^/]+)\/unit\/([^/]+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      unitPosition: match[2],
+    }),
+  },
+  {
+    // Lesson entry: la puerta de compromiso antes de la sesión
+    // (Wireframe Review §2.5) — mode sigue en null.
+    pattern: /^\/book\/([^/]+)\/unit\/([^/]+)\/lesson\/([^/]+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      unitPosition: match[2],
+      lessonPosition: match[3],
+    }),
+  },
+  {
+    // Learning Session, Learn Mode: sesión de estudio activa.
+    pattern: /^\/book\/([^/]+)\/unit\/([^/]+)\/lesson\/([^/]+)\/learn\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      unitPosition: match[2],
+      lessonPosition: match[3],
+      mode: 'learn',
     }),
   },
 ]);

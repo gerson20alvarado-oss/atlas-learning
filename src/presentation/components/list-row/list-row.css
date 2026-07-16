@@ -45,3 +45,13 @@
   line-height: 1;
   flex-shrink: 0;
 }
+
+/* Marcador binario de Lesson (Design System §14.3): texto plano en
+   text-muted, sin color, sin flecha — "next" o "completed ✓". */
+[data-component="list-row"] [data-part="marker"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+  flex-shrink: 0;
+  margin-left: var(--al-space-2);
+}

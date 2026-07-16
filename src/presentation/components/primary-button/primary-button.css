@@ -1,0 +1,36 @@
+/**
+ * primary-button.css
+ */
+
+[data-component="primary-button"] {
+  display: block;
+  width: 100%;
+  height: var(--al-button-primary-height);
+  background: var(--al-action-primary);
+  color: var(--al-text-on-action);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  border-radius: var(--al-radius-md);
+  text-align: center;
+  transition: background-color var(--al-duration-fast) var(--al-ease-standard),
+    transform var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="primary-button"][data-variant="session"] {
+  height: var(--al-button-primary-height-session);
+}
+
+[data-component="primary-button"]:hover:not(:disabled) {
+  background: var(--al-action-primary-hover);
+}
+
+[data-component="primary-button"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+[data-component="primary-button"]:disabled {
+  background: var(--al-action-disabled);
+  color: var(--al-text-disabled);
+  cursor: default;
+}

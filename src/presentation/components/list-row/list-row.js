@@ -7,18 +7,21 @@
  * navega. El tap en la fila es la única interacción — sin swipe, sin
  * long-press (PRD §15).
  *
- * Sprint 2 la usa para las filas de Unit dentro de Book screen (con
- * su whisper bar, §14.2 — "unit row adds a whisper bar under its
- * title"). El mismo componente queda listo para las filas de Lesson,
- * Favorites y Settings en sprints futuros sin modificarse — solo
- * cambia qué props recibe.
+ * Sprint 2 la usó para las filas de Unit dentro de Book screen (con
+ * whisper bar, §14.2). Sprint 3 añade el marcador binario opcional
+ * de Lesson (§14.3 — "next" / "completed" / sin marcador) para las
+ * filas de Lesson dentro de Unit screen — exactamente el punto de
+ * extensión que el propio comentario de Sprint 2 anticipaba ("solo
+ * cambia qué props recibe"). `progress` y `marker` son mutuamente
+ * excluyentes en la práctica (whisper bar a nivel contenedor,
+ * marcador de texto a nivel atómico — Design System §14.1 regla 2).
  *
- * Componente puro: no conoce Unit, Book, ni router.
+ * Componente puro: no conoce Unit, Lesson, Book, ni router.
  */
 
 import { createProgressBar } from '../progress-bar/progress-bar.js';
 
-export function createListRow({ title, progress = null, onSelect = null }) {
+export function createListRow({ title, progress = null, marker = null, onSelect = null }) {
   const element = document.createElement(onSelect ? 'button' : 'div');
   element.setAttribute('data-component', 'list-row');
   if (onSelect) {
@@ -45,6 +48,14 @@ export function createListRow({ title, progress = null, onSelect = null }) {
   }
 
   element.appendChild(main);
+
+  let markerElement = null;
+  if (marker && marker !== 'none') {
+    markerElement = document.createElement('span');
+    markerElement.setAttribute('data-part', 'marker');
+    markerElement.textContent = marker === 'completed' ? 'completed ✓' : 'next';
+    element.appendChild(markerElement);
+  }
 
   if (onSelect) {
     const chevron = document.createElement('span');

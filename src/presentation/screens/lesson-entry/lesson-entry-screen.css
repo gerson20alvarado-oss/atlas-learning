@@ -1,0 +1,24 @@
+/**
+ * lesson-entry-screen.css
+ */
+
+[data-component="lesson-entry-screen"] {
+  max-width: var(--al-measure-ui);
+  margin: 0 auto;
+}
+
+[data-component="lesson-entry-screen"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-22);
+  font-weight: var(--al-weight-semibold);
+  color: var(--al-text-ui);
+  margin: 0 0 var(--al-space-2);
+  text-align: left;
+}
+
+[data-component="lesson-entry-screen"] [data-part="time-estimate"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-12);
+}

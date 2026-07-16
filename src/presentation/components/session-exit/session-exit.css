@@ -1,0 +1,16 @@
+/**
+ * session-exit.css
+ */
+
+[data-component="session-exit"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--al-hit-target-min);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+}
+
+[data-component="session-exit"]:hover {
+  color: var(--al-text-ui);
+}

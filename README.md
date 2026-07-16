@@ -1,6 +1,6 @@
 # Atlas Learning
 
-**Estado actual:** Sprint 2 (Library) implementado.
+**Estado actual:** Sprint 3 (Reader) implementado.
 
 Static SPA, HTML/CSS/JS ES Modules puro — sin framework, sin bundler
 (Software Architecture, restricción C1). Diseñada para GitHub Pages
@@ -20,86 +20,100 @@ node dev-server.mjs 8080
 Abrir `http://localhost:8080/`. No hay paso de build: los archivos se
 sirven tal cual.
 
-## Qué existe en Sprint 2 — y qué no
+## Qué existe en Sprint 3 — y qué no
 
-Sprint 2 entrega **Library** (Engineering Implementation Roadmap,
-Phase 2): la screen de Library (portadas + ghost slots), la screen de
-Book (título, progreso acumulado, lista de unidades) y la carga de un
-Book publicado. Exit Criteria del Roadmap: "un libro puede abrirse" —
-cumplido: Library → tap en una portada → Book screen con su
-estructura real.
+Sprint 3 entrega **Reader** (Engineering Implementation Roadmap,
+Phase 3): la "Navigation" que Sprint 2 dejó pendiente (Unit screen,
+Lesson entry screen) más el Learning Session container con
+renderizado real de contenido. Exit Criteria del Roadmap: "entire
+lessons are readable" — cumplido: Library → Book → Unit → Lesson →
+Learning Session, avanzando linealmente por las Dynamic Learning
+Sections de una lección hasta terminarla.
 
-Deliberadamente fuera de Sprint 2 (llegan en sprints posteriores según
+Deliberadamente fuera de Sprint 3 (llegan en sprints posteriores según
 la Dependency Matrix del Roadmap):
-- Navegación a la screen de Unit y más abajo (Lesson, Learning
-  Session) — Reader, Sprint 3. Las filas de Unit dentro de Book se
-  muestran (con su whisper bar) pero no navegan todavía; ver el
-  comentario en `presentation/screens/book/book-screen.js`.
-- Progreso real derivado de Attempts — Progress, Sprint 4. La whisper
-  bar de Sprint 2 muestra honestamente 0 completadas de N (no existe
-  ningún Attempt que contar todavía); ver
-  `domain/content/progress.js`.
-- Home ("Continue Learning"), Review y Settings no tienen screen
-  propia — dependen de Session/Progress (Sprint 4) y del Exercise
-  Engine (Sprint 5) respectivamente. El nav-secondary solo expone
-  "Library" por ahora.
+- **Practice / Exercise Engine** (Sprint 5). El primitivo "practice"
+  existe en el contrato de datos (entity-shapes.js) pero no tiene
+  renderer — content-block-renderer.js muestra un aviso neutral si
+  algún día aparece, en vez de fallar.
+- **Media** (audio/video/imagen) — sin assets reales todavía (el
+  Content Import Pipeline no corre en este runtime). Mismo fallback
+  neutral que "practice".
+- **Session Summary con resultados** (aciertos/total) — depende de
+  Attempts, que no existen hasta el Exercise Engine. Al terminar la
+  última sección, "Continue" se convierte en "Finish" y sale
+  directamente, sin pantalla de resultados todavía.
+- **Persistencia y resume de Session** (Progress, Sprint 4). La
+  sección activa vive solo en memoria del componente de Learning
+  Session — recargar la página o salir la pierde. "Exit" navega a
+  Home sin guardar nada todavía.
+- **Review Mode** — depende de Error Records (Exercise Engine).
+  learning-session-screen.js está diseñado como "un componente, dos
+  consumidores" (Design System §18) pero Sprint 3 solo construye el
+  consumidor Learn Mode.
 
 ## Estructura
 
 ```
 src/
-  app/            Composición raíz — el único lugar que conoce todas las capas
-                  (bootstrap.js, app-shell.js, screen-router.js — Sprint 2)
-  config/         Configuración pública y resolución de base path (GH Pages)
-  core/
-    events/       Bus pub/sub no bloqueante + vocabulario de eventos
-    router/       Router hash-based + forma de la Navigation State
-                  (route-table.js: "library" y "book/:id" desde Sprint 2)
-    errors/       Clasificación de errores (recoverable vs. must-surface)
-  persistence/    Contrato de storage + envelope versionado (sin dominio real aún)
+  app/            screen-router.js resuelve ahora Unit, Lesson entry
+                  y Learning Session, además de Library/Book (Sprint 2)
   domain/
-    contracts/    Forma de Library/Book/Unit/Lesson
-    content/      Sprint 2 — Book publicado (library-catalog.js),
-                  lectura de contenido (content-repository.js) y
-                  progreso derivado, honestamente 0/N (progress.js)
+    contracts/    entity-shapes.js — Sprint 3 añade Section y Content
+                  Block (los 8 primitivos, C5), y el validador de la
+                  secuencia pedagógica (contenido antes que práctica)
+    content/      library-catalog.js — Lessons con secciones y
+                  content blocks reales; content-repository.js añade
+                  getUnitById/getLessonById; progress.js añade
+                  marcadores binarios de Lesson y progreso de sesión
   presentation/
-    components/   Componentes de UI puros — sin conocer router/persistence
-                  (book-card, ghost-slot, progress-bar, list-row,
-                  back-nav — Sprint 2)
-    screens/      library/ y book/ — Sprint 2. Punto de extensión
-                  para Sprint 3+ (Unit, Lesson, Learning Session)
-  styles/         Sprint 2 — tokens.css (Design System §24) + base.css;
-                  cada componente/screen trae su propio .css junto al
-                  .js, importado desde styles/main.css
+    components/
+      content-blocks/   Sprint 3 — un renderer por primitivo
+                  (prose, term, dialogue, aside, example, table) +
+                  content-block-renderer.js (dispatcher con fallback
+                  neutral para media/practice, todavía no implementados)
+      primary-button/   Button/primary (Design System §11.1)
+      session-exit/     "exit" del Session Container (§15.3)
+    screens/
+      unit/             Sprint 3 — lista de lecciones, marcador binario
+      lesson-entry/      Sprint 3 — puerta de compromiso
+      learning-session/  Sprint 3 — el Session Container (§18):
+                  navegación lineal por secciones, whisper bar de
+                  sesión, transición page-turn (§21.3)
+  styles/         base.css añade las clases de voz de lectura
+                  (type-reading-*) — usadas por primera vez en Sprint 3
 ```
-
-Cada carpeta de primer nivel bajo `src/` corresponde a una capa de
-Software Architecture §9.2, con una excepción documentada: `content/`
-dentro de `domain/` no es uno de los seis nombres de la tabla de
-§9.2 — es la extensión de Sprint 2 para el Content Import Pipeline
-(§7), publicado como módulo ES estático en vez de vía fetch(), para
-no darle a Domain una responsabilidad de red que la regla de vecinos
-le prohíbe (ver el comentario en `content-repository.js`). `sync/` y
-`auth/` siguen sin existir — llegan en Sprint 6, no se crean vacías de
-antemano.
 
 ## Regla de vecinos
 
-Cada capa solo llama a la que tiene inmediatamente debajo
-(Software Architecture §9.3): Presentation → Router (Session &
-Navigation) → Domain → Persistence. `presentation/components/` y
-`presentation/screens/` no importan nada fuera de sí mismas — reciben
-todo por props/callbacks inyectados desde `app/` (`screen-router.js`
-es quien conecta Domain & Content con Presentation en Sprint 2).
+Sin cambios respecto a Sprint 2. `presentation/components/` y
+`presentation/screens/` siguen sin importar nada fuera de sí mismas
+— reciben todo por props/callbacks inyectados desde `app/`. Los
+renderers de content-blocks son intencionalmente puros: no reportan al
+error boundary ni al event bus (eso es responsabilidad de `app/`).
 
-## Verificación manual de Sprint 2
+## Verificación manual de Sprint 3
 
 Probado con un navegador real (Chromium headless) contra
-`dev-server.mjs`, confirmando sin errores de consola ni excepciones:
-Home → tap "Library" → shelf con 1 book card + N ghost slots
-(2/3/4 columnas según viewport compact/medium/expanded) → tap en la
-portada → Book screen con título, progreso acumulado y 3 filas de
-Unit con su propia whisper bar → back-nav "‹ library" → de regreso al
-shelf. También: navegación directa a un id de Book inexistente
-(estado vacío, sin excepción), y el botón atrás/adelante del
-navegador vía hashchange nativo.
+`dev-server.mjs`:
+- Flujo completo Library → Book → Unit → Lesson entry → Learning
+  Session → avance por todas las secciones → Finish → Home, para las
+  5 lecciones del libro de muestra, sin errores de consola ni
+  excepciones.
+- Los seis primitivos de contenido (prose, term, dialogue, aside,
+  example, table) renderizan correctamente con contenido real.
+- El fallback neutral para "media"/"practice" no lanza excepciones.
+- Marcador binario de Lesson ("next" en la primera lección de cada
+  unidad, sin marcador en el resto — honesto dado que no hay Attempts
+  todavía).
+- Validadores de dominio probados de forma aislada: un Content Block
+  con un noveno tipo inventado se rechaza (C5); una secuencia
+  práctica-antes-que-contenido se rechaza (invariante pedagógica,
+  Software Architecture §5.4); el caso real de Sprint 3 (sin ningún
+  bloque "practice") se acepta correctamente.
+- "exit" y "Finish" navegan a Home; un id de Unit o Lesson inexistente
+  degrada a un estado vacío en calma, reportado como recuperable.
+- Transición page-turn entre secciones probada con y sin
+  `prefers-reduced-motion`, sin excepciones en ningún caso.
+- Recorrido completo de las 5 lecciones del libro sin cuelgues ni
+  errores acumulados.

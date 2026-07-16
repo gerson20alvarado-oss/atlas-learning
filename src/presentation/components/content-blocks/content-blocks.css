@@ -1,0 +1,139 @@
+/**
+ * content-blocks.css
+ *
+ * Reglas universales (Design System §19.1): el cuerpo de todo
+ * primitivo usa la voz de lectura + text-content; etiquetas/captions
+ * usan la voz de UI + text-muted. Sin fondos decorativos, sin cajas
+ * de color — la diferenciación viene de tipografía, espacio y
+ * hairlines. Los primitivos se apilan separados por space-8 (regla
+ * aplicada por el contenedor que los itera, ver
+ * learning-session-screen.css).
+ */
+
+[data-component="prose-block"] p {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-4);
+}
+
+[data-component="prose-block"] p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Term ---- */
+
+[data-component="term-block"] {
+  margin: 0;
+}
+
+[data-component="term-block"] [data-part="entry"] {
+  padding: var(--al-space-4) 0;
+  border-bottom: var(--al-border-hairline) solid var(--al-border-default);
+}
+
+[data-component="term-block"] [data-part="entry"]:last-child {
+  border-bottom: none;
+}
+
+[data-component="term-block"] [data-part="term"] {
+  font-weight: var(--al-weight-semibold);
+  color: var(--al-text-content);
+  margin: 0;
+}
+
+[data-component="term-block"] [data-part="meaning"] {
+  color: var(--al-text-ui);
+  margin: var(--al-space-1) 0 0;
+}
+
+[data-component="term-block"] [data-part="example"] {
+  font-style: italic;
+  color: var(--al-text-muted);
+  margin: var(--al-space-2) 0 0;
+}
+
+/* ---- Dialogue ---- */
+
+[data-component="dialogue-block"] [data-part="turn"] {
+  margin-bottom: var(--al-space-4);
+}
+
+[data-component="dialogue-block"] [data-part="turn"]:last-child {
+  margin-bottom: 0;
+}
+
+[data-component="dialogue-block"] [data-part="speaker"] {
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-1);
+}
+
+[data-component="dialogue-block"] [data-part="text"] {
+  color: var(--al-text-content);
+  margin: 0 0 0 var(--al-space-4);
+}
+
+/* ---- Aside ---- */
+
+[data-component="aside-block"] {
+  border-left: 2px solid var(--al-border-whisper);
+  padding-left: var(--al-space-4);
+}
+
+[data-component="aside-block"] [data-part="label"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-2);
+}
+
+[data-component="aside-block"] [data-part="body"] {
+  color: var(--al-text-ui);
+  margin: 0;
+}
+
+/* ---- Example ---- */
+
+[data-component="example-block"] {
+  border-left: var(--al-border-hairline) solid var(--al-border-default);
+  padding-left: var(--al-space-4);
+}
+
+[data-component="example-block"] [data-part="label"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-2);
+}
+
+[data-component="example-block"] [data-part="body"] {
+  color: var(--al-text-content);
+  margin: 0;
+}
+
+/* ---- Table ---- */
+
+[data-component="table-block"] {
+  overflow-x: auto;
+}
+
+[data-component="table-block"] table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+[data-component="table-block"] th,
+[data-component="table-block"] td {
+  border-bottom: var(--al-border-hairline) solid var(--al-border-default);
+  padding: var(--al-space-2) var(--al-space-4) var(--al-space-2) 0;
+  text-align: left;
+}
+
+[data-component="table-block"] th {
+  color: var(--al-text-ui);
+}
+
+[data-component="table-block"] td {
+  color: var(--al-text-content);
+}
+
+/* ---- Unsupported (media/practice fallback) ---- */
+
+[data-component="unsupported-block"] {
+  color: var(--al-text-muted);
+}

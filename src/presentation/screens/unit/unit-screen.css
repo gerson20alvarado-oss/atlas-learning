@@ -1,0 +1,30 @@
+/**
+ * unit-screen.css
+ *
+ * Misma estructura que book-screen.css (Design System §7.2, §7.4) —
+ * Unit y Book son el mismo tipo de pantalla de navegación
+ * estructural, solo cambia qué colección listan.
+ */
+
+[data-component="unit-screen"] {
+  max-width: var(--al-measure-ui);
+  margin: 0 auto;
+}
+
+[data-component="unit-screen"] [data-part="title"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-22);
+  font-weight: var(--al-weight-semibold);
+  color: var(--al-text-ui);
+  margin: 0 0 var(--al-space-4);
+  text-align: left;
+}
+
+[data-component="unit-screen"] [data-part="unit-progress"] {
+  margin-bottom: var(--al-space-8);
+}
+
+[data-component="unit-screen"] [data-part="lesson-list"] {
+  display: flex;
+  flex-direction: column;
+}

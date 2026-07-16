@@ -75,6 +75,32 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* Voz de lectura (Design System §5.1-5.3) — reservada para contenido
+   declarado por el libro (Sprint 3: Content Presentation, §19).
+   Nunca usada por copy de UI, aunque "se sienta más cálida". */
+
+.al-type-reading-heading {
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-21);
+  font-weight: var(--al-weight-semibold);
+  line-height: var(--al-leading-tight);
+}
+
+.al-type-reading-body {
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  font-weight: var(--al-weight-regular);
+  line-height: var(--al-leading-reading);
+}
+
+.al-type-reading-caption {
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-15);
+  font-weight: var(--al-weight-regular);
+  font-style: italic;
+  line-height: 1.5;
+}
+
 /* Foco (Design System §22.3): siempre visible cuando el origen es
    teclado, nunca suprimido. */
 :focus-visible {

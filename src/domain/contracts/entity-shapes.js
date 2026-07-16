@@ -2,16 +2,23 @@
  * domain/contracts/entity-shapes.js
  *
  * Declara la FORMA de las entidades nombradas por Software
- * Architecture §4.2 — Library, Book, Unit, Lesson — sin datos ni
- * lógica de negocio todavía (Sprint 1 Plan §6). Ningún campo aquí
+ * Architecture §4.2 — Library, Book, Unit, Lesson, Dynamic Learning
+ * Section, Content Block — sin lógica de negocio de dominio más allá
+ * de la validación de forma (Sprint 1 Plan §6). Ningún campo aquí
  * puede nombrar un concepto específico de materia como "Grammar" o
  * "Vocabulary" (C5), ni asumir un único libro (C8): todo es siempre
  * una colección, incluso cuando tiene 0 o 1 elemento.
  *
- * Sprint 2 (Library) es quien primero puebla estas formas con datos
- * reales, publicados por el Content Import Pipeline (Software
- * Architecture §7) — este archivo no debería necesitar cambiar
- * cuando eso ocurra.
+ * Sprint 3 añade Section y Content Block — antes deliberadamente
+ * ausentes ("no se pre-declaran vacías", Sprint 2). Los ocho
+ * primitivos de Content Block son el vocabulario COMPLETO y cerrado
+ * de la plataforma (Software Architecture §4.2, §5.3; Design System
+ * §19.1) — ningún noveno primitivo puede añadirse por libro (C5).
+ * Que el motor de renderizado (Sprint 3) todavía no implemente los
+ * ocho (ver presentation/components/content-blocks/) no es una
+ * violación de este contrato: la forma reconoce los ocho tipos desde
+ * ahora, y solo la capa de presentación decide cuáles renderiza cada
+ * sprint — el contrato de datos no cambiará cuando se complete.
  */
 
 /**
@@ -38,15 +45,50 @@
  * @property {string} id
  * @property {string} title
  * @property {number} estimatedStudyMinutes
+ * @property {DynamicLearningSection[]} sections
+ */
+
+/**
+ * @typedef {object} DynamicLearningSection
+ * @property {string} id
+ * @property {string} label - Etiqueta que el libro declara (p. ej.
+ *   "Reading", "Vocabulary") — dato, nunca un tipo (§4.3, C5).
+ * @property {ContentBlock[]} blocks
+ */
+
+/**
+ * @typedef {object} ContentBlock
+ * @property {string} id
+ * @property {'prose'|'term'|'dialogue'|'media'|'aside'|'example'|'table'|'practice'} type
  *
- * Nota: las Dynamic Learning Sections (PRD §16) se añaden cuando un
- * sprint futuro renderiza contenido real — no se pre-declaran vacías
- * aquí, siguiendo "el silencio es una decisión de diseño válida".
+ * Campos adicionales requeridos según `type` — ver
+ * CONTENT_BLOCK_REQUIRED_FIELDS_BY_TYPE.
  */
 
 const REQUIRED_BOOK_KEYS = Object.freeze(['id', 'title', 'units']);
 const REQUIRED_UNIT_KEYS = Object.freeze(['id', 'title', 'lessons']);
-const REQUIRED_LESSON_KEYS = Object.freeze(['id', 'title', 'estimatedStudyMinutes']);
+const REQUIRED_LESSON_KEYS = Object.freeze([
+  'id',
+  'title',
+  'estimatedStudyMinutes',
+  'sections',
+]);
+const REQUIRED_SECTION_KEYS = Object.freeze(['id', 'label', 'blocks']);
+const REQUIRED_CONTENT_BLOCK_KEYS = Object.freeze(['id', 'type']);
+
+// Los ocho primitivos completos (Software Architecture §4.2; Design
+// System §19) y sus campos propios. Un `type` fuera de esta lista no
+// es un Content Block válido — es exactamente lo que C5 prohíbe.
+const CONTENT_BLOCK_REQUIRED_FIELDS_BY_TYPE = Object.freeze({
+  prose: ['paragraphs'],
+  term: ['entries'],
+  dialogue: ['turns'],
+  media: ['mediaType'],
+  aside: ['body'],
+  example: ['body'],
+  table: ['headers', 'rows'],
+  practice: ['exerciseId'],
+});
 
 function hasShape(candidate, requiredKeys) {
   return (
@@ -65,7 +107,55 @@ export function isValidUnitShape(candidate) {
 }
 
 export function isValidLessonShape(candidate) {
-  return hasShape(candidate, REQUIRED_LESSON_KEYS);
+  return (
+    hasShape(candidate, REQUIRED_LESSON_KEYS) &&
+    Array.isArray(candidate.sections) &&
+    candidate.sections.every(isValidSectionShape) &&
+    isValidPedagogicalSequence(candidate.sections)
+  );
+}
+
+export function isValidSectionShape(candidate) {
+  return (
+    hasShape(candidate, REQUIRED_SECTION_KEYS) &&
+    Array.isArray(candidate.blocks) &&
+    candidate.blocks.every(isValidContentBlockShape)
+  );
+}
+
+export function isValidContentBlockShape(candidate) {
+  if (!hasShape(candidate, REQUIRED_CONTENT_BLOCK_KEYS)) return false;
+  const typeFields = CONTENT_BLOCK_REQUIRED_FIELDS_BY_TYPE[candidate.type];
+  if (!typeFields) return false; // type desconocido: noveno primitivo, rechazado (C5)
+  return typeFields.every((key) => key in candidate);
+}
+
+/**
+ * Invariante de secuenciación pedagógica (Software Architecture
+ * §5.2, §5.4): "contenido antes que práctica" — la única regla que
+ * el motor impone sobre el orden de un libro (PRD §16). Se evalúa
+ * sobre la secuencia COMPLETA de blocks de la Lesson, concatenados
+ * en el orden de sus Sections — no solo dentro de una Section — para
+ * que un bloque de contenido en una Section posterior a una Section
+ * de práctica también quede correctamente rechazado.
+ *
+ * Con cero Content Blocks de tipo "practice" (el caso de Sprint 3:
+ * el Exercise Engine todavía no existe, Roadmap Phase 5), la regla
+ * se cumple de forma vacua — no es un caso especial, es la misma
+ * regla aplicada a una secuencia sin práctica todavía.
+ */
+export function isValidPedagogicalSequence(sections) {
+  let sawPractice = false;
+  for (const section of sections) {
+    for (const block of section.blocks) {
+      if (block.type === 'practice') {
+        sawPractice = true;
+      } else if (sawPractice) {
+        return false; // contenido después de práctica: inválido
+      }
+    }
+  }
+  return true;
 }
 
 /**
