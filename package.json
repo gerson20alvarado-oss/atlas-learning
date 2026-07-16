@@ -1,0 +1,10 @@
+{
+  "name": "atlas-learning",
+  "version": "0.1.0",
+  "description": "Atlas Learning — Sprint 1 (Foundation). Static SPA, ES Modules, sin framework (Software Architecture C1).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node dev-server.mjs"
+  }
+}
