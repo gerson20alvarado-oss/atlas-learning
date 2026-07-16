@@ -29,6 +29,7 @@
 @import url('../presentation/components/session-exit/session-exit.css');
 @import url('../presentation/components/content-blocks/content-blocks.css');
 
+@import url('../presentation/screens/home/home-screen.css');
 @import url('../presentation/screens/library/library-screen.css');
 @import url('../presentation/screens/book/book-screen.css');
 @import url('../presentation/screens/unit/unit-screen.css');

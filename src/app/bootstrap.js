@@ -25,6 +25,7 @@ import { createErrorBoundary } from '../core/errors/error-boundary.js';
 import { createRouter } from '../core/router/router.js';
 import { createStorageContract } from '../persistence/storage-contract.js';
 import { createLocalStorageAdapter } from '../persistence/adapters/local-storage-adapter.js';
+import { createSessionRepository } from '../domain/session/session-repository.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
 
@@ -38,10 +39,12 @@ function bootstrap() {
   const errorBoundary = createErrorBoundary(eventBus);
 
   // Persistence: el contrato queda listo y consumible desde Sprint 1
-  // (Sprint 1 Plan §12), aunque ningún dato de dominio real se
-  // persista todavía — eso llega en Sprint 4 (Progress).
+  // (Sprint 1 Plan §12). Sprint 4 (Progress, Roadmap Phase 4) es el
+  // primer sprint que persiste un dato de dominio real a través de
+  // él: la Session (ver domain/session/session-repository.js).
   const storageAdapter = createLocalStorageAdapter();
   const storage = createStorageContract(storageAdapter, errorBoundary);
+  const sessionRepository = createSessionRepository(storage);
 
   // c. Router — inicializado pero sin resolver ninguna ruta todavía;
   //    eso ocurre explícitamente en el paso (f).
@@ -63,8 +66,17 @@ function bootstrap() {
   // route:changed (Library, Book, o el placeholder de Home). Se
   // suscribe antes de router.start() para no perderse la resolución
   // de la ruta inicial (mismo orden que la suscripción de
-  // mountAppShell arriba).
-  mountScreenRouter({ eventBus, contentRegion, router, errorBoundary });
+  // mountAppShell arriba). Sprint 4 añade sessionRepository (Restore
+  // Session, Home real) y runtimeConfig (resolución de assets de
+  // Media, §21.2) a sus dependencias.
+  mountScreenRouter({
+    eventBus,
+    contentRegion,
+    router,
+    errorBoundary,
+    sessionRepository,
+    runtimeConfig,
+  });
 
   // f. El router resuelve la ruta inicial y publica route:changed.
   router.start();
@@ -75,7 +87,7 @@ function bootstrap() {
   // Expuesto solo para verificación manual en Sprint 1 (§7 del plan:
   // "validación manual del flujo de arranque"), nunca para que otro
   // módulo del proyecto dependa de un global.
-  window.__atlasLearning = Object.freeze({ router, eventBus, storage });
+  window.__atlasLearning = Object.freeze({ router, eventBus, storage, sessionRepository });
 }
 
 bootstrap();

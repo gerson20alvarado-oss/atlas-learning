@@ -132,8 +132,27 @@
   color: var(--al-text-content);
 }
 
-/* ---- Unsupported (media/practice fallback) ---- */
+/* ---- Media (image variant — Design System §19.5) ---- */
 
-[data-component="unsupported-block"] {
+[data-component="media-block"][data-part="image"] {
+  margin: 0;
+}
+
+[data-component="media-block"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="media-block"][data-part="caption"] {
+  color: var(--al-text-muted);
+  margin: var(--al-space-2) 0 0;
+}
+
+/* ---- Unsupported (media without asset / practice fallback) ---- */
+
+[data-component="unsupported-block"],
+[data-component="media-block"][data-part="unsupported"] {
   color: var(--al-text-muted);
 }

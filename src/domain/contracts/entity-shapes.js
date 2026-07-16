@@ -132,30 +132,44 @@ export function isValidContentBlockShape(candidate) {
 
 /**
  * Invariante de secuenciación pedagógica (Software Architecture
- * §5.2, §5.4): "contenido antes que práctica" — la única regla que
- * el motor impone sobre el orden de un libro (PRD §16). Se evalúa
- * sobre la secuencia COMPLETA de blocks de la Lesson, concatenados
- * en el orden de sus Sections — no solo dentro de una Section — para
- * que un bloque de contenido en una Section posterior a una Section
- * de práctica también quede correctamente rechazado.
+ * §5.2, §5.4; Design System §19.9): "contenido antes que práctica"
+ * dentro de cada Dynamic Learning Section — la única regla que el
+ * motor impone sobre el orden de un libro (PRD §16).
  *
- * Con cero Content Blocks de tipo "practice" (el caso de Sprint 3:
- * el Exercise Engine todavía no existe, Roadmap Phase 5), la regla
- * se cumple de forma vacua — no es un caso especial, es la misma
- * regla aplicada a una secuencia sin práctica todavía.
+ * CORRECCIÓN (Sprint 4 Plan): la implementación original de Sprint 3
+ * evaluaba esto como una única secuencia aplanada de TODA la Lesson
+ * (todas las Sections concatenadas), lo que en la práctica prohibía
+ * más de un ciclo contenido→práctica por Lesson — imposible de
+ * satisfacer para libros reales que intercalan explicación y
+ * práctica en cada punto gramatical (el patrón pedagógico más común
+ * en libros de idiomas, incluido Hi! Korean 3A). Esa implementación
+ * era más estricta de lo que el texto congelado exige: Design System
+ * §19.9 ata explícitamente la regla a "a section's feedback/continue"
+ * (una Section, no la Lesson completa), y el propio Session Container
+ * (§18.1) ya renderiza una Section a la vez, cada una con su propio
+ * ciclo. Se corrige aquí para validar la invariante de forma
+ * independiente POR Section — cada Section puede tener su propio
+ * ciclo contenido → ejemplo → práctica, pero nunca contenido nuevo
+ * después de que esa misma Section haya empezado su práctica.
+ *
+ * Con cero Content Blocks de tipo "practice" (el caso de Sprint 3: el
+ * Exercise Engine todavía no existe, Roadmap Phase 5), la regla se
+ * cumple de forma vacua en cualquiera de las dos interpretaciones —
+ * por eso el cambio no afecta ningún contenido ya validado antes de
+ * Sprint 4.
  */
 export function isValidPedagogicalSequence(sections) {
-  let sawPractice = false;
-  for (const section of sections) {
+  return sections.every((section) => {
+    let sawPractice = false;
     for (const block of section.blocks) {
       if (block.type === 'practice') {
         sawPractice = true;
       } else if (sawPractice) {
-        return false; // contenido después de práctica: inválido
+        return false; // contenido nuevo después de práctica, dentro de la misma Section: inválido
       }
     }
-  }
-  return true;
+    return true;
+  });
 }
 
 /**

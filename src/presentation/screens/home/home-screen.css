@@ -1,0 +1,28 @@
+/**
+ * home-screen.css
+ *
+ * Home (Design System §7.2 — measure-ui; §7.4 — estructura vertical:
+ * el título del libro es el protagonista, PDD §1.1/WR §2.1, no el
+ * wordmark). Sin card, sin fondo — silencio es una decisión de diseño
+ * válida (Design Rule 10) cuando solo hay un libro y una acción.
+ */
+
+[data-component="home-screen"] {
+  max-width: var(--al-measure-ui);
+  margin: 0 auto;
+}
+
+[data-component="home-screen"] [data-part="book-title"] {
+  color: var(--al-text-content);
+  margin: var(--al-space-12) 0 var(--al-space-2);
+  text-align: left;
+}
+
+[data-component="home-screen"] [data-part="context"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-8);
+}
+
+[data-component="home-screen"] [data-part="continue"] {
+  max-width: 320px;
+}

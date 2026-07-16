@@ -11,18 +11,29 @@
  * de diseño válida"). Cuando Review Mode llegue, es este mismo
  * archivo el que se extiende, no uno nuevo.
  *
- * Alcance de Sprint 3 (ver README y el reporte de riesgos del
- * Sprint): lineal, sellado (§18.2) — solo Lecture-type content
- * (prose/term/dialogue/aside/example/table), sin Practice (Exercise
- * Engine, Sprint 5) y sin Session Summary con resultados (no hay
- * Attempts que resumir). Al terminar la última sección, "Continue"
- * se convierte en "Finish" y sale — no hay pantalla de resultados
- * todavía.
+ * Alcance de Sprint 3: lineal, sellado (§18.2) — solo Lecture-type
+ * content, sin Session Summary con resultados (no hay Attempts que
+ * resumir). Al terminar la última sección, "Continue" se convierte en
+ * "Finish" y sale — no hay pantalla de resultados todavía (eso sigue
+ * sin cambiar en Sprint 4: no hay Attempts, Sprint 5).
  *
- * El índice de sección activo vive solo en memoria de este
- * componente (Session & Navigation State, Software Architecture
- * §9.2) — no se persiste (Persistence/Resume es Sprint 4). Salir
- * pierde la posición; ver session-exit.js.
+ * Sprint 4 (Progress, Roadmap Phase 4) añade lo que Sprint 3 dejó
+ * explícitamente pendiente: la posición de sección y el scroll ya no
+ * viven solo en memoria (Software Architecture §10.4, §14.3) —
+ * `restoreSectionIndex`/`restoreScrollPosition` permiten reanudar
+ * exactamente donde quedó el estudiante, y `onSectionChange` /
+ * `onScrollChange` (inyectados desde app/screen-router.js, que ya
+ * conoce el Session repository) persisten cada cambio granular, no
+ * solo al salir. `onExit` ahora recibe `{ reason }` ('finished' |
+ * 'exited') para que quien orquesta decida qué hacer con la Session
+ * persistida en cada caso (ver screen-router.js: 'finished' limpia la
+ * Session, 'exited' no toca nada más — ya quedó guardada
+ * incrementalmente).
+ *
+ * currentExercise/currentAudio del esquema de Session (Sprint 4 Plan)
+ * no se popula todavía desde aquí: no hay Exercises reales (Sprint 5)
+ * ni Media de audio real en el contenido de este sprint — permanecen
+ * en `null`, honestamente, hasta que exista algo real que registrar.
  */
 
 import { createSessionExit } from '../../components/session-exit/session-exit.js';
@@ -32,15 +43,23 @@ import { createContentBlock } from '../../components/content-blocks/content-bloc
 import { computeSessionProgress } from '../../../domain/content/progress.js';
 
 const PAGE_TURN_MS = 360; // duration-gentle (Design System §21.2)
+const SCROLL_SAVE_DEBOUNCE_MS = 400;
 
-export function createLearningSessionScreen({ lesson, onExit }) {
+export function createLearningSessionScreen({
+  lesson,
+  restoreSectionIndex = 0,
+  restoreScrollPosition = 0,
+  onSectionChange,
+  onScrollChange,
+  onExit,
+}) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'learning-session-screen');
 
   const chrome = document.createElement('div');
   chrome.setAttribute('data-part', 'chrome');
 
-  const exit = createSessionExit({ onSelect: () => onExit?.() });
+  const exit = createSessionExit({ onSelect: () => onExit?.({ reason: 'exited' }) });
 
   const sessionProgress = createProgressBar({
     completed: 0,
@@ -66,10 +85,18 @@ export function createLearningSessionScreen({ lesson, onExit }) {
   element.appendChild(contentColumn);
   element.appendChild(continueButton.element);
 
-  let currentIndex = 0;
+  // Restaura dentro de los límites válidos de la Lesson actual — una
+  // Session persistida podría apuntar a un índice que ya no existe si
+  // el contenido de la Lesson cambió entre sesiones (Content Import
+  // Pipeline republicó la Lesson con menos secciones). Degradar a 0
+  // es la misma postura que content-repository.js aplica a contenido
+  // inválido: nunca romper, nunca fingir una posición que no existe.
+  const lastValidIndex = lesson.sections.length - 1;
+  let currentIndex = Math.min(Math.max(restoreSectionIndex, 0), lastValidIndex);
   let currentSectionWrapper = null;
+  let scrollSaveTimer = null;
 
-  function renderSection(index, { animateIncoming = false } = {}) {
+  function renderSection(index, { animateIncoming = false, restoredScroll = null } = {}) {
     const section = lesson.sections[index];
 
     const wrapper = document.createElement('div');
@@ -106,12 +133,39 @@ export function createLearningSessionScreen({ lesson, onExit }) {
     const isLast = index === lesson.sections.length - 1;
     continueButton.update({ label: isLast ? 'Finish' : 'Continue' });
     sessionProgress.update(computeSessionProgress(index, lesson.sections.length));
+
+    if (restoredScroll !== null) {
+      // Restaurar el scroll exacto requiere que el layout de la
+      // sección ya esté pintado — se usa un rAF; es una restauración
+      // "mejor esfuerzo", nunca bloqueante (Software Architecture C6:
+      // nada debe interrumpir el aprendizaje esperando una
+      // restauración perfecta).
+      requestAnimationFrame(() => {
+        window.scrollTo(0, restoredScroll);
+      });
+    }
   }
+
+  function handleScroll() {
+    window.clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = window.setTimeout(() => {
+      onScrollChange?.(window.scrollY);
+    }, SCROLL_SAVE_DEBOUNCE_MS);
+  }
+
+  function flushScrollSave() {
+    window.clearTimeout(scrollSaveTimer);
+    onScrollChange?.(window.scrollY);
+  }
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  window.addEventListener('beforeunload', flushScrollSave);
 
   function handleContinue() {
     const isLast = currentIndex === lesson.sections.length - 1;
     if (isLast) {
-      onExit?.();
+      flushScrollSave();
+      onExit?.({ reason: 'finished' });
       return;
     }
     advanceToSection(currentIndex + 1);
@@ -127,14 +181,32 @@ export function createLearningSessionScreen({ lesson, onExit }) {
       }, PAGE_TURN_MS);
     }
     currentIndex = nextIndex;
+    // Cambiar de sección es un punto de guardado granular explícito
+    // (Software Architecture §10.4) — el scroll de la nueva sección
+    // empieza en 0, nunca hereda el de la sección anterior.
+    onSectionChange?.(currentIndex);
+    window.scrollTo(0, 0);
     renderSection(currentIndex, { animateIncoming: true });
   }
 
-  renderSection(currentIndex);
+  // Primer render: restaura la sección exacta (si había una Session
+  // válida para esta Lesson) y persiste inmediatamente la posición
+  // resultante — así, aunque el estudiante haya llegado por Library/
+  // Unit en vez de "Continue Learning", la Session queda apuntando a
+  // esta Lesson desde el primer instante (postura "most-recent-write-
+  // wins" ya aceptada para el puntero de Session, Software
+  // Architecture §11.4).
+  onSectionChange?.(currentIndex);
+  renderSection(currentIndex, {
+    restoredScroll: restoreScrollPosition > 0 ? restoreScrollPosition : null,
+  });
 
   function update() {}
 
   function destroy() {
+    window.removeEventListener('scroll', handleScroll);
+    window.removeEventListener('beforeunload', flushScrollSave);
+    window.clearTimeout(scrollSaveTimer);
     exit.destroy();
     sessionProgress.destroy();
     continueButton.destroy();

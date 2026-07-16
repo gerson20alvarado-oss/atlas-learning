@@ -1,6 +1,6 @@
 # Atlas Learning
 
-**Estado actual:** Sprint 3 (Reader) implementado.
+**Estado actual:** Sprint 4 (Progress) implementado.
 
 Static SPA, HTML/CSS/JS ES Modules puro — sin framework, sin bundler
 (Software Architecture, restricción C1). Diseñada para GitHub Pages
@@ -20,100 +20,137 @@ node dev-server.mjs 8080
 Abrir `http://localhost:8080/`. No hay paso de build: los archivos se
 sirven tal cual.
 
-## Qué existe en Sprint 3 — y qué no
+## Qué existe en Sprint 4 — y qué no
 
-Sprint 3 entrega **Reader** (Engineering Implementation Roadmap,
-Phase 3): la "Navigation" que Sprint 2 dejó pendiente (Unit screen,
-Lesson entry screen) más el Learning Session container con
-renderizado real de contenido. Exit Criteria del Roadmap: "entire
-lessons are readable" — cumplido: Library → Book → Unit → Lesson →
-Learning Session, avanzando linealmente por las Dynamic Learning
-Sections de una lección hasta terminarla.
+Sprint 4 entrega **Progress** (Engineering Implementation Roadmap,
+Phase 4) tal como fue acordado explícitamente antes de implementar:
+**infraestructura de persistencia y restauración de Session, nunca
+progreso académico artificial**. Sin Exercise Engine (Sprint 5) no
+existen Attempts reales, y sin Attempts, Progress permanece
+honestamente en 0/N — exactamente como en Sprint 3.
 
-Deliberadamente fuera de Sprint 3 (llegan en sprints posteriores según
-la Dependency Matrix del Roadmap):
-- **Practice / Exercise Engine** (Sprint 5). El primitivo "practice"
-  existe en el contrato de datos (entity-shapes.js) pero no tiene
-  renderer — content-block-renderer.js muestra un aviso neutral si
-  algún día aparece, en vez de fallar.
-- **Media** (audio/video/imagen) — sin assets reales todavía (el
-  Content Import Pipeline no corre en este runtime). Mismo fallback
-  neutral que "practice".
-- **Session Summary con resultados** (aciertos/total) — depende de
-  Attempts, que no existen hasta el Exercise Engine. Al terminar la
-  última sección, "Continue" se convierte en "Finish" y sale
-  directamente, sin pantalla de resultados todavía.
-- **Persistencia y resume de Session** (Progress, Sprint 4). La
-  sección activa vive solo en memoria del componente de Learning
-  Session — recargar la página o salir la pierde. "Exit" navega a
-  Home sin guardar nada todavía.
-- **Review Mode** — depende de Error Records (Exercise Engine).
-  learning-session-screen.js está diseñado como "un componente, dos
-  consumidores" (Design System §18) pero Sprint 3 solo construye el
-  consumidor Learn Mode.
+Lo que Sprint 4 sí entrega:
+- **Persistencia de Session** (`domain/session/`): posición
+  Book/Unit/Lesson/Section, scroll, y los campos reservados
+  `currentExercise`/`currentAudio` (en `null` hasta que existan datos
+  reales que registrar — Sprint 5 y una futura Media de audio real).
+- **Restore Session real** dentro de Learning Session: sección y
+  scroll se restauran exactamente al reabrir una lección en curso
+  (Software Architecture §10.4, §14.3).
+- **Home ("Continue Learning") real** — Wireframe Review §2.1 —
+  reemplaza el placeholder de Sprint 2/3. Si no hay Session persistida
+  (estudiante nuevo, o acaba de terminar su única lección), se sigue
+  mostrando el mismo estado vacío de siempre.
+- **Primer libro real: Hi! Korean 3A** — Chapter 01 (서울), Lesson 1-1
+  completa (páginas 16–25 del libro impreso). Alcance explícitamente
+  acordado; el resto del libro no se adapta todavía. El libro de
+  muestra "Español Esencial" (Sprint 3) se conserva sin cambios — la
+  Library ahora tiene 2 libros, reforzando el comportamiento "N
+  libros" (PRD §13, C8) con datos reales.
+- **Primer asset real de Media**: un mapa de distritos de Seúl
+  (`assets/images/content/hi-korean-3a/`), extraído directamente del
+  PDF del libro — no fabricado. Por eso `media-block.js` implementa la
+  variante `image` del primitivo Media (Design System §19.5).
+
+Deliberadamente fuera de Sprint 4 (llegan en sprints posteriores):
+- **Progress numérico real / marcar lecciones como completadas** —
+  depende de Attempts (Exercise Engine, Sprint 5). Ningún contador
+  artificial se introdujo para simularlo.
+- **Practice / Exercise Engine** — los bloques `practice` del
+  contenido real de Hi! Korean ya existen (con `exerciseId` estable),
+  pero siguen mostrando el mismo aviso neutral que Sprint 3 definió;
+  el motor que les da vida es Sprint 5.
+- **Audio real** — el libro referencia pistas de audio (Track
+  01/02/03) pero Atlas no tiene esos archivos. Se documentan como
+  bloques `aside`, nunca como un reproductor sin contenido real.
+- **Review Mode** — sigue dependiendo de Error Records (Exercise
+  Engine).
+
+## Corrección de dominio en este sprint
+
+`domain/contracts/entity-shapes.js` — `isValidPedagogicalSequence` se
+corrigió para validar "contenido antes que práctica" **por Dynamic
+Learning Section**, no como una única secuencia aplanada de toda la
+Lesson. La implementación de Sprint 3 era más estricta de lo que
+Design System §19.9 realmente especifica ("Practice is always the
+last content primitive before **a section's** feedback/continue") y
+no permitía representar libros reales que intercalan explicación y
+práctica en cada punto gramatical — el patrón más común en libros de
+idiomas. Decisión aprobada explícitamente antes de implementar; ver
+"Cambios recomendados en documentación" del resumen técnico de Sprint
+4 para la aclaración pendiente en el documento congelado.
 
 ## Estructura
 
 ```
 src/
-  app/            screen-router.js resuelve ahora Unit, Lesson entry
-                  y Learning Session, además de Library/Book (Sprint 2)
   domain/
-    contracts/    entity-shapes.js — Sprint 3 añade Section y Content
-                  Block (los 8 primitivos, C5), y el validador de la
-                  secuencia pedagógica (contenido antes que práctica)
-    content/      library-catalog.js — Lessons con secciones y
-                  content blocks reales; content-repository.js añade
-                  getUnitById/getLessonById; progress.js añade
-                  marcadores binarios de Lesson y progreso de sesión
+    session/         NUEVO — session-repository.js: único punto de
+                      entrada del dominio hacia Persistence para la
+                      Session activa (Software Architecture §10, §14)
+    contracts/
+      session-shape.js  NUEVO — forma de la entidad Session (§4.2)
+      entity-shapes.js  isValidPedagogicalSequence corregida (ver arriba)
+    content/
+      library-catalog.js  Sprint 4 añade Hi! Korean 3A (Ch1, Lesson 1-1)
   presentation/
-    components/
-      content-blocks/   Sprint 3 — un renderer por primitivo
-                  (prose, term, dialogue, aside, example, table) +
-                  content-block-renderer.js (dispatcher con fallback
-                  neutral para media/practice, todavía no implementados)
-      primary-button/   Button/primary (Design System §11.1)
-      session-exit/     "exit" del Session Container (§15.3)
     screens/
-      unit/             Sprint 3 — lista de lecciones, marcador binario
-      lesson-entry/      Sprint 3 — puerta de compromiso
-      learning-session/  Sprint 3 — el Session Container (§18):
-                  navegación lineal por secciones, whisper bar de
-                  sesión, transición page-turn (§21.3)
-  styles/         base.css añade las clases de voz de lectura
-                  (type-reading-*) — usadas por primera vez en Sprint 3
+      home/           NUEVO — Home real ("Continue Learning")
+      learning-session/  Restore Session (sección + scroll granular,
+                      onSectionChange/onScrollChange), onExit con
+                      { reason: 'finished' | 'exited' }
+    components/
+      content-blocks/
+        media-block.js   NUEVO — primitivo Media, variante `image`
+  app/
+    bootstrap.js      Crea sessionRepository, lo inyecta junto con
+                      runtimeConfig en mountScreenRouter
+    screen-router.js  Home real vía Session; Restore Session en
+                      Learning Session; resuelve assets de Media
+                      contra el base path real (única capa que conoce
+                      runtimeConfig y contenido a la vez)
+assets/
+  images/content/hi-korean-3a/  NUEVO — asset real extraído del PDF
 ```
 
 ## Regla de vecinos
 
-Sin cambios respecto a Sprint 2. `presentation/components/` y
-`presentation/screens/` siguen sin importar nada fuera de sí mismas
-— reciben todo por props/callbacks inyectados desde `app/`. Los
-renderers de content-blocks son intencionalmente puros: no reportan al
-error boundary ni al event bus (eso es responsabilidad de `app/`).
+Sin cambios respecto a Sprint 3. `presentation/components/` y
+`presentation/screens/` siguen sin importar nada fuera de sí mismas —
+reciben todo por props/callbacks inyectados desde `app/`.
+`media-block.js` recibe siempre un `src` ya resuelto — no conoce
+runtimeConfig ni calcula rutas (esa resolución vive en
+`screen-router.js`, que ya conoce varias capas por diseño).
+`session-repository.js` conoce el storage contract inyectado, nunca el
+mecanismo real detrás de él.
 
-## Verificación manual de Sprint 3
+## Verificación realizada en este sprint
 
-Probado con un navegador real (Chromium headless) contra
-`dev-server.mjs`:
-- Flujo completo Library → Book → Unit → Lesson entry → Learning
-  Session → avance por todas las secciones → Finish → Home, para las
-  5 lecciones del libro de muestra, sin errores de consola ni
-  excepciones.
-- Los seis primitivos de contenido (prose, term, dialogue, aside,
-  example, table) renderizan correctamente con contenido real.
-- El fallback neutral para "media"/"practice" no lanza excepciones.
-- Marcador binario de Lesson ("next" en la primera lección de cada
-  unidad, sin marcador en el resto — honesto dado que no hay Attempts
-  todavía).
-- Validadores de dominio probados de forma aislada: un Content Block
-  con un noveno tipo inventado se rechaza (C5); una secuencia
-  práctica-antes-que-contenido se rechaza (invariante pedagógica,
-  Software Architecture §5.4); el caso real de Sprint 3 (sin ningún
-  bloque "practice") se acepta correctamente.
-- "exit" y "Finish" navegan a Home; un id de Unit o Lesson inexistente
-  degrada a un estado vacío en calma, reportado como recuperable.
-- Transición page-turn entre secciones probada con y sin
-  `prefers-reduced-motion`, sin excepciones en ningún caso.
-- Recorrido completo de las 5 lecciones del libro sin cuelgues ni
-  errores acumulados.
+Sin acceso a un navegador real en este entorno de trabajo (a
+diferencia de Sprint 3), la verificación de este sprint fue:
+- Sintaxis válida de todos los archivos `.js` (`node --check`) y
+  balance de llaves en los `.css` tocados/nuevos.
+- Validación de dominio real contra `entity-shapes.js`: el Book, la
+  Unit y la Lesson de Hi! Korean 3A pasan `isValidBookShape` /
+  `isValidUnitShape` / `isValidLessonShape` / `isValidPedagogicalSequence`
+  (por Section, tras la corrección). El libro de muestra de Sprint 3
+  se re-validó sin cambios.
+- `session-repository.js` probado de forma aislada (storage en
+  memoria simulando el contrato real): guardado inicial, patch
+  parcial que conserva campos no tocados, `clearSession`, y rechazo
+  honesto de un `partialUpdate` con una clave ajena al contrato.
+- Resolución de assets de Media probada de forma aislada: un
+  `runtimeConfig` simulado produce el `src` final esperado a partir de
+  `assetPath` para el único bloque `media` real del contenido.
+- `content-repository.js` probado contra el nuevo libro: búsquedas
+  válidas, degradación honesta a `null` para ids inexistentes,
+  `computeBookProgress`/`computeUnitProgress`/`computeLessonMarkers`
+  siguen devolviendo 0/N y el marcador "next" único, tal como exige la
+  decisión de este sprint.
+
+**Pendiente de tu verificación manual real en navegador** (`npm
+start`): flujo completo Library → Book (Hi! Korean 3A) → Unit → Lesson
+entry → Learning Session → avance por las 12 secciones → Finish → Home
+(vacío) → reingreso a mitad de lección → exit → Home ("Continue
+Learning") → click → restauración exacta de sección y scroll; y
+verificación visual del mapa de Seúl extraído.
