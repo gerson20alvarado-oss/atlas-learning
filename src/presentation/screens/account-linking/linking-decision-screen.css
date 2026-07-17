@@ -23,13 +23,26 @@
 }
 
 [data-component="linking-decision-screen"] [data-part="discard"] {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--al-hit-target-min);
+  padding: var(--al-space-1) var(--al-space-2);
   background: none;
   border: none;
   color: var(--al-text-muted);
+  font-weight: var(--al-weight-medium);
   margin: 0 auto;
   cursor: pointer;
   transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="linking-decision-screen"] [data-part="discard"]:hover:not(:disabled) {
+  color: var(--al-text-ui);
+}
+
+[data-component="linking-decision-screen"] [data-part="discard"]:active:not(:disabled) {
+  color: var(--al-text-content);
 }
 
 [data-component="linking-decision-screen"] [data-part="discard"]:disabled {

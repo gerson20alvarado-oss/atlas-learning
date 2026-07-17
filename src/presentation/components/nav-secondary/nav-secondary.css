@@ -25,3 +25,8 @@
 [data-component="nav-secondary"] [data-nav-item]:hover {
   color: var(--al-ink-900);
 }
+
+[data-component="nav-secondary"] [data-nav-item]:active {
+  opacity: 0.7;
+  transition: opacity var(--al-duration-fast) var(--al-ease-standard);
+}

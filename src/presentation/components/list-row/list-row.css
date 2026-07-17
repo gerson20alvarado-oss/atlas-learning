@@ -72,8 +72,6 @@ button[data-component="list-row"]:active [data-part="chevron"] {
 
 [data-component="list-row"] [data-part="chevron"] {
   color: var(--al-text-muted);
-  font-size: var(--al-size-18);
-  line-height: 1;
   flex-shrink: 0;
 }
 

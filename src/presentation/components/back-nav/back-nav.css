@@ -3,19 +3,35 @@
  *
  * Back-nav (Design System §15.1): type-ui-caption, text-muted,
  * hit area 44px, alineado arriba a la izquierda de su screen.
+ *
+ * Sprint 7 (Objetivo E, extensión): icono chevron-left real +
+ * label; padding horizontal generoso para un hit-target más cómodo,
+ * sin fondo ni borde — sigue siendo una "quiet word" (§11.2), no un
+ * botón. Estado pressed añadido junto al hover ya existente.
  */
 
 [data-component="back-nav"] {
   display: inline-flex;
   align-items: center;
+  gap: var(--al-space-1);
   min-height: var(--al-hit-target-min);
+  padding: var(--al-space-1) var(--al-space-2) var(--al-space-1) 0;
   font-family: var(--al-font-ui);
   font-size: var(--al-size-13);
+  font-weight: var(--al-weight-medium);
   color: var(--al-text-muted);
   margin-bottom: var(--al-space-2);
   transition: color var(--al-duration-fast) var(--al-ease-standard);
 }
 
+[data-component="back-nav"] [data-part="icon"] {
+  flex-shrink: 0;
+}
+
 [data-component="back-nav"]:hover {
   color: var(--al-text-ui);
+}
+
+[data-component="back-nav"]:active {
+  color: var(--al-text-content);
 }

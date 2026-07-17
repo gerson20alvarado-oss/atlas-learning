@@ -20,6 +20,7 @@
  */
 
 import { createProgressBar } from '../progress-bar/progress-bar.js';
+import { createChevronIcon } from '../icons/chevron-icon.js';
 
 export function createListRow({ title, progress = null, marker = null, onSelect = null }) {
   const element = document.createElement(onSelect ? 'button' : 'div');
@@ -58,10 +59,8 @@ export function createListRow({ title, progress = null, marker = null, onSelect 
   }
 
   if (onSelect) {
-    const chevron = document.createElement('span');
+    const chevron = createChevronIcon({ direction: 'right' });
     chevron.setAttribute('data-part', 'chevron');
-    chevron.setAttribute('aria-hidden', 'true');
-    chevron.textContent = '›';
     element.appendChild(chevron);
     element.addEventListener('click', () => onSelect());
   }

@@ -32,10 +32,16 @@
  *     aunque el Exercise Engine no exista hasta Sprint 5 — se
  *     renderizan con el mismo aviso neutral que content-block-
  *     renderer.js ya define para "practice".
- *   - Un único bloque `media` de tipo `image` es real: el mapa de
- *     distritos de Seúl (p.22), extraído directamente del PDF del
- *     libro (asset legítimo, no fabricado) — ver
- *     assets/images/content/hi-korean-3a/.
+ *   - Dos bloques `media` de tipo `image` son reales (Sprint 4: el
+ *     mapa; Sprint 7, Objetivo E: la fotografía de apertura), ambos
+ *     extraídos directamente del PDF del libro (assets legítimos, no
+ *     fabricados) — ver assets/images/content/hi-korean-3a/. La
+ *     fotografía de apertura (p.16) NO incluye el marco/rotación
+ *     "polaroid" propios de la maquetación impresa — se recortó solo
+ *     el contenido fotográfico, para que reciba el mismo tratamiento
+ *     editorial que el resto del contenido dentro de Atlas (figure +
+ *     caption en voz de lectura, Design System §19.5), no una réplica
+ *     de la página del libro.
  *   - NINGÚN bloque `media` de tipo audio se incluye: el libro
  *     referencia pistas de audio reales (Track 01/02/03) pero Atlas
  *     no tiene esos archivos. Las referencias al audio se documentan
@@ -318,6 +324,22 @@ export const LIBRARY_CATALOG = Object.freeze({
                   id: 'section-hikorean-1-1-intro',
                   label: '도입',
                   blocks: [
+                    {
+                      // Objetivo E, extensión (Sprint 7): fotografía real de
+                      // apertura de la lección — mismo criterio de
+                      // legitimidad ya usado para el mapa de p.22 (asset
+                      // extraído directamente del libro, sin ilustración
+                      // inventada). Se coloca primero, exactamente el
+                      // orden de lectura del original impreso (p.16: foto,
+                      // luego las dos preguntas de caldeamiento).
+                      id: 'block-hikorean-1-1-intro-photo',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-seoul-skyline.jpg',
+                      alt: '서울의 야경 — 롯데월드타워와 한강',
+                      caption:
+                        '레슨 도입부의 서울 야경 사진 — 원서 p.16에서 추출한 실제 이미지 자산이다.',
+                    },
                     {
                       id: 'block-hikorean-1-1-intro-1',
                       type: 'prose',

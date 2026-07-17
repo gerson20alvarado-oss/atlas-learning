@@ -141,6 +141,12 @@ export function createLearningSessionScreen({
     const blockComponents = section.blocks.map((block) => {
       const blockComponent = createContentBlock(block);
       blockComponent.element.setAttribute('data-part', 'block');
+      // Sprint 7 (Objetivo E, extensión): expone el tipo del bloque
+      // solo para que el CSS pueda distinguir ritmo vertical entre
+      // bloques relacionados vs. cambios de tema (ver CSS,
+      // "dos niveles de espaciado") — no cambia el contrato de
+      // ningún bloque ni la estructura de datos del contenido.
+      blockComponent.element.setAttribute('data-block-type', block.type);
       wrapper.appendChild(blockComponent.element);
       return blockComponent;
     });

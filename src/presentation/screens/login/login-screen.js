@@ -17,17 +17,18 @@
 
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
 import { createStateView } from '../../components/state-views/state-views.js';
+import { createBackNav } from '../../components/back-nav/back-nav.js';
 
 export function createLoginScreen({ onBack, onSubmit }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'login-screen');
 
-  const backLink = document.createElement('button');
-  backLink.type = 'button';
-  backLink.setAttribute('data-part', 'back');
-  backLink.className = 'al-type-ui-caption';
-  backLink.textContent = '‹ back';
-  backLink.addEventListener('click', () => onBack?.());
+  // Sprint 7 (Objetivo E, extensión): antes un botón hecho a mano que
+  // decía literalmente "‹ back" — contradecía Wireframe Review §4
+  // ("nunca 'back', nunca un salto de nivel") y duplicaba, con su
+  // propio CSS, un componente que ya existe. Ahora reutiliza back-nav
+  // tal cual, con el nombre real del nivel padre (Entry).
+  const backNav = createBackNav({ parentLabel: 'entry', onSelect: onBack });
 
   const emailLabel = document.createElement('label');
   emailLabel.className = 'al-type-ui-label';
@@ -67,7 +68,7 @@ export function createLoginScreen({ onBack, onSubmit }) {
   loadingView.element.setAttribute('data-part', 'loading');
   loadingView.element.hidden = true;
 
-  element.appendChild(backLink);
+  element.appendChild(backNav.element);
   element.appendChild(emailLabel);
   element.appendChild(emailInput);
   element.appendChild(passwordLabel);
@@ -100,6 +101,7 @@ export function createLoginScreen({ onBack, onSubmit }) {
   function update() {}
 
   function destroy() {
+    backNav.destroy();
     signInButton.destroy();
     element.remove();
   }

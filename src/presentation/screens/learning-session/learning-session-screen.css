@@ -89,6 +89,19 @@
   margin-bottom: 0;
 }
 
+/* Objetivo E, extensión (Sprint 7): ritmo vertical de dos niveles.
+   space-8 (arriba) sigue siendo el default — un cambio de tema real
+   entre bloques de distinto propósito. space-4 aquí es la excepción
+   deliberada: un bloque que ilustra o continúa directamente al
+   anterior respira más cerca de él, para que la agrupación se lea
+   visualmente antes de leer el texto. Ningún token nuevo — mismo
+   space-4/space-8 que ya existían, aplicados con más criterio. */
+[data-component="learning-session-screen"] [data-block-type="prose"] + [data-part="block"][data-block-type="example"],
+[data-component="learning-session-screen"] [data-block-type="term"] + [data-part="block"][data-block-type="example"],
+[data-component="learning-session-screen"] [data-block-type="practice"] + [data-part="block"][data-block-type="practice"] {
+  margin-top: calc(var(--al-space-4) - var(--al-space-8));
+}
+
 [data-component="learning-session-screen"] [data-part="continue"] {
   max-width: var(--al-measure-reading);
   margin: var(--al-space-6) auto 0;
