@@ -13,6 +13,7 @@
   font-size: var(--al-size-13);
   color: var(--al-text-muted);
   margin-bottom: var(--al-space-2);
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
 }
 
 [data-component="back-nav"]:hover {

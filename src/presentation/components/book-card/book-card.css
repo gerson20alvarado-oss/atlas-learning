@@ -20,6 +20,26 @@
   background: var(--al-surface-recessed);
   border: var(--al-border-hairline) solid var(--al-border-default);
   border-radius: var(--al-radius-lg);
+  overflow: hidden;
+  /* Objetivo A (Sprint 7): solo transición de color de borde.
+     Restricción cruzada de R1 — la portada editorial real no debe
+     competir con ningún tratamiento de hover (sin elevación, sin
+     sombra, sin brillo, sin escala): debe sentirse como un libro
+     real en una biblioteca, no como un banner. */
+  transition: border-color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+/* R1: portada real íntegra, proporción original intacta — nunca
+   recortada (object-fit: contain, nunca cover) ni deformada. El
+   contenedor 2:3 no cambia (--al-cover-aspect); si la proporción
+   real del libro no lo llena, el remanente queda con el fondo
+   surface-recessed de la línea de arriba — el espacio pertenece al
+   contenedor, no se le quita nada a la portada. */
+[data-component="book-card"] [data-part="cover-image"] {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 [data-component="book-card"]:hover [data-part="cover"] {

@@ -295,6 +295,15 @@ export const LIBRARY_CATALOG = Object.freeze({
     {
       id: 'book-hi-korean-3a',
       title: 'Hi! Korean 3A',
+      // R1 (Sprint 7, Objetivo E — decisión de Producto): portada
+      // editorial real, sin recortar ni reinterpretar (assets/images/
+      // covers/hi-korean-3a.jpg, extraída directamente del PDF del
+      // libro, mismo criterio de legitimidad ya usado para el mapa de
+      // p.22 — ver nota de fidelidad de contenido más arriba en este
+      // archivo). Resuelta a URL real por quien compone la screen
+      // (app/screen-router.js vía runtimeConfig.resolveAssetPath),
+      // nunca aquí — este archivo es contenido, no runtime.
+      coverAssetPath: 'assets/images/covers/hi-korean-3a.jpg',
       units: [
         {
           id: 'unit-hikorean-ch1-seoul',

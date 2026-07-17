@@ -36,8 +36,19 @@
  * desde app/screen-router.js, consultando Attempts — este componente
  * no sabe de dónde salió ese dato, solo lo pasa a través de
  * content-block-renderer.js.
+ *
+ * Objetivo E (Sprint 7, validación manual — decisión de Producto):
+ * el chrome ahora expone dos acciones independientes, nunca una
+ * sustituyendo a la otra — `onBack` (jerárquico, un nivel arriba:
+ * Lesson entry, mismo componente back-nav que el resto del sistema)
+ * y `onExit` (abandonar la sesión activa y volver a Home, session-
+ * exit). Esto amplía lo que el Wireframe Review §2.6 especificaba
+ * originalmente para este contenedor (solo "quiet exit"); la
+ * ampliación es una decisión de Producto explícita, no una
+ * corrección de una omisión del diseño original.
  */
 
+import { createBackNav } from '../../components/back-nav/back-nav.js';
 import { createSessionExit } from '../../components/session-exit/session-exit.js';
 import { createProgressBar } from '../../components/progress-bar/progress-bar.js';
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
@@ -53,6 +64,7 @@ export function createLearningSessionScreen({
   restoreScrollPosition = 0,
   onSectionChange,
   onScrollChange,
+  onBack,
   onExit,
 }) {
   const element = document.createElement('div');
@@ -61,7 +73,20 @@ export function createLearningSessionScreen({
   const chrome = document.createElement('div');
   chrome.setAttribute('data-part', 'chrome');
 
+  // Back (jerárquico, un nivel arriba: Lesson entry) y Exit (salir de
+  // la sesión activa y volver a Home) son dos acciones con
+  // responsabilidades distintas — ninguna sustituye a la otra
+  // (decisión de Producto, Sprint 7, validación manual). Misma
+  // familia visual (Design System §11.2: "‹ back" y session "exit"
+  // son ambos "secondary actions" quietas), agrupadas para que la
+  // barra de progreso siga teniendo su propio espacio a la derecha.
+  const chromeActions = document.createElement('div');
+  chromeActions.setAttribute('data-part', 'chrome-actions');
+
+  const backNav = createBackNav({ parentLabel: 'lesson', onSelect: onBack });
   const exit = createSessionExit({ onSelect: () => onExit?.({ reason: 'exited' }) });
+  chromeActions.appendChild(backNav.element);
+  chromeActions.appendChild(exit.element);
 
   const sessionProgress = createProgressBar({
     completed: 0,
@@ -70,7 +95,7 @@ export function createLearningSessionScreen({
   });
   sessionProgress.element.setAttribute('data-part', 'session-progress');
 
-  chrome.appendChild(exit.element);
+  chrome.appendChild(chromeActions);
   chrome.appendChild(sessionProgress.element);
 
   const contentColumn = document.createElement('div');
@@ -230,6 +255,7 @@ export function createLearningSessionScreen({
     window.removeEventListener('scroll', handleScroll);
     window.removeEventListener('beforeunload', flushScrollSave);
     window.clearTimeout(scrollSaveTimer);
+    backNav.destroy();
     exit.destroy();
     sessionProgress.destroy();
     continueButton.destroy();

@@ -37,6 +37,11 @@ import { createPrimaryButton } from '../../components/primary-button/primary-but
 export function createHomeScreen({ bookTitle, lessonTitle, onContinue }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'home-screen');
+  // Objetivo E (Sprint 7, R2): estado inicial de la transición de
+  // llegada — se retira en el primer frame para que el navegador
+  // capture el estado "entering" antes de animar hacia el reposo.
+  element.setAttribute('data-motion', 'entering');
+  requestAnimationFrame(() => element.removeAttribute('data-motion'));
 
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'book-title');
@@ -45,7 +50,11 @@ export function createHomeScreen({ bookTitle, lessonTitle, onContinue }) {
 
   const context = document.createElement('p');
   context.setAttribute('data-part', 'context');
-  context.className = 'al-type-ui-caption';
+  // Objetivo E (Sprint 7, §11.2.2): antes al-type-ui-caption — el
+  // mismo peso que un footnote o un enlace "‹ back". Esta línea
+  // comunica el valor central de "memoria" del producto (PRD §2.3,
+  // "restaura el contexto exacto"), no una nota al margen.
+  context.className = 'al-type-ui-body';
   context.textContent = `Continúas en: ${lessonTitle}`;
 
   const continueButton = createPrimaryButton({

@@ -22,6 +22,27 @@
   justify-content: space-between;
   gap: var(--al-space-4);
   margin-bottom: var(--al-space-8);
+  /* Corrección de regresión (validación manual, Sprint 7): sin esto,
+     desplazarse dentro de una sección larga —típicamente para
+     responder un ejercicio más abajo en la página— sacaba a
+     session-exit fuera de la vista, dejando al estudiante sin forma
+     de salir sin volver a subir. Wireframe Review §2.6 exige "quiet
+     exit always reachable" — "siempre" no se cumplía en la práctica.
+     position: sticky, no fixed: el chrome sigue perteneciendo al
+     flujo normal de la screen (Design System §21.3: "el chrome nunca
+     se mueve — solo la página" sigue intacto, esto solo evita que
+     desaparezca de la vista al hacer scroll). */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--al-surface-app);
+  padding-top: var(--al-space-2);
+}
+
+[data-component="learning-session-screen"] [data-part="chrome-actions"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-4);
 }
 
 [data-component="learning-session-screen"] [data-part="session-progress"] {

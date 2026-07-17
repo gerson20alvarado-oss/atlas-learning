@@ -14,11 +14,16 @@
   margin: 0 auto;
 }
 
+/* Tipografía resuelta por la clase compartida .al-type-title
+   (Design System §24.1, base.css) — aquí solo vive el layout que le
+   corresponde a esta pantalla (Objetivo C, Sprint 7).
+   Margen (Objetivo E, Sprint 7): con back-nav ya presente en esta
+   pantalla, el criterio de Objetivo D se revierte a sí mismo —
+   Library pasa a compartir el patrón de Book/Unit (la separación
+   respecto al borde superior la da back-nav, no un margen propio del
+   título), en vez del margen de "llegada" que solo corresponde a
+   pantallas raíz sin back-nav (Home). */
 [data-component="library-screen"] [data-part="title"] {
-  font-family: var(--al-font-ui);
-  font-size: var(--al-size-22);
-  font-weight: var(--al-weight-semibold);
-  color: var(--al-text-ui);
   margin: 0 0 var(--al-space-8);
 }
 

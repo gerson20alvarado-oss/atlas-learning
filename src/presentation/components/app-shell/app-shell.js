@@ -8,13 +8,30 @@
  * todo ya resuelto desde afuera (Sprint 1 Plan §6, regla de
  * vecinos).
  *
+ * Objetivo E (Sprint 7, §11.4.1): el header completo (wordmark-firma
+ * + nav-secondary) solo tiene sentido una vez hay sesión — Entry y
+ * Login son, por diseño (Wireframe Review §4), las pantallas más
+ * restringidas del sistema: una única acción, "sign in", nada más
+ * que ofrecer. `update({ authenticated })` resuelve esto sin cambiar
+ * el contrato del componente.
+ *
+ * Corrección de regresión (validación manual, Sprint 7): el
+ * ocultamiento vive ÚNICAMENTE en el atributo `data-authenticated` +
+ * la regla CSS correspondiente en app-shell.css. Antes también se
+ * asignaba `header.hidden`, pero esa propiedad no tenía ningún efecto
+ * visual real — una regla de autor ya existente (`display: flex` en
+ * `[data-region="shell-header"]`) siempre gana sobre el
+ * `[hidden]{display:none}` del user-agent stylesheet. Mantener ambos
+ * mecanismos a la vez era lo que ocultaba el bug: el código "parecía"
+ * correcto sin serlo. Un único mecanismo, explícito en CSS.
+ *
  * Contrato de componente (Sprint 1 Plan §9.2):
  * { element, update(nextProps), destroy() }.
  */
 
 export function createAppShell({ secondaryNavElement, contentRegionElement }) {
   const wordmark = document.createElement('div');
-  wordmark.textContent = 'atlas learning';
+  wordmark.textContent = 'Atlas Learning';
   wordmark.setAttribute('data-role', 'wordmark-signature');
 
   const header = document.createElement('header');
@@ -28,13 +45,16 @@ export function createAppShell({ secondaryNavElement, contentRegionElement }) {
 
   const element = document.createElement('div');
   element.setAttribute('data-component', 'app-shell');
+  // Estado inicial conservador hasta el primer update() real — mismo
+  // criterio que ya oculta el header cuando authenticated es false.
+  element.setAttribute('data-authenticated', 'false');
   element.appendChild(header);
   element.appendChild(main);
 
-  // Sprint 1 no tiene props dinámicas propias del shell (p. ej. el
-  // título del libro actual llega en Sprint 2+). update() ya existe
-  // como parte del contrato del componente, aunque hoy sea un no-op.
-  function update() {}
+  function update(nextProps) {
+    if (!nextProps || typeof nextProps.authenticated !== 'boolean') return;
+    element.setAttribute('data-authenticated', String(nextProps.authenticated));
+  }
 
   function destroy() {
     element.remove();

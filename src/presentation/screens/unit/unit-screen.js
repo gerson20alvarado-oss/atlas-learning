@@ -22,6 +22,7 @@ export function createUnitScreen({ unit, onBack, onSelectLesson }) {
 
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
+  heading.className = 'al-type-title';
   heading.textContent = unit.title;
 
   const unitProgressBar = createProgressBar({

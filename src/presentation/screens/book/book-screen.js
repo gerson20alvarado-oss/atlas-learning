@@ -24,6 +24,7 @@ export function createBookScreen({ book, onBack, onSelectUnit }) {
 
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
+  heading.className = 'al-type-title';
   heading.textContent = book.title;
 
   const bookProgressBar = createProgressBar({

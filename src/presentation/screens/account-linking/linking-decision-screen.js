@@ -15,6 +15,7 @@
  */
 
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
+import { createStateView } from '../../components/state-views/state-views.js';
 
 export function createLinkingDecisionScreen({ onMerge, onDiscard }) {
   const element = document.createElement('div');
@@ -28,7 +29,7 @@ export function createLinkingDecisionScreen({ onMerge, onDiscard }) {
 
   const primaryAction = createPrimaryButton({
     label: 'Conservar y combinar',
-    onClick: () => onMerge?.(),
+    onClick: () => handleDecision(onMerge),
   });
   primaryAction.element.setAttribute('data-part', 'merge');
 
@@ -37,11 +38,39 @@ export function createLinkingDecisionScreen({ onMerge, onDiscard }) {
   secondaryAction.setAttribute('data-part', 'discard');
   secondaryAction.className = 'al-type-ui-caption';
   secondaryAction.textContent = 'Descartar progreso de este dispositivo';
-  secondaryAction.addEventListener('click', () => onDiscard?.());
+  secondaryAction.addEventListener('click', () => handleDecision(onDiscard));
+
+  // Objetivo B (Sprint 7, §22.5): mismo tratamiento que Login —
+  // silencioso los primeros 400ms, whisper bar después. Ambas
+  // acciones ya son asíncronas contra Supabase (screen-router.js,
+  // accountLinkingFlow.resolvePendingDecision) y hasta ahora no
+  // comunicaban ninguna espera.
+  const loadingView = createStateView({ kind: 'loading' });
+  loadingView.element.setAttribute('data-part', 'loading');
+  loadingView.element.hidden = true;
 
   element.appendChild(message);
   element.appendChild(primaryAction.element);
   element.appendChild(secondaryAction);
+  element.appendChild(loadingView.element);
+
+  async function handleDecision(handler) {
+    primaryAction.update({ disabled: true });
+    secondaryAction.disabled = true;
+
+    const revealLoading = setTimeout(() => {
+      loadingView.element.hidden = false;
+    }, 400);
+
+    try {
+      await handler?.();
+    } finally {
+      clearTimeout(revealLoading);
+      loadingView.element.hidden = true;
+      primaryAction.update({ disabled: false });
+      secondaryAction.disabled = false;
+    }
+  }
 
   function update() {}
 

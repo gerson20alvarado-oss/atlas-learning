@@ -106,16 +106,21 @@ function resolveLessonExercises(lesson, attemptRepository, userId) {
   };
 }
 
-function buildLibraryScreen({ router, attemptRepository }) {
+function buildLibraryScreen({ router, attemptRepository, runtimeConfig }) {
   const library = getLibrary();
   const books = library.books.map((book) => ({
     id: book.id,
     title: book.title,
     progress: computeBookProgress(book, attemptRepository),
+    // R1 (Sprint 7): portada real cuando el libro la declara (ver
+    // domain/content/library-catalog.js); si no existe todavía para
+    // un libro dado, book-card conserva su estado neutro sin cambios.
+    coverUrl: book.coverAssetPath ? runtimeConfig.resolveAssetPath(book.coverAssetPath) : null,
   }));
 
   return createLibraryScreen({
     books,
+    onBack: () => router.navigateTo('/'),
     onSelectBook: (bookId) => router.navigateTo(`/book/${bookId}`),
   });
 }
@@ -241,6 +246,7 @@ function buildLearningSessionScreen({
         userId,
       }),
     onScrollChange: (scrollPosition) => sessionRepository.saveSession({ scrollPosition }),
+    onBack: () => router.navigateTo(`/book/${bookId}/unit/${unitId}/lesson/${lessonId}`),
     onExit: ({ reason }) => {
       if (reason === 'finished') {
         sessionRepository.clearSession();

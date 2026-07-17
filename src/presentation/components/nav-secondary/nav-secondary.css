@@ -19,6 +19,7 @@
   min-height: var(--al-hit-target-min);
   display: inline-flex;
   align-items: center;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
 }
 
 [data-component="nav-secondary"] [data-nav-item]:hover {

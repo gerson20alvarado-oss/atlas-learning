@@ -16,6 +16,7 @@
  * content-repository, router ni event bus (regla de vecinos).
  */
 
+import { createBackNav } from '../../components/back-nav/back-nav.js';
 import { createBookCard } from '../../components/book-card/book-card.js';
 import { createGhostSlot } from '../../components/ghost-slot/ghost-slot.js';
 
@@ -35,18 +36,22 @@ function resolveColumnsForCurrentViewport() {
   return 2;
 }
 
-export function createLibraryScreen({ books, onSelectBook }) {
+export function createLibraryScreen({ books, onBack, onSelectBook }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'library-screen');
 
+  const backNav = createBackNav({ parentLabel: 'home', onSelect: onBack });
+
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
+  heading.className = 'al-type-title';
   heading.textContent = 'Library';
 
   const shelf = document.createElement('div');
   shelf.setAttribute('data-part', 'shelf');
   shelf.setAttribute('role', 'list');
 
+  element.appendChild(backNav.element);
   element.appendChild(heading);
   element.appendChild(shelf);
 
@@ -63,6 +68,7 @@ export function createLibraryScreen({ books, onSelectBook }) {
       const card = createBookCard({
         title: book.title,
         progress: book.progress,
+        coverUrl: book.coverUrl ?? null,
         onSelect: () => onSelectBook?.(book.id),
       });
       card.element.setAttribute('role', 'listitem');
@@ -98,6 +104,7 @@ export function createLibraryScreen({ books, onSelectBook }) {
   function destroy() {
     mediaQueryLists.forEach((mql) => mql.removeEventListener('change', handleViewportChange));
     childComponents.forEach((child) => child.destroy());
+    backNav.destroy();
     element.remove();
   }
 

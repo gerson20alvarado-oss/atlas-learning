@@ -18,17 +18,36 @@ const DEFAULT_MESSAGES = Object.freeze({
   empty: 'Todavía no hay nada aquí.',
 });
 
+function applyKind(element, kind, message) {
+  element.setAttribute('data-state-kind', kind);
+  const text = message ?? DEFAULT_MESSAGES[kind] ?? '';
+  if (kind === 'loading') {
+    // §22.5: la barra de 2px (CSS) es la única señal visual — nada
+    // de texto en pantalla. El mensaje sigue anunciándose a lectores
+    // de pantalla (§23.3, "la restricción visual no es ocultar
+    // información") mediante un nodo visualmente oculto.
+    element.textContent = '';
+    element.setAttribute('role', 'status');
+    element.setAttribute('aria-live', 'polite');
+    const srOnly = document.createElement('span');
+    srOnly.setAttribute('data-part', 'sr-only');
+    srOnly.textContent = text;
+    element.appendChild(srOnly);
+  } else {
+    element.removeAttribute('role');
+    element.removeAttribute('aria-live');
+    element.textContent = text;
+  }
+}
+
 export function createStateView({ kind, message } = { kind: 'empty' }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'state-view');
-  element.setAttribute('data-state-kind', kind);
-  element.textContent = message ?? DEFAULT_MESSAGES[kind] ?? '';
+  applyKind(element, kind, message);
 
   function update(nextProps) {
     if (!nextProps) return;
-    const nextKind = nextProps.kind ?? kind;
-    element.setAttribute('data-state-kind', nextKind);
-    element.textContent = nextProps.message ?? DEFAULT_MESSAGES[nextKind] ?? '';
+    applyKind(element, nextProps.kind ?? kind, nextProps.message);
   }
 
   function destroy() {

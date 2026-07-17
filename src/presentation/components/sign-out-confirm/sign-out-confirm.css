@@ -1,0 +1,54 @@
+/**
+ * sign-out-confirm.css
+ *
+ * Usa exclusivamente tokens de componente ya existentes en
+ * tokens.css (--al-surface-scrim, --al-dialog-max-width,
+ * --al-shadow-dialog) que hasta ahora ningún componente instanciaba
+ * — no se introduce ningún token nuevo para esto (Sprint 7,
+ * Objetivo E, alcance acotado a esta única confirmación).
+ */
+
+[data-component="sign-out-confirm"] {
+  position: fixed;
+  inset: 0;
+  background: var(--al-surface-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--al-space-4);
+  z-index: 10;
+}
+
+[data-component="sign-out-confirm"] [data-part="panel"] {
+  width: 100%;
+  max-width: var(--al-dialog-max-width);
+  background: var(--al-surface-app);
+  border-radius: var(--al-radius-lg);
+  box-shadow: var(--al-shadow-dialog);
+  padding: var(--al-space-6);
+  text-align: center;
+}
+
+[data-component="sign-out-confirm"] [data-part="message"] {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-6);
+}
+
+[data-component="sign-out-confirm"] [data-part="cancel"] {
+  max-width: 240px;
+  margin: 0 auto var(--al-space-4);
+}
+
+[data-component="sign-out-confirm"] [data-part="confirm"] {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--al-text-muted);
+  margin: 0 auto;
+  cursor: pointer;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="sign-out-confirm"] [data-part="confirm"]:hover {
+  color: var(--al-text-ui);
+}

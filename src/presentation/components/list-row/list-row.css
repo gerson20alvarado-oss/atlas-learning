@@ -19,6 +19,37 @@
   text-align: left;
 }
 
+/* Objetivo A (Sprint 7): estado de interacción, antes inexistente.
+   Solo aplica a la variante <button> (fila navegable, onSelect
+   presente) — la variante <div> (sin onSelect, ver list-row.js) no
+   es interactiva y no debe sugerir que lo es. Misma física que el
+   resto del sistema (Design System §22.2): el título se profundiza
+   a text-content, nunca se mueve la geometría de la fila. */
+button[data-component="list-row"] {
+  cursor: pointer;
+  transition: border-color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+button[data-component="list-row"] [data-part="title"] {
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+button[data-component="list-row"] [data-part="chevron"] {
+  transition: transform var(--al-duration-fast) var(--al-ease-standard);
+}
+
+button[data-component="list-row"]:hover [data-part="title"] {
+  color: var(--al-text-content);
+}
+
+button[data-component="list-row"]:hover {
+  border-bottom-color: var(--al-border-focus);
+}
+
+button[data-component="list-row"]:active [data-part="chevron"] {
+  transform: translateX(2px);
+}
+
 [data-component="list-row"] [data-part="main"] {
   display: flex;
   flex-direction: column;

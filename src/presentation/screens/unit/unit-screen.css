@@ -11,11 +11,10 @@
   margin: 0 auto;
 }
 
+/* Tipografía resuelta por la clase compartida .al-type-title
+   (Design System §24.1, base.css) — aquí solo vive el layout que le
+   corresponde a esta pantalla (Objetivo C, Sprint 7). */
 [data-component="unit-screen"] [data-part="title"] {
-  font-family: var(--al-font-ui);
-  font-size: var(--al-size-22);
-  font-weight: var(--al-weight-semibold);
-  color: var(--al-text-ui);
   margin: 0 0 var(--al-space-4);
   text-align: left;
 }

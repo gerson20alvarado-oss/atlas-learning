@@ -22,7 +22,7 @@ export function createEntryScreen({ onSignIn }) {
   const wordmark = document.createElement('p');
   wordmark.setAttribute('data-part', 'wordmark');
   wordmark.className = 'al-type-display';
-  wordmark.textContent = 'atlas learning';
+  wordmark.textContent = 'Atlas Learning';
 
   const promise = document.createElement('p');
   promise.setAttribute('data-part', 'promise');

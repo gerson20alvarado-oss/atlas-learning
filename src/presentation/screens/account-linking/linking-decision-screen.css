@@ -29,4 +29,14 @@
   color: var(--al-text-muted);
   margin: 0 auto;
   cursor: pointer;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="linking-decision-screen"] [data-part="discard"]:disabled {
+  color: var(--al-text-disabled);
+  cursor: default;
+}
+
+[data-component="linking-decision-screen"] [data-part="loading"] {
+  margin-top: var(--al-space-4);
 }

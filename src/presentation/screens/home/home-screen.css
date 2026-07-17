@@ -26,3 +26,30 @@
 [data-component="home-screen"] [data-part="continue"] {
   max-width: 320px;
 }
+
+/* Objetivo E (Sprint 7, R2): transición de llegada — mismo
+   vocabulario de Learning Session (§21.3: duration-gentle,
+   easing-standard), adaptado a un asentamiento vertical de 12px en
+   vez del desplazamiento lateral de "pasar página", porque aquí no
+   hay una página anterior de la que salir, solo una llegada. La
+   acción previa del estudiante (sign in / decisión de vinculación)
+   es lo que autoriza este movimiento (§21.4: nada se anima sin una
+   acción previa). */
+[data-component="home-screen"] {
+  transition: opacity var(--al-duration-gentle) var(--al-ease-standard),
+    transform var(--al-duration-gentle) var(--al-ease-standard);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-component="home-screen"][data-motion="entering"] {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="home-screen"] {
+    transition: opacity var(--al-duration-gentle) var(--al-ease-standard);
+    transform: none !important;
+  }
+}

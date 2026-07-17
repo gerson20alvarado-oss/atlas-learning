@@ -9,6 +9,15 @@
 [data-component="app-shell"] {
   min-height: 100vh;
   background: var(--al-surface-app);
+  transition: background var(--al-duration-gentle) var(--al-ease-standard);
+}
+
+/* Objetivo E (Sprint 7): excepción formal y acotada — ver
+   tokens.css, --al-surface-entry. Solo se activa sin sesión, que
+   hoy coincide exactamente con "mostrando Entry o Login" (nunca
+   Home ni ninguna otra pantalla, ver app/screen-router.js). */
+[data-component="app-shell"][data-authenticated="false"] {
+  background: var(--al-surface-entry);
 }
 
 [data-region="shell-header"] {
@@ -17,6 +26,18 @@
   justify-content: space-between;
   gap: var(--al-space-4);
   padding: var(--al-space-4) var(--al-space-6);
+}
+
+/* Corrección de regresión (Sprint 7, validación manual): la regla de
+   arriba (display: flex, especificidad de autor) siempre gana sobre
+   el [hidden]{display:none} del user-agent stylesheet, sin importar
+   que header.hidden ya esté en true — por eso el header seguía
+   visible en Entry/Login pese a que el JS "sí" lo marcaba oculto.
+   Esta regla, con mayor especificidad (dos selectores de atributo) y
+   declarada después, es la que realmente oculta el header cuando no
+   hay sesión. */
+[data-component="app-shell"][data-authenticated="false"] [data-region="shell-header"] {
+  display: none;
 }
 
 [data-region="shell-main"] {

@@ -27,6 +27,7 @@
 @import url('../presentation/components/back-nav/back-nav.css');
 @import url('../presentation/components/primary-button/primary-button.css');
 @import url('../presentation/components/session-exit/session-exit.css');
+@import url('../presentation/components/sign-out-confirm/sign-out-confirm.css');
 @import url('../presentation/components/content-blocks/content-blocks.css');
 
 @import url('../presentation/screens/entry/entry-screen.css');

@@ -91,6 +91,15 @@
   --al-surface-recessed: var(--al-paper-1);
   --al-surface-scrim: rgb(33 31 28 / 0.4);
 
+  /* Excepción formal de Producto (Sprint 7, Objetivo E — ver
+     Design System, adición registrada junto al Principio 9 del
+     Wireframe Review): degradado sutil, exclusivo de Entry/Login,
+     que diferencia la bienvenida del resto del producto sin
+     introducir un lenguaje cromático nuevo para Atlas. NUNCA se
+     consume fuera de esas dos pantallas — Home permanece en
+     --al-surface-app sin excepción (decisión de Producto explícita). */
+  --al-surface-entry: linear-gradient(165deg, #eaf1f8 0%, #f6fafd 55%, var(--al-paper-0) 100%);
+
   /* ---- Semánticos: texto ---- */
   --al-text-content: var(--al-ink-900);
   --al-text-ui: var(--al-ink-700);

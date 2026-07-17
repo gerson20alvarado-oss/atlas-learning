@@ -16,6 +16,7 @@
  */
 
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
+import { createStateView } from '../../components/state-views/state-views.js';
 
 export function createLoginScreen({ onBack, onSubmit }) {
   const element = document.createElement('div');
@@ -57,22 +58,42 @@ export function createLoginScreen({ onBack, onSubmit }) {
   });
   signInButton.element.setAttribute('data-part', 'sign-in');
 
+  // Objetivo B (Sprint 7, §22.5): silencioso los primeros 400ms — la
+  // mayoría de los intentos de login resuelven dentro de esa
+  // ventana. Solo si la llamada real a Auth tarda más, aparece el
+  // whisper bar. Oculto por defecto: no hay región de carga visible
+  // en reposo.
+  const loadingView = createStateView({ kind: 'loading' });
+  loadingView.element.setAttribute('data-part', 'loading');
+  loadingView.element.hidden = true;
+
   element.appendChild(backLink);
   element.appendChild(emailLabel);
   element.appendChild(emailInput);
   element.appendChild(passwordLabel);
   element.appendChild(passwordInput);
   element.appendChild(errorMessage);
+  element.appendChild(loadingView.element);
   element.appendChild(signInButton.element);
 
   async function handleSubmit() {
     errorMessage.hidden = true;
     signInButton.update({ disabled: true });
-    const result = await onSubmit?.(emailInput.value, passwordInput.value);
-    signInButton.update({ disabled: false });
-    if (result?.error) {
-      errorMessage.textContent = result.error;
-      errorMessage.hidden = false;
+
+    const revealLoading = setTimeout(() => {
+      loadingView.element.hidden = false;
+    }, 400);
+
+    try {
+      const result = await onSubmit?.(emailInput.value, passwordInput.value);
+      if (result?.error) {
+        errorMessage.textContent = result.error;
+        errorMessage.hidden = false;
+      }
+    } finally {
+      clearTimeout(revealLoading);
+      loadingView.element.hidden = true;
+      signInButton.update({ disabled: false });
     }
   }
 
