@@ -1,72 +1,60 @@
 /**
  * domain/contracts/session-shape.js
  *
- * Forma de la entidad Session (Software Architecture §4.2, §14.2):
- * "the live, resumable state of one continuous act of studying" —
- * posición Book/Unit/Lesson, sección activa, scroll, y el punto de
- * extensión reservado para audio (cuando exista un asset real de
- * Media tipo audio).
+ * Evolución a ReaderPosition (Technical Specification — Reader como
+ * Lector de PDF v2.1, §5.1): esta entidad deja de representar una
+ * posición dentro del Content Model (Book/Unit/Lesson/Section) y pasa
+ * a representar una posición dentro del PDF — la última página
+ * visitada de un libro, nada más. El nombre del archivo y de las
+ * funciones se conserva (`session-shape.js`, `createEmptySession`,
+ * `isValidSessionShape`) a propósito, para no obligar a tocar el
+ * resto del proyecto en esta etapa — es el mismo contrato, con una
+ * forma nueva.
  *
- * CORRECCIÓN (Sprint 5 Plan, decisión #5): Sprint 4 reservó aquí un
- * campo `currentExercise` asumiendo un único ejercicio activo a la
- * vez. Al diseñar el Exercise Engine se confirmó que el Session
- * Container ya renderiza TODOS los bloques de una Section juntos
- * (§18.1) — una Section puede tener varios `practice` a la vez, cada
- * uno en su propio estado. Restaurar eso con un puntero singular no
- * alcanza, y mantenerlo habría sido persistir información duplicada
- * sin necesidad. Se eliminó: el estado de cada ejercicio (respondido
- * o no, y con qué resultado) se deriva consultando los Attempts ya
- * registrados para esa Lesson (domain/learning-data/attempt-
- * repository.js) — la misma filosofía "derivado, nunca duplicado"
- * que ya rige Progress (§15.2). `currentAudio` no se ve afectado por
- * este cambio — sigue reservado para cuando exista un asset real.
+ * `unitId`, `lessonId`, `mode`, `sectionIndex`, `scrollPosition` y
+ * `currentAudio` se retiran del contrato. Eso no elimina Unit/Lesson/
+ * Section del Content Model — siguen existiendo con su rol
+ * pedagógico intacto (fuente del Exercise Engine). Simplemente dejan
+ * de ser necesarios para expresar "dónde estaba leyendo el
+ * estudiante".
  *
- * Sprint 6 (Authentication) añade `userId` — metadato de propiedad,
- * no de contenido de la Session en sí (Sprint 6 Plan, diseño del
- * flujo de vinculación de cuenta): distingue una Session huérfana
- * (`null`, creada antes de cualquier login — el caso real que
- * generaron los Sprints 1-5), propia (pertenece a la cuenta que
- * inició sesión) o ajena (pertenece a otra cuenta, en un dispositivo
- * compartido — nunca se fusiona, se descarta). Domain nunca lee este
- * campo con lógica propia; solo `app/account-linking/` lo interpreta.
+ * Sin migración (decisión de Producto, ya aprobada): una Session
+ * persistida con la forma anterior no pasa `isValidSessionShape` —
+ * se trata como inexistente, exactamente igual que un estudiante
+ * nuevo. No hay código de traducción de una forma a la otra; el
+ * propio mecanismo de validación estricta ya existente (rechaza
+ * campos de más y de menos) es, por sí solo, todo el mecanismo de
+ * reinicialización que hace falta.
+ *
+ * `userId` (Sprint 6): metadato de propiedad, sin cambios de
+ * semántica — Session huérfana (`null`), propia o ajena. `updatedAt`
+ * se conserva: sigue siendo lo que account-linking-flow.js usa para
+ * decidir cuál de dos ReaderPosition (local vs. remota) es más
+ * reciente al fusionar cuentas.
  */
 
-const SESSION_KEYS = Object.freeze([
-  'bookId',
-  'unitId',
-  'lessonId',
-  'mode',
-  'sectionIndex',
-  'scrollPosition',
-  'currentAudio',
-  'userId',
-  'updatedAt',
-]);
+const SESSION_KEYS = Object.freeze(['bookId', 'pageNumber', 'userId', 'updatedAt']);
 
 /**
- * Session vacía: la instancia "sin sesión todavía" — un estudiante
- * que nunca empezó a estudiar, o que acaba de terminar una lección
- * (ver session-repository.js, clearSession). No es un caso especial:
- * es la misma forma, con todos los campos en `null`.
+ * ReaderPosition vacía: "sin nada que continuar todavía" — un
+ * estudiante nuevo, o uno que acaba de terminar de leer (ver
+ * session-repository.js, clearSession). No es un caso especial: es
+ * la misma forma, con todos los campos en `null`.
  */
 export function createEmptySession() {
   return Object.freeze({
     bookId: null,
-    unitId: null,
-    lessonId: null,
-    mode: null,
-    sectionIndex: null,
-    scrollPosition: null,
-    currentAudio: null, // { blockId, position } — Objetivo A, Sprint 8: posición del último bloque de audio reproducido, restaurada exacta (PRD §18) al reabrir la sección que lo contiene
+    pageNumber: null,
     userId: null, // huérfana hasta que una vinculación de cuenta la reclame
     updatedAt: null,
   });
 }
 
 /**
- * Valida la forma exacta de una Session — ni campos de menos (una
- * Session parcial no es restaurable con exactitud, C7) ni campos de
- * más (un campo no declarado aquí no pertenece a este contrato).
+ * Valida la forma exacta de una ReaderPosition — ni campos de menos
+ * ni campos de más. Una Session con la forma anterior (unitId,
+ * lessonId, sectionIndex...) falla aquí, a propósito — es el
+ * mecanismo completo de "sin migración" ya aprobado.
  */
 export function isValidSessionShape(candidate) {
   if (!candidate || typeof candidate !== 'object') return false;

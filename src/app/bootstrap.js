@@ -42,6 +42,12 @@ import { createSupabaseAccountSnapshotAdapter } from '../remote-account-snapshot
 import { createLibraryAccessService } from '../library-access/library-access-contract.js';
 import { createSupabaseLibraryAccessAdapter } from '../library-access/adapters/supabase-library-access-adapter.js';
 import { createLibraryAccessRepository } from '../domain/library-access/library-access-repository.js';
+import { createPageSourceService } from '../page-source/page-source-contract.js';
+import { createSupabasePageSourceAdapter } from '../page-source/adapters/supabase-page-source-adapter.js';
+import { createPageSourceRepository } from '../domain/page-source/page-source-repository.js';
+import { createBookmarkService } from '../bookmark/bookmark-contract.js';
+import { createSupabaseBookmarkAdapter } from '../bookmark/adapters/supabase-bookmark-adapter.js';
+import { createBookmarkRepository } from '../domain/bookmark/bookmark-repository.js';
 import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
@@ -98,6 +104,29 @@ function bootstrap() {
   const libraryAccessService = createLibraryAccessService(supabaseLibraryAccessAdapter, errorBoundary);
   const libraryAccessRepository = createLibraryAccessRepository(libraryAccessService);
 
+  // Nuevo Reader (Sprint Proposal aprobado, Etapa 2): PageSource,
+  // bucket público — Technical Specification v2.0, "el Reader
+  // necesita una fuente capaz de proporcionar la representación
+  // visual de una página." Hoy, WEBP en Supabase Storage; el
+  // contrato permanece estable si esa implementación cambia en el
+  // futuro (§ aclaración de esta sesión).
+  const supabasePageSourceAdapter = createSupabasePageSourceAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+  });
+  const pageSourceService = createPageSourceService(supabasePageSourceAdapter, errorBoundary);
+  const pageSourceRepository = createPageSourceRepository(pageSourceService);
+
+  // Marcadores (Sprint Proposal — Nuevo Reader, Etapa 5): primera
+  // entidad de esta sesión que el propio estudiante escribe en
+  // tiempo real, no solo lee — mismo patrón contrato + adapter, tabla
+  // granular en vez de blob (ver supabase-bookmark-adapter.js).
+  const supabaseBookmarkAdapter = createSupabaseBookmarkAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const bookmarkService = createBookmarkService(supabaseBookmarkAdapter, errorBoundary);
+  const bookmarkRepository = createBookmarkRepository(bookmarkService);
+
   const accountLinkingFlow = createAccountLinkingFlow({
     sessionRepository,
     attemptRepository,
@@ -147,9 +176,12 @@ function bootstrap() {
   // g. Aplicación arrancada e interactiva.
   eventBus.publish(EVENT_NAMES.APP_READY, { basePath: runtimeConfig.basePath });
 
-  // Expuesto solo para verificación manual en Sprint 1 (§7 del plan:
-  // "validación manual del flujo de arranque"), nunca para que otro
-  // módulo del proyecto dependa de un global.
+  // Expuesto solo para verificación manual (Sprint 1 §7: "validación
+  // manual del flujo de arranque"), nunca para que otro módulo del
+  // proyecto dependa de un global. pageSourceRepository se añade
+  // aquí para la Etapa 2 del Sprint del Nuevo Reader — verificación
+  // manual de que resuelve una imagen real desde Supabase Storage,
+  // antes de que exista ninguna pantalla que lo consuma (Etapa 7).
   window.__atlasLearning = Object.freeze({
     router,
     eventBus,
@@ -157,6 +189,8 @@ function bootstrap() {
     sessionRepository,
     attemptRepository,
     authContract,
+    pageSourceRepository,
+    bookmarkRepository,
   });
 }
 

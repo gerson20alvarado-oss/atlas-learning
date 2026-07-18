@@ -1,10 +1,22 @@
 /**
  * domain/session/session-repository.js
  *
- * Único punto de entrada del dominio para leer y escribir la Session
- * activa (Software Architecture §4.2, §10, §14) — análogo a
- * content-repository.js para contenido publicado. Nadie fuera de este
- * módulo debería llamar a storage-contract.js para datos de Session.
+ * Único punto de entrada del dominio para leer y escribir la posición
+ * de lectura activa (Software Architecture §4.2, §10, §14) — análogo
+ * a content-repository.js para contenido publicado. Nadie fuera de
+ * este módulo debería llamar a storage-contract.js para este dato.
+ *
+ * Evolución a ReaderPosition (Etapa 4, Technical Specification —
+ * Reader como Lector de PDF v2.1, §5.1): este archivo no tuvo que
+ * cambiar ninguna línea de lógica — ya era completamente agnóstico a
+ * los nombres de campo, delegando la forma exacta por completo a
+ * session-shape.js (`createEmptySession`/`isValidSessionShape`). El
+ * mismo mecanismo de "PATCH + validación estricta" que ya existía es,
+ * sin ningún cambio, el mecanismo completo de "sin migración,
+ * reinicialización por invalidez de forma" ya aprobado: una Session
+ * persistida con la forma anterior simplemente deja de pasar
+ * `isValidSessionShape` y `getSession()` degrada a `null`, igual que
+ * ya hacía con cualquier otra forma inválida.
  *
  * Regla de vecinos (Software Architecture §9.2–9.3): esta capa conoce
  * la capa Persistence que recibe inyectada (el "storage contract" de
@@ -15,13 +27,6 @@
  * el mismo criterio que content-repository.js: devuelve valores
  * honestos (null, o el resultado de la escritura) y deja que quien
  * orquesta (app/) decida cómo reportar cualquier caso anómalo.
- *
- * Sprint 4 (Progress, Roadmap Phase 4): primer módulo que persiste un
- * dato de dominio real, tal como storage-contract.js anticipaba desde
- * Sprint 1. Progress numérico real (derivado de Attempts) sigue sin
- * existir — eso es Sprint 5, Exercise Engine (Software Architecture
- * §15.2, §6.2) — este repositorio solo resuelve la posición de Session
- * (Restore Session, PRD §18), nunca completitud de Lesson/Unit/Book.
  */
 
 import { createEmptySession, isValidSessionShape } from '../contracts/session-shape.js';
@@ -30,12 +35,13 @@ const SESSION_STORAGE_KEY = 'session';
 
 export function createSessionRepository(storage) {
   /**
-   * Devuelve la Session persistida, o `null` si nunca hubo una
-   * (estudiante nuevo) o si la última Session terminó (ver
-   * clearSession, invocado al llegar a "Finish" — Sprint 4 Plan).
-   * Nunca devuelve una Session con forma inválida: en ese caso
-   * degrada a `null`, igual que content-repository.js degrada un
-   * Book con forma inválida a `null` en vez de propagarlo.
+   * Devuelve la ReaderPosition persistida, o `null` si nunca hubo una
+   * (estudiante nuevo), si la sesión de lectura anterior terminó (ver
+   * clearSession), o si lo persistido tiene una forma que ya no es
+   * válida (p. ej. una Session con la forma anterior, previa a esta
+   * etapa) — en cualquiera de esos tres casos, degrada a `null`, igual
+   * que content-repository.js degrada un Book con forma inválida a
+   * `null` en vez de propagarlo.
    */
   function getSession() {
     const raw = storage.read(SESSION_STORAGE_KEY);
@@ -44,12 +50,12 @@ export function createSessionRepository(storage) {
   }
 
   /**
-   * Actualiza la Session con los campos dados, conservando el resto
-   * (mismo patrón que un PATCH, nunca un PUT completo) — así que
-   * quien llama nunca necesita conocer campos que no le conciernen
-   * (p. ej. actualizar `scrollPosition` no obliga a repetir
-   * `bookId`/`unitId`/`lessonId`). `updatedAt` se recalcula siempre,
-   * nunca se acepta del llamador.
+   * Actualiza la ReaderPosition con los campos dados, conservando el
+   * resto (mismo patrón que un PATCH, nunca un PUT completo) — así
+   * que quien llama nunca necesita repetir campos que no le
+   * conciernen (p. ej. actualizar `pageNumber` no obliga a repetir
+   * `bookId`). `updatedAt` se recalcula siempre, nunca se acepta del
+   * llamador.
    */
   function saveSession(partialUpdate) {
     const current = getSession() ?? createEmptySession();
@@ -75,13 +81,10 @@ export function createSessionRepository(storage) {
   }
 
   /**
-   * Limpia la Session persistida por completo. Se invoca cuando un
-   * estudiante llega al final de una Lesson ("Finish") — sin
-   * Attempts/Progress real todavía (Sprint 5), no hay una "siguiente
-   * lección" que recomendar con certeza, así que el estado honesto es
-   * "no hay nada que continuar" (mismo mensaje vacío que ya existía en
-   * Home antes de Sprint 4), en vez de dejar apuntando a una Session
-   * ya completamente leída.
+   * Limpia la ReaderPosition persistida por completo. El estado
+   * honesto de "no hay nada que continuar" (mismo mensaje vacío que
+   * ya existía en Home) es preferible a dejar apuntando a una
+   * posición que ya no aplica.
    */
   function clearSession() {
     return storage.remove(SESSION_STORAGE_KEY);
