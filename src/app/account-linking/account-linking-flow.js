@@ -35,9 +35,27 @@
  * Si CHECK_REMOTE no puede verificarse (fallo de red), no se
  * bloquea al estudiante: se procede con los datos locales tal cual
  * están y se reintenta en un login posterior (C6).
+ *
+ * Control de Acceso por Libro (diseño cerrado antes de este sprint,
+ * Caso 1): ninguna Session que este flujo fusione o restaure puede
+ * quedar apuntando a un libro no autorizado para la cuenta que
+ * inicia sesión — se resuelve una sola vez aquí, antes de cualquier
+ * rama, con el mismo criterio silencioso que ya rige "datos ajenos"
+ * en este mismo archivo (se descarta, nunca se bloquea el login ni
+ * se avisa).
  */
 
-export function createAccountLinkingFlow({ sessionRepository, attemptRepository, accountSnapshotService }) {
+function sessionBookIsAuthorized(session, authorizedBookIds) {
+  if (!session?.bookId) return true; // sin libro que verificar
+  return authorizedBookIds.includes(session.bookId);
+}
+
+export function createAccountLinkingFlow({
+  sessionRepository,
+  attemptRepository,
+  accountSnapshotService,
+  libraryAccessRepository,
+}) {
   let pendingDecision = null; // null | { userId, accessToken, remoteSnapshot }
 
   function buildLocalSnapshotPayload(userId) {
@@ -105,11 +123,23 @@ export function createAccountLinkingFlow({ sessionRepository, attemptRepository,
       return;
     }
 
+    // Control de Acceso por Libro: resuelto una sola vez, reutilizado
+    // en las tres ramas de abajo y guardado junto a pendingDecision
+    // para el Caso 3 (resolvePendingDecision no vuelve a consultarlo).
+    const authorizedBookIds = await libraryAccessRepository.getAuthorizedBookIds({ userId, accessToken });
+
     if (localHasOrphan && !remoteHasData) {
       // Caso 1
       attemptRepository.claimOrphanAttempts(userId);
       const session = sessionRepository.getSession();
-      if (session?.userId === null) sessionRepository.saveSession({ userId });
+      if (session?.userId === null) {
+        if (sessionBookIsAuthorized(session, authorizedBookIds)) {
+          sessionRepository.saveSession({ userId });
+        } else {
+          sessionRepository.clearSession();
+          sessionRepository.saveSession({ userId });
+        }
+      }
       await uploadSnapshot(userId, accessToken);
       return;
     }
@@ -117,14 +147,14 @@ export function createAccountLinkingFlow({ sessionRepository, attemptRepository,
     if (!localHasOrphan && remoteHasData) {
       // Caso 2
       attemptRepository.mergeRemoteAttempts(userId, remoteSnapshot.attempts ?? []);
-      if (remoteSnapshot.session) {
+      if (remoteSnapshot.session && sessionBookIsAuthorized(remoteSnapshot.session, authorizedBookIds)) {
         sessionRepository.saveSession({ ...remoteSnapshot.session, userId });
       }
       return;
     }
 
     // Caso 3 — ambos tienen datos: nunca se decide en silencio.
-    pendingDecision = { userId, accessToken, remoteSnapshot };
+    pendingDecision = { userId, accessToken, remoteSnapshot, authorizedBookIds };
   }
 
   function hasPendingDecision() {
@@ -138,7 +168,7 @@ export function createAccountLinkingFlow({ sessionRepository, attemptRepository,
    */
   async function resolvePendingDecision(choice) {
     if (!pendingDecision) return;
-    const { userId, accessToken, remoteSnapshot } = pendingDecision;
+    const { userId, accessToken, remoteSnapshot, authorizedBookIds } = pendingDecision;
 
     if (choice === 'merge') {
       // Cada Attempt es un hecho histórico aditivo — la unión de
@@ -150,9 +180,19 @@ export function createAccountLinkingFlow({ sessionRepository, attemptRepository,
 
       const localSession = sessionRepository.getSession();
       const remoteSession = remoteSnapshot.session;
-      if (remoteSession && (!localSession?.updatedAt || remoteSession.updatedAt > localSession.updatedAt)) {
+      const preferRemote =
+        remoteSession && (!localSession?.updatedAt || remoteSession.updatedAt > localSession.updatedAt);
+
+      if (preferRemote && sessionBookIsAuthorized(remoteSession, authorizedBookIds)) {
         sessionRepository.saveSession({ ...remoteSession, userId });
-      } else if (localSession) {
+      } else if (!preferRemote && localSession && sessionBookIsAuthorized(localSession, authorizedBookIds)) {
+        sessionRepository.saveSession({ userId });
+      } else {
+        // La sesión que hubiera ganado (remota o local) apunta a un
+        // libro no autorizado para esta cuenta — se descarta, mismo
+        // criterio silencioso del Caso 1, en vez de restaurar una
+        // posición a la que el estudiante ya no tiene acceso.
+        sessionRepository.clearSession();
         sessionRepository.saveSession({ userId });
       }
 
@@ -161,7 +201,7 @@ export function createAccountLinkingFlow({ sessionRepository, attemptRepository,
       attemptRepository.discardOrphanAttempts();
       sessionRepository.clearSession();
       attemptRepository.mergeRemoteAttempts(userId, remoteSnapshot.attempts ?? []);
-      if (remoteSnapshot.session) {
+      if (remoteSnapshot.session && sessionBookIsAuthorized(remoteSnapshot.session, authorizedBookIds)) {
         sessionRepository.saveSession({ ...remoteSnapshot.session, userId });
       }
     }

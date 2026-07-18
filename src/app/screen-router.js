@@ -106,9 +106,19 @@ function resolveLessonExercises(lesson, attemptRepository, userId) {
   };
 }
 
-function buildLibraryScreen({ router, attemptRepository, runtimeConfig }) {
+function buildLibraryScreen({ router, attemptRepository, runtimeConfig, libraryAccessRepository, authorizedBookIds }) {
   const library = getLibrary();
-  const books = library.books.map((book) => ({
+  // Control de Acceso por Libro (Caso 5, biblioteca vacía incluido):
+  // Library nunca pregunta "¿qué libros existen?" — recibe ya
+  // resuelto "¿qué libros puede ver esta cuenta?". Si no hay ninguno
+  // autorizado, `books` queda en un arreglo vacío y library-screen.js
+  // renderiza exactamente el mismo estado vacío que ya usa para
+  // cualquier colección sin elementos (createEmptyLibrary(), Content
+  // Model C8) — sin ningún cambio en ese archivo.
+  const authorizedBooks = library.books.filter((book) =>
+    libraryAccessRepository.isBookAuthorized(authorizedBookIds, book.id),
+  );
+  const books = authorizedBooks.map((book) => ({
     id: book.id,
     title: book.title,
     progress: computeBookProgress(book, attemptRepository),
@@ -235,6 +245,7 @@ function buildLearningSessionScreen({
     lesson: resolvedLesson,
     restoreSectionIndex: matchesThisLesson ? persisted.sectionIndex ?? 0 : 0,
     restoreScrollPosition: matchesThisLesson ? persisted.scrollPosition ?? 0 : 0,
+    restoreAudioPosition: matchesThisLesson ? persisted.currentAudio ?? null : null,
     onSectionChange: (sectionIndex) =>
       sessionRepository.saveSession({
         bookId,
@@ -246,6 +257,7 @@ function buildLearningSessionScreen({
         userId,
       }),
     onScrollChange: (scrollPosition) => sessionRepository.saveSession({ scrollPosition }),
+    onAudioPositionChange: (currentAudio) => sessionRepository.saveSession({ currentAudio }),
     onBack: () => router.navigateTo(`/book/${bookId}/unit/${unitId}/lesson/${lessonId}`),
     onExit: ({ reason }) => {
       if (reason === 'finished') {
@@ -256,10 +268,18 @@ function buildLearningSessionScreen({
   });
 }
 
-function buildHomeScreen({ router, sessionRepository }) {
+function buildHomeScreen({ router, sessionRepository, libraryAccessRepository, authorizedBookIds }) {
   const session = sessionRepository.getSession();
 
-  if (session?.bookId && session.unitId && session.lessonId) {
+  // Control de Acceso por Libro: mismo principio del Caso 4, aplicado
+  // aquí sin pantalla de error — Home nunca muestra un mensaje de
+  // "no disponible", simplemente no promete continuar algo que ya no
+  // es accesible. Cae al mismo estado vacío que "todavía no hay nada
+  // que continuar", sin distinción visible para el estudiante.
+  const bookIsAuthorized =
+    session?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, session.bookId);
+
+  if (bookIsAuthorized && session.unitId && session.lessonId) {
     const book = getBookById(session.bookId);
     const lesson = getLessonById(session.bookId, session.unitId, session.lessonId);
 
@@ -285,6 +305,22 @@ function resolveScreen(navigationState, deps) {
   const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition } = navigationState;
   const userId = deps.authContract.getSession()?.userId ?? null;
   const fullDeps = { ...deps, userId };
+
+  // Control de Acceso por Libro (Caso 4, diseño cerrado antes de este
+  // sprint): un bookId no autorizado para esta cuenta se resuelve
+  // exactamente igual que un bookId inexistente — mismo notFoundView,
+  // mismo mensaje, para que ambos sean indistinguibles para el
+  // estudiante. Un único punto de control aquí, antes de dispatchar a
+  // cualquiera de las cuatro screens que dependen de un libro, en vez
+  // de repetir la misma verificación cuatro veces.
+  if (bookPosition && !deps.libraryAccessRepository.isBookAuthorized(deps.authorizedBookIds, bookPosition)) {
+    return notFoundView({
+      errorBoundary: deps.errorBoundary,
+      reason: 'book-not-authorized',
+      context: { bookId: bookPosition },
+      message: 'Este libro no está disponible. Vuelve a la Library para elegir otro.',
+    });
+  }
 
   if (bookPosition && unitPosition && lessonPosition && mode === 'learn') {
     return buildLearningSessionScreen({
@@ -329,9 +365,18 @@ export function mountScreenRouter({
   runtimeConfig,
   authContract,
   accountLinkingFlow,
+  libraryAccessRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
+  // Control de Acceso por Libro: en memoria únicamente, nunca
+  // persistida (riesgo aceptado en el plan de este sprint: sin caché
+  // local en esta primera versión) — se resuelve fresca contra la
+  // fuente configurada en cada transición real de sesión de
+  // autenticación, mismo punto exacto donde ya se resuelve
+  // accountLinkingFlow.run(). Vacía por defecto: el mismo resultado
+  // seguro que un fallo de verificación (Caso 5).
+  let authorizedBookIds = [];
 
   function render() {
     const authSession = authContract.getSession();
@@ -383,6 +428,8 @@ export function mountScreenRouter({
       attemptRepository,
       runtimeConfig,
       authContract,
+      libraryAccessRepository,
+      authorizedBookIds,
     });
     contentRegion.render(screen);
   }
@@ -396,6 +443,15 @@ export function mountScreenRouter({
   const unsubscribeAuth = authContract.onAuthStateChange(async (authSession) => {
     if (authSession) {
       await accountLinkingFlow.run(authSession);
+      authorizedBookIds = await libraryAccessRepository.getAuthorizedBookIds({
+        userId: authSession.userId,
+        accessToken: authSession.accessToken,
+      });
+    } else {
+      // Logout, o cambio a una cuenta distinta en el mismo
+      // dispositivo: nunca debe sobrevivir la lista de libros
+      // autorizados de la sesión anterior.
+      authorizedBookIds = [];
     }
     render();
   });
@@ -408,9 +464,18 @@ export function mountScreenRouter({
   // hacer), así que es seguro invocarlo aquí también, en cada
   // arranque con sesión ya cacheada — es lo que garantiza que una
   // interrupción eventualmente se resuelva, sin exigir un nuevo login.
+  // Mismo criterio para authorizedBookIds: se resuelve aquí también,
+  // fresca, nunca asumida de una ejecución anterior.
   const cachedSession = authContract.getSession();
   if (cachedSession) {
-    accountLinkingFlow.run(cachedSession).then(render);
+    Promise.all([
+      accountLinkingFlow.run(cachedSession),
+      libraryAccessRepository
+        .getAuthorizedBookIds({ userId: cachedSession.userId, accessToken: cachedSession.accessToken })
+        .then((ids) => {
+          authorizedBookIds = ids;
+        }),
+    ]).then(render);
   }
 
   return Object.freeze({

@@ -42,11 +42,33 @@
  *     editorial que el resto del contenido dentro de Atlas (figure +
  *     caption en voz de lectura, Design System §19.5), no una réplica
  *     de la página del libro.
- *   - NINGÚN bloque `media` de tipo audio se incluye: el libro
- *     referencia pistas de audio reales (Track 01/02/03) pero Atlas
- *     no tiene esos archivos. Las referencias al audio se documentan
- *     como bloques `aside`, nunca como un reproductor sin contenido
- *     real (Sprint 4 Plan, punto 3: "no fabriques audio").
+ *   - Tres bloques `media` de tipo audio son reales (Sprint 8,
+ *     Objetivo A): assets/audio/content/hi-korean-3a/. Copiados
+ *     íntegros desde el ZIP oficial de audios del Student's Book —
+ *     mismos bytes, sin recortar ni recomprimir (decisión de
+ *     Producto explícita, Sprint 8).
+ *
+ *     AUDIO MAPPING (hipótesis de trabajo — ver Sprint 8
+ *     Implementation Plan y la sesión de aprobación correspondiente):
+ *       Track 01 (대화, p.21)          → Hi Korean 3A_SB_01.mp3 →
+ *                                          lesson-1-1-dialogue.mp3
+ *       Track 02 (듣고 말하기 1, p.23)  → Hi Korean 3A_SB_02.mp3 →
+ *                                          lesson-1-1-listen-1.mp3
+ *       Track 03 (듣고 말하기 2, p.24)  → Hi Korean 3A_SB_03.mp3 →
+ *                                          lesson-1-1-listen-2.mp3
+ *     Base del mapeo: numeración oficial del Student's Book (Track
+ *     01/02/03 son, en efecto, las tres primeras pistas del libro, y
+ *     la Lección 1-1 es la primera lección del primer capítulo) +
+ *     evidencia estructural (duración relativa consistente con la
+ *     complejidad de cada sección — Track 03 es la más larga de las
+ *     tres, coherente con cubrir dos personas y cuatro preguntas de
+ *     comprensión, frente a un único intercambio en Track 01/02).
+ *     NO se verificó el contenido hablado palabra por palabra —no
+ *     hay reconocimiento de voz disponible en el entorno de
+ *     implementación—; esa verificación queda explícitamente diferida
+ *     a la validación manual del Sprint 8. Si se detecta una
+ *     discrepancia, corregir únicamente el `assetPath` del bloque
+ *     correspondiente — no reabre ninguna otra decisión del sprint.
  *   - `estimatedStudyMinutes` de esta Lesson es una estimación
  *     autoral (el libro no declara un tiempo de estudio) — 40
  *     minutos, dado el volumen de contenido (2 puntos de gramática +
@@ -355,6 +377,14 @@ export const LIBRARY_CATALOG = Object.freeze({
                   label: '문법 1 — A-대(요) V-ㄴ/는대(요)',
                   blocks: [
                     {
+                      id: 'block-hikorean-1-1-gram1-illustration',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-grammar1-dialogue.jpg',
+                      alt: '두 사람이 대화하는 예문 삽화 — "아까 카린 씨가 뭐라고 했어요?"',
+                      caption: '문법 1 예문 삽화 — 원서 p.17에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
                       id: 'block-hikorean-1-1-gram1-prose',
                       type: 'prose',
                       paragraphs: [
@@ -442,6 +472,48 @@ export const LIBRARY_CATALOG = Object.freeze({
                       ],
                     },
                     {
+                      // Objetivo C (Sprint 8): los cuatro avisos van todos
+                      // juntos aquí, antes de cualquier practice — la
+                      // invariante de secuenciación pedagógica (Software
+                      // Architecture §7.3) no permite contenido nuevo
+                      // después de practice dentro de la misma Section,
+                      // así que no pueden intercalarse uno a uno junto a
+                      // su ejercicio correspondiente. El estudiante ve
+                      // los cuatro antes de responder cualquiera de los
+                      // cuatro ejercicios — el orden de lectura sigue
+                      // siendo "mirar, luego responder".
+                      id: 'block-hikorean-1-1-notice-dog',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-notice-dog.jpg',
+                      alt: '안내문: 강아지를 찾습니다. 말티즈(수컷, 흰색). 연락처: 000-0000',
+                      caption: '안내문 — 원서 p.18에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-notice-book-club',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-notice-book-club.jpg',
+                      alt: '안내문: 독서 동아리 회원 모집. 문의: 000-0000',
+                      caption: '안내문 — 원서 p.18에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-notice-mask',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-notice-mask.jpg',
+                      alt: '안내문: 입장 전 마스크를 착용해 주세요.',
+                      caption: '안내문 — 원서 p.18에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-notice-holiday',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-notice-holiday.jpg',
+                      alt: '안내문: 추석 연휴 휴무 안내. 9월 12일(목) ~ 15일(일). 즐거운 추석 보내세요!',
+                      caption: '안내문 — 원서 p.18에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
                       id: 'block-hikorean-1-1-activity1-practice2-a',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-activity1-02a',
@@ -471,6 +543,14 @@ export const LIBRARY_CATALOG = Object.freeze({
                   id: 'section-hikorean-1-1-gram2',
                   label: '문법 2 — A/V-아/어도',
                   blocks: [
+                    {
+                      id: 'block-hikorean-1-1-gram2-illustration',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-grammar2-dialogue.jpg',
+                      alt: '두 사람이 대화하는 예문 삽화 — "오후에 비가 온대요"',
+                      caption: '문법 2 예문 삽화 — 원서 p.19에서 추출한 실제 이미지 자산이다.',
+                    },
                     {
                       id: 'block-hikorean-1-1-gram2-prose',
                       type: 'prose',
@@ -508,6 +588,14 @@ export const LIBRARY_CATALOG = Object.freeze({
                   id: 'section-hikorean-1-1-activity2',
                   label: '활동 (1)',
                   blocks: [
+                    {
+                      id: 'block-hikorean-1-1-activity2-illustration',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-activity1-dialogue.jpg',
+                      alt: '두 사람이 대화하는 예문 삽화 — "유학 생활이 힘들어서 고향에 돌아갈까 해요"',
+                      caption: '활동 (1) 예문 삽화 — 원서 p.20에서 추출한 실제 이미지 자산이다.',
+                    },
                     {
                       id: 'block-hikorean-1-1-activity2-dialogue',
                       type: 'dialogue',
@@ -551,6 +639,14 @@ export const LIBRARY_CATALOG = Object.freeze({
                   label: '활동 (2)',
                   blocks: [
                     {
+                      id: 'block-hikorean-1-1-activity2b-illustration',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-activity2-dialogue.jpg',
+                      alt: '한 사람의 예문 삽화 — "저는 아무리 연습해도 발음이 안 좋아요"',
+                      caption: '활동 (2) 예문 삽화 — 원서 p.20에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
                       id: 'block-hikorean-1-1-activity2-dialogue2',
                       type: 'dialogue',
                       turns: [{ speaker: '보기', text: '저는 아무리 연습해도 발음이 안 좋아요.' }],
@@ -572,6 +668,17 @@ export const LIBRARY_CATALOG = Object.freeze({
                   label: '대화',
                   blocks: [
                     {
+                      // Objetivo C (Sprint 8): ilustración real de la
+                      // conversación principal (p.21), sin el marco/
+                      // fondo propios de la maquetación impresa.
+                      id: 'block-hikorean-1-1-dialogue-illustration',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-main-dialogue.jpg',
+                      alt: '서준과 첸이 카페에서 대화하는 장면 — 첸이 파비우에 대해 이야기한다',
+                      caption: '대화 장면 — 원서 p.21에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
                       id: 'block-hikorean-1-1-dialogue-main',
                       type: 'dialogue',
                       turns: [
@@ -591,10 +698,16 @@ export const LIBRARY_CATALOG = Object.freeze({
                       ],
                     },
                     {
-                      id: 'block-hikorean-1-1-dialogue-audio-note',
-                      type: 'aside',
-                      label: 'Nota',
-                      body: 'Esta conversación incluye audio en el libro original (Track 01). El asset de audio real todavía no está integrado en Atlas — ver Sprint 4, decisión sobre Media.',
+                      // Objetivo A (Sprint 8): Track 01 real, reemplaza
+                      // el aviso de "audio no integrado" de Sprint 4.
+                      // Audio Mapping — hipótesis de trabajo (ver
+                      // documentación en la cabecera de este archivo):
+                      // Hi Korean 3A_SB_01.mp3 → Track 01 (대화).
+                      id: 'block-hikorean-1-1-dialogue-audio',
+                      type: 'media',
+                      mediaType: 'audio',
+                      assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-dialogue.mp3',
+                      caption: 'Track 01 — 대화를 듣고 따라 읽어 보세요.',
                     },
                   ],
                 },
@@ -657,14 +770,24 @@ export const LIBRARY_CATALOG = Object.freeze({
                       prompt: '빈칸에 알맞은 말을 쓰세요. ( ): 강의 남쪽 지역',
                     },
                     {
-                      // Tipo de ejercicio futuro (Sprint 5 Plan): matching término-
-                      // definición. "Matching" es PRD §24 "Should Have v1.x", no uno
-                      // de los 3 tipos de Sprint 5 — sin Exercise a propósito.
+                      // Objetivo B (Sprint 8, P2 aprobado): reformulado
+                      // de "matching" (tipo de interacción que el
+                      // Exercise Engine no soporta, PRD §24 Should Have
+                      // v1.x) a "typing" — mismo objetivo pedagógico
+                      // (asociar cada término con su definición) y los
+                      // mismos cinco pares de p.22, verificable con un
+                      // tipo ya soportado. Las definiciones se
+                      // relabelan a/b/c/d/e (en vez de los símbolos
+                      // circulados del libro, difíciles de escribir)
+                      // por usabilidad del input, sin alterar su
+                      // contenido.
                       id: 'block-hikorean-1-1-vocab-practice-matching',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-vocab-01-matching',
                       prompt:
-                        '다음 단어와 의미가 맞는 것을 연결하세요: 수도 / 대도시 / 중심지 / 도심 / 인구.',
+                        '다음 단어에 맞는 정의의 기호를 순서대로 쓰세요 (수도, 대도시, 중심지, 도심, 인구): ' +
+                        'a) 어떤 일이나 활동의 중심이 되는 곳 · b) 어떤 지역에 사는 사람의 수 · ' +
+                        'c) 미국-워싱턴 D.C., 중국-베이징, 프랑스-파리 · d) 도시의 중심 · e) 지역이 넓고 사람이 많은 도시',
                     },
                   ],
                 },
@@ -673,20 +796,42 @@ export const LIBRARY_CATALOG = Object.freeze({
                   label: '듣고 말하기 1',
                   blocks: [
                     {
+                      // Objetivo C (Sprint 8): mapa ilustrado de la zona
+                      // de Hongdae (p.23), contexto de la pregunta de
+                      // caldeamiento y de la comprensión auditiva.
+                      id: 'block-hikorean-1-1-listen1-map',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-hongdae-map.jpg',
+                      alt: '홍대 앞 지역 지도 — 연남동, 홍대입구, 경의선',
+                      caption: '홍대 앞 지도 — 원서 p.23에서 추출한 실제 이미지 자산이다.',
+                    },
+                    {
                       id: 'block-hikorean-1-1-listen1-prose',
                       type: 'prose',
                       paragraphs: ['여러분은 홍대 앞에 자주 갑니까? 홍대 앞에서 무엇을 하면 좋습니까?'],
                     },
                     {
-                      id: 'block-hikorean-1-1-listen1-audio-note',
-                      type: 'aside',
-                      label: 'Nota',
-                      body: 'Esta sección usa audio en el libro original (Track 02). El asset de audio real todavía no está integrado en Atlas.',
+                      // Objetivo A (Sprint 8): Track 02 real, reemplaza
+                      // el aviso de "audio no integrado". Audio Mapping
+                      // — hipótesis de trabajo (ver cabecera del
+                      // archivo): Hi Korean 3A_SB_02.mp3 → Track 02
+                      // (듣고 말하기 1).
+                      id: 'block-hikorean-1-1-listen1-audio',
+                      type: 'media',
+                      mediaType: 'audio',
+                      assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-1.mp3',
+                      caption: 'Track 02 — 다음을 잘 듣고 대답해 보세요.',
                     },
                     {
-                      // Sin audio real (Sprint 4) no hay forma de derivar la respuesta
-                      // correcta de (1)/(2), y (3) además es una pregunta personal
-                      // abierta. Sin Exercise a propósito — ver exercise-catalog.js.
+                      // El audio ya es real y reproducible (Objetivo A),
+                      // pero verificar la respuesta correcta de (1)/(2)
+                      // requeriría transcribir el contenido hablado, algo
+                      // que no se hizo en este sprint (ver Audio Mapping,
+                      // limitación documentada) — y (3) sigue siendo una
+                      // pregunta personal abierta de todos modos. Sin
+                      // Exercise a propósito, sin cambios de alcance
+                      // respecto al Sprint 8 Implementation Plan.
                       id: 'block-hikorean-1-1-listen1-practice',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-listen1-01',
@@ -700,13 +845,20 @@ export const LIBRARY_CATALOG = Object.freeze({
                   label: '듣고 말하기 2',
                   blocks: [
                     {
-                      id: 'block-hikorean-1-1-listen2-audio-note',
-                      type: 'aside',
-                      label: 'Nota',
-                      body: 'Esta sección usa audio en el libro original (Track 03). El asset de audio real todavía no está integrado en Atlas.',
+                      // Objetivo A (Sprint 8): Track 03 real, reemplaza
+                      // el aviso de "audio no integrado". Audio Mapping
+                      // — hipótesis de trabajo: Hi Korean 3A_SB_03.mp3
+                      // → Track 03 (듣고 말하기 2).
+                      id: 'block-hikorean-1-1-listen2-audio',
+                      type: 'media',
+                      mediaType: 'audio',
+                      assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-2.mp3',
+                      caption: 'Track 03 — 다음을 잘 듣고 대답해 보세요.',
                     },
                     {
-                      // Misma razón que listen1: sin audio real, sin Exercise.
+                      // Misma razón que listen1: audio real y reproducible,
+                      // pero sin transcripción verificada no hay clave de
+                      // corrección confiable. Sin Exercise a propósito.
                       id: 'block-hikorean-1-1-listen2-practice',
                       type: 'practice',
                       exerciseId: 'ex-hikorean-1-1-listen2-01',
@@ -739,6 +891,14 @@ export const LIBRARY_CATALOG = Object.freeze({
                       type: 'example',
                       label: '참고: 서울관광재단',
                       body: '광화문 광장부터 청계천까지 빌딩과 도심 산책하기. 예쁜 한복 빌려 입고 고궁에 가서 멋진 사진 찍기. 인사동에서 전통 기념품 사기. 홍대 걷고 싶은 거리에서 길거리 공연 즐기기.',
+                    },
+                    {
+                      id: 'block-hikorean-1-1-production-map',
+                      type: 'media',
+                      mediaType: 'image',
+                      assetPath: 'assets/images/content/hi-korean-3a/lesson-1-1-seoul-landmarks-map.jpg',
+                      alt: '서울 주요 명소 지도 — 경복궁, 롯데타워, 청계천, 63빌딩, N서울타워, 종합운동장',
+                      caption: '서울 명소 지도 — 원서 p.25에서 추출한 실제 이미지 자산이다.',
                     },
                     {
                       // Actividad abierta: lista de deseos personal, sin clave de

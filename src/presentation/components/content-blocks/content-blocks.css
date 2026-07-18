@@ -145,9 +145,127 @@
   border-radius: var(--al-radius-lg);
 }
 
-[data-component="media-block"][data-part="caption"] {
+[data-component="media-block"] [data-part="caption"] {
   color: var(--al-text-muted);
   margin: var(--al-space-2) 0 0;
+}
+
+/* ---- Audio (Design System §16, Objetivo A — Sprint 8) ---- */
+
+[data-component="media-block"][data-part="audio"] {
+  margin: 0;
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="controls"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-3);
+  width: 100%;
+  height: var(--al-audio-block-height);
+  padding: 0 var(--al-space-4);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="play-pause"],
+[data-component="media-block"][data-part="audio"] [data-part="replay-10"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--al-hit-target-min);
+  height: var(--al-hit-target-min);
+  color: var(--al-text-ui);
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="play-pause"]:hover,
+[data-component="media-block"][data-part="audio"] [data-part="replay-10"]:hover {
+  color: var(--al-ink-900);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="elapsed"],
+[data-component="media-block"][data-part="audio"] [data-part="total"] {
+  color: var(--al-text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 2.5em;
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="elapsed"] {
+  text-align: right;
+}
+
+/* Scrub track (§16): reutiliza el lenguaje visual del whisper bar,
+   4px aquí en vez de 2px por usabilidad, con un handle de 8px que
+   aparece en interacción. Hit area 44px de alto aunque el track
+   visible sea de 4px — el input nativo ya es un slider accesible y
+   etiquetado (aria-label), sin reinventar el control. */
+[data-component="media-block"][data-part="audio"] [data-part="scrub"] {
+  flex: 1;
+  min-width: 0;
+  height: var(--al-hit-target-min);
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]::-webkit-slider-runnable-track {
+  height: var(--al-audio-scrub-height);
+  background: var(--al-progress-track);
+  border-radius: var(--al-radius-sm);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]::-moz-range-track {
+  height: var(--al-audio-scrub-height);
+  background: var(--al-progress-track);
+  border-radius: var(--al-radius-sm);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  transition: width var(--al-duration-fast) var(--al-ease-standard),
+    height var(--al-duration-fast) var(--al-ease-standard),
+    opacity var(--al-duration-fast) var(--al-ease-standard);
+  margin-top: calc((var(--al-audio-scrub-height) - 8px) / 2);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:hover::-webkit-slider-thumb,
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:focus-visible::-webkit-slider-thumb,
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:active::-webkit-slider-thumb {
+  width: 8px;
+  height: 8px;
+  opacity: 1;
+  border-radius: 50%;
+  background: var(--al-ink-900);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]::-moz-range-thumb {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--al-ink-900);
+  transition: width var(--al-duration-fast) var(--al-ease-standard),
+    height var(--al-duration-fast) var(--al-ease-standard),
+    opacity var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:hover::-moz-range-thumb,
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:focus-visible::-moz-range-thumb,
+[data-component="media-block"][data-part="audio"] [data-part="scrub"]:active::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  opacity: 1;
+}
+
+[data-component="media-block"][data-part="audio"] [data-part="audio-el"] {
+  display: none;
 }
 
 /* ---- Unsupported (media without asset / practice fallback) ---- */

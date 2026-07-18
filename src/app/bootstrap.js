@@ -39,6 +39,9 @@ import { createAuthContract } from '../auth/auth-contract.js';
 import { createSupabaseAuthAdapter } from '../auth/adapters/supabase-auth-adapter.js';
 import { createAccountSnapshotService } from '../remote-account-snapshot/account-snapshot-contract.js';
 import { createSupabaseAccountSnapshotAdapter } from '../remote-account-snapshot/adapters/supabase-account-snapshot-adapter.js';
+import { createLibraryAccessService } from '../library-access/library-access-contract.js';
+import { createSupabaseLibraryAccessAdapter } from '../library-access/adapters/supabase-library-access-adapter.js';
+import { createLibraryAccessRepository } from '../domain/library-access/library-access-repository.js';
 import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
@@ -83,10 +86,23 @@ function bootstrap() {
   });
   const accountSnapshotService = createAccountSnapshotService(supabaseSnapshotAdapter, errorBoundary);
 
+  // Control de Acceso por Libro (diseño cerrado antes de este
+  // sprint): dominio propio, hermano de Session — nunca dentro de
+  // Auth, nunca conocido por Library ni por el Content Model. Mismo
+  // patrón contrato + adapter que el resto de la infraestructura
+  // remota de este archivo.
+  const supabaseLibraryAccessAdapter = createSupabaseLibraryAccessAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const libraryAccessService = createLibraryAccessService(supabaseLibraryAccessAdapter, errorBoundary);
+  const libraryAccessRepository = createLibraryAccessRepository(libraryAccessService);
+
   const accountLinkingFlow = createAccountLinkingFlow({
     sessionRepository,
     attemptRepository,
     accountSnapshotService,
+    libraryAccessRepository,
   });
 
   // c. Router — inicializado pero sin resolver ninguna ruta todavía;
@@ -122,6 +138,7 @@ function bootstrap() {
     runtimeConfig,
     authContract,
     accountLinkingFlow,
+    libraryAccessRepository,
   });
 
   // f. El router resuelve la ruta inicial y publica route:changed.

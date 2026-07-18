@@ -62,8 +62,10 @@ export function createLearningSessionScreen({
   lesson,
   restoreSectionIndex = 0,
   restoreScrollPosition = 0,
+  restoreAudioPosition = null,
   onSectionChange,
   onScrollChange,
+  onAudioPositionChange,
   onBack,
   onExit,
 }) {
@@ -139,7 +141,21 @@ export function createLearningSessionScreen({
     wrapper.appendChild(sectionLabel);
 
     const blockComponents = section.blocks.map((block) => {
-      const blockComponent = createContentBlock(block);
+      // Objetivo A (Sprint 8): un bloque de audio recibe su posición
+      // de restauración solo si coincide con el `blockId` guardado en
+      // Session.currentAudio (Restore Session, PRD §18) — el mismo
+      // criterio "derivado, nunca duplicado" que ya rige el resto de
+      // Session (session-shape.js). Cualquier otro audio de la
+      // lección empieza en 0, no en la posición de otro bloque.
+      const enrichedBlock =
+        block.type === 'media' && block.mediaType === 'audio'
+          ? {
+              ...block,
+              restorePosition: restoreAudioPosition?.blockId === block.id ? restoreAudioPosition.position : 0,
+              onPositionChange: (position) => onAudioPositionChange?.({ blockId: block.id, position }),
+            }
+          : block;
+      const blockComponent = createContentBlock(enrichedBlock);
       blockComponent.element.setAttribute('data-part', 'block');
       // Sprint 7 (Objetivo E, extensión): expone el tipo del bloque
       // solo para que el CSS pueda distinguir ritmo vertical entre

@@ -14,20 +14,28 @@
  *      sin respuesta única): ex-hikorean-1-1-activity2-01c,
  *      ex-hikorean-1-1-activity2-01d, ex-hikorean-1-1-activity2-02,
  *      ex-hikorean-1-1-listen2-02, ex-hikorean-1-1-production-01.
- *   2. Dependientes de audio real que Atlas todavía no tiene (Sprint
- *      4): ex-hikorean-1-1-listen1-01, ex-hikorean-1-1-listen2-01.
- *   3. Tipo de ejercicio aún no soportado (matching, PRD §24 Should
- *      Have v1.x): ex-hikorean-1-1-vocab-01-matching.
+ *   2. Comprensión auditiva sin transcripción verificada (Sprint 8,
+ *      Audio Mapping): ex-hikorean-1-1-listen1-01,
+ *      ex-hikorean-1-1-listen2-01. El audio real ya existe y es
+ *      reproducible (Objetivo A) — lo que falta no es el asset, es
+ *      una clave de corrección confiable, que requeriría transcribir
+ *      el contenido hablado exacto. No se fabrica una respuesta sin
+ *      verificarla contra el audio real.
+ *
+ * `ex-hikorean-1-1-vocab-01-matching` (antes en esta lista, tipo
+ * "matching" no soportado) quedó resuelto en Sprint 8, Objetivo B —
+ * reformulado como `typing`, ver su entrada más abajo.
  *
  * exercise-repository.getExerciseById(id) devuelve `null` para los
- * ocho anteriores — content-block-renderer.js ya sabe mostrar el
+ * siete anteriores — content-block-renderer.js ya sabe mostrar el
  * aviso neutral para un `practice` sin Exercise resuelto (mismo
  * camino que "media"/"practice" sin datos reales desde Sprint 3).
- * Ninguno de los ocho participa en el cómputo de Progress (domain/
+ * Ninguno de los siete participa en el cómputo de Progress (domain/
  * content/progress.js) ni puede generar un Attempt. Este es un punto
  * de extensión documentado para una futura capacidad de Atlas (otro
  * tipo de experiencia de aprendizaje para reflexión/producción
- * libre), explícitamente no implementado en Sprint 5.
+ * libre, o transcripción verificada de audio), explícitamente no
+ * implementado todavía.
  *
  * Todo lo demás aquí es genérico por tipo — ningún campo nombra
  * "coreano" ni "gramática"; son la misma forma que tendría un
@@ -145,5 +153,15 @@ export const EXERCISE_CATALOG = Object.freeze({
     id: 'ex-hikorean-1-1-vocab-01d',
     type: 'fillBlank',
     acceptedAnswers: ['강남'],
+  },
+
+  // ---- 어휘와 표현 (p.22) — matching término-definición, reformulado
+  // como typing (Sprint 8, Objetivo B, P2 aprobado). Términos en el
+  // orden del prompt: 수도, 대도시, 중심지, 도심, 인구 → letra de su
+  // definición correspondiente (c, e, a, d, b).
+  'ex-hikorean-1-1-vocab-01-matching': {
+    id: 'ex-hikorean-1-1-vocab-01-matching',
+    type: 'typing',
+    acceptedAnswers: ['c, e, a, d, b', 'c,e,a,d,b', 'c e a d b'],
   },
 });

@@ -57,7 +57,7 @@ export function createEmptySession() {
     mode: null,
     sectionIndex: null,
     scrollPosition: null,
-    currentAudio: null, // reservado — Media tipo audio, cuando exista un asset real
+    currentAudio: null, // { blockId, position } — Objetivo A, Sprint 8: posición del último bloque de audio reproducido, restaurada exacta (PRD §18) al reabrir la sección que lo contiene
     userId: null, // huérfana hasta que una vinculación de cuenta la reclame
     updatedAt: null,
   });
