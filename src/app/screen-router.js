@@ -49,6 +49,7 @@ import { createBookScreen } from '../presentation/screens/book/book-screen.js';
 import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
 import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/lesson-entry-screen.js';
 import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
+import { createPageReaderScreen } from '../presentation/screens/page-reader/page-reader-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
 import { createEntryScreen } from '../presentation/screens/entry/entry-screen.js';
 import { createLoginScreen } from '../presentation/screens/login/login-screen.js';
@@ -106,7 +107,25 @@ function resolveLessonExercises(lesson, attemptRepository, userId) {
   };
 }
 
-function buildLibraryScreen({ router, attemptRepository, runtimeConfig, libraryAccessRepository, authorizedBookIds }) {
+// Nuevo Reader (Sprint Proposal — Nuevo Reader, §2): rango con
+// recursos reales de Lección 1-1. El propio PageReaderScreen no
+// impone este límite (Technical Specification v2.1, §7.2, "el visor
+// no impone el límite, los PageResource sí") — es esta composición,
+// para este Sprint, la que acota la navegación a lo que de verdad
+// existe en Storage. Ampliar el rango cuando se produzcan más
+// páginas no requiere ningún cambio de arquitectura, solo cambiar
+// estas dos constantes.
+const READER_FIRST_PAGE = 16;
+const READER_LAST_PAGE = 25;
+
+function buildLibraryScreen({
+  router,
+  attemptRepository,
+  runtimeConfig,
+  libraryAccessRepository,
+  authorizedBookIds,
+  sessionRepository,
+}) {
   const library = getLibrary();
   // Control de Acceso por Libro (Caso 5, biblioteca vacía incluido):
   // Library nunca pregunta "¿qué libros existen?" — recibe ya
@@ -131,7 +150,56 @@ function buildLibraryScreen({ router, attemptRepository, runtimeConfig, libraryA
   return createLibraryScreen({
     books,
     onBack: () => router.navigateTo('/'),
-    onSelectBook: (bookId) => router.navigateTo(`/book/${bookId}`),
+    onSelectBook: (bookId) => {
+      // Nuevo Reader: Library abre el Reader directamente, en la
+      // última página real visitada de ESE libro (ReaderPosition
+      // puede apuntar a otro libro, si el estudiante lo dejó a medio
+      // leer) — o en la primera página con recursos si no hay
+      // ninguna posición previa real.
+      const position = sessionRepository.getSession();
+      const rawTargetPage = position?.bookId === bookId ? position.pageNumber : READER_FIRST_PAGE;
+      const targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
+      router.navigateTo(`/book/${bookId}/read/${targetPage}`);
+    },
+  });
+}
+
+/**
+ * Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapas 7-9). Resuelve
+ * todas las dependencias reales (PageSource, ReaderPosition,
+ * Bookmark, StudyWorkspace, Attempts, credenciales de la sesión de
+ * Auth activa) antes de montar la pantalla — PageReaderScreen en sí
+ * es completamente puro, no conoce Supabase, Auth ni Router.
+ */
+function buildPageReaderScreen({
+  router,
+  bookId,
+  pageNumber,
+  userId,
+  authContract,
+  runtimeConfig,
+  pageSourceRepository,
+  sessionRepository,
+  bookmarkRepository,
+  studyWorkspaceRepository,
+  attemptRepository,
+}) {
+  const accessToken = authContract.getSession()?.accessToken ?? null;
+
+  return createPageReaderScreen({
+    bookId,
+    initialPageNumber: pageNumber,
+    firstPage: READER_FIRST_PAGE,
+    lastPage: READER_LAST_PAGE,
+    userId,
+    accessToken,
+    runtimeConfig,
+    pageSourceRepository,
+    sessionRepository,
+    bookmarkRepository,
+    studyWorkspaceRepository,
+    attemptRepository,
+    onBack: () => router.navigateTo('/library'),
   });
 }
 
@@ -269,7 +337,7 @@ function buildLearningSessionScreen({
 }
 
 function buildHomeScreen({ router, sessionRepository, libraryAccessRepository, authorizedBookIds }) {
-  const session = sessionRepository.getSession();
+  const position = sessionRepository.getSession();
 
   // Control de Acceso por Libro: mismo principio del Caso 4, aplicado
   // aquí sin pantalla de error — Home nunca muestra un mensaje de
@@ -277,20 +345,19 @@ function buildHomeScreen({ router, sessionRepository, libraryAccessRepository, a
   // es accesible. Cae al mismo estado vacío que "todavía no hay nada
   // que continuar", sin distinción visible para el estudiante.
   const bookIsAuthorized =
-    session?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, session.bookId);
+    position?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, position.bookId);
 
-  if (bookIsAuthorized && session.unitId && session.lessonId) {
-    const book = getBookById(session.bookId);
-    const lesson = getLessonById(session.bookId, session.unitId, session.lessonId);
+  // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): ReaderPosition
+  // ya no expresa unitId/lessonId (Technical Specification v2.1, §5.1)
+  // — "continuar" significa volver a la página exacta, no a una Lesson.
+  if (bookIsAuthorized && position.pageNumber) {
+    const book = getBookById(position.bookId);
 
-    if (book && lesson) {
+    if (book) {
       return createHomeScreen({
         bookTitle: book.title,
-        lessonTitle: lesson.title,
-        onContinue: () =>
-          router.navigateTo(
-            `/book/${session.bookId}/unit/${session.unitId}/lesson/${session.lessonId}/learn`,
-          ),
+        lessonTitle: `Página ${position.pageNumber}`,
+        onContinue: () => router.navigateTo(`/book/${position.bookId}/read/${position.pageNumber}`),
       });
     }
   }
@@ -302,7 +369,7 @@ function buildHomeScreen({ router, sessionRepository, libraryAccessRepository, a
 }
 
 function resolveScreen(navigationState, deps) {
-  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition } = navigationState;
+  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition, pagePosition } = navigationState;
   const userId = deps.authContract.getSession()?.userId ?? null;
   const fullDeps = { ...deps, userId };
 
@@ -311,8 +378,8 @@ function resolveScreen(navigationState, deps) {
   // exactamente igual que un bookId inexistente — mismo notFoundView,
   // mismo mensaje, para que ambos sean indistinguibles para el
   // estudiante. Un único punto de control aquí, antes de dispatchar a
-  // cualquiera de las cuatro screens que dependen de un libro, en vez
-  // de repetir la misma verificación cuatro veces.
+  // cualquiera de las screens que dependen de un libro, en vez de
+  // repetir la misma verificación en cada una.
   if (bookPosition && !deps.libraryAccessRepository.isBookAuthorized(deps.authorizedBookIds, bookPosition)) {
     return notFoundView({
       errorBoundary: deps.errorBoundary,
@@ -320,6 +387,14 @@ function resolveScreen(navigationState, deps) {
       context: { bookId: bookPosition },
       message: 'Este libro no está disponible. Vuelve a la Library para elegir otro.',
     });
+  }
+
+  // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): antes de
+  // los cuatro ramales heredados (Book/Unit/Lesson entry/Learning
+  // Session), que siguen intactos y desacoplados, no eliminados
+  // (Sprint Proposal §5.1, ya aprobado).
+  if (bookPosition && pagePosition) {
+    return buildPageReaderScreen({ ...fullDeps, bookId: bookPosition, pageNumber: pagePosition });
   }
 
   if (bookPosition && unitPosition && lessonPosition && mode === 'learn') {
@@ -366,6 +441,9 @@ export function mountScreenRouter({
   authContract,
   accountLinkingFlow,
   libraryAccessRepository,
+  pageSourceRepository,
+  bookmarkRepository,
+  studyWorkspaceRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
@@ -420,7 +498,14 @@ export function mountScreenRouter({
     }
 
     authUiStage = 'entry'; // reset para un futuro logout
-    const navigationState = lastNavigationState ?? { libraryPosition: null, bookPosition: null, unitPosition: null, lessonPosition: null, mode: null };
+    const navigationState = lastNavigationState ?? {
+      libraryPosition: null,
+      bookPosition: null,
+      unitPosition: null,
+      lessonPosition: null,
+      mode: null,
+      pagePosition: null,
+    };
     const screen = resolveScreen(navigationState, {
       router,
       errorBoundary,
@@ -430,6 +515,9 @@ export function mountScreenRouter({
       authContract,
       libraryAccessRepository,
       authorizedBookIds,
+      pageSourceRepository,
+      bookmarkRepository,
+      studyWorkspaceRepository,
     });
     contentRegion.render(screen);
   }

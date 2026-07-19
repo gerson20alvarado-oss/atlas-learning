@@ -48,6 +48,9 @@ import { createPageSourceRepository } from '../domain/page-source/page-source-re
 import { createBookmarkService } from '../bookmark/bookmark-contract.js';
 import { createSupabaseBookmarkAdapter } from '../bookmark/adapters/supabase-bookmark-adapter.js';
 import { createBookmarkRepository } from '../domain/bookmark/bookmark-repository.js';
+import { createStudyWorkspaceService } from '../study-workspace/study-workspace-contract.js';
+import { createSupabaseStudyWorkspaceAdapter } from '../study-workspace/adapters/supabase-study-workspace-adapter.js';
+import { createStudyWorkspaceRepository } from '../domain/study-workspace/study-workspace-repository.js';
 import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
@@ -127,6 +130,16 @@ function bootstrap() {
   const bookmarkService = createBookmarkService(supabaseBookmarkAdapter, errorBoundary);
   const bookmarkRepository = createBookmarkRepository(bookmarkService);
 
+  // Espacio de Estudio (Sprint Proposal — Nuevo Reader, Etapa 6):
+  // Database para notas + Storage privado para imágenes, ya resuelto
+  // en la Technical Specification v2.1, §5.4/§13.
+  const supabaseStudyWorkspaceAdapter = createSupabaseStudyWorkspaceAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const studyWorkspaceService = createStudyWorkspaceService(supabaseStudyWorkspaceAdapter, errorBoundary);
+  const studyWorkspaceRepository = createStudyWorkspaceRepository(studyWorkspaceService);
+
   const accountLinkingFlow = createAccountLinkingFlow({
     sessionRepository,
     attemptRepository,
@@ -168,6 +181,9 @@ function bootstrap() {
     authContract,
     accountLinkingFlow,
     libraryAccessRepository,
+    pageSourceRepository,
+    bookmarkRepository,
+    studyWorkspaceRepository,
   });
 
   // f. El router resuelve la ruta inicial y publica route:changed.
@@ -191,6 +207,7 @@ function bootstrap() {
     authContract,
     pageSourceRepository,
     bookmarkRepository,
+    studyWorkspaceRepository,
   });
 }
 

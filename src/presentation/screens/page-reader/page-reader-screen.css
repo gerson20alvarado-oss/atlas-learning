@@ -1,0 +1,97 @@
+/**
+ * page-reader-screen.css
+ *
+ * canvas-container con position: relative es la pieza crítica de
+ * este archivo — es lo que hace que page-marker-layer.css
+ * (position: absolute; inset: 0) se ancle a la imagen de la página,
+ * no a toda la pantalla.
+ */
+
+[data-component="page-reader-screen"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--al-surface-app);
+}
+
+[data-component="page-reader-screen"] [data-part="chrome"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  padding: var(--al-space-3) var(--al-space-4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--al-surface-app);
+}
+
+[data-component="page-reader-screen"] [data-part="page-indicator"] {
+  color: var(--al-text-muted);
+}
+
+[data-component="page-reader-screen"] [data-part="bookmark-toggle"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-2);
+  background: none;
+  border: none;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  color: var(--al-text-ui);
+  cursor: pointer;
+}
+
+[data-component="page-reader-screen"] [data-part="canvas-container"] {
+  position: relative;
+  width: 100%;
+  max-width: var(--al-measure-reading);
+  margin: 0 auto;
+  flex: 1;
+}
+
+[data-component="page-reader-screen"] [data-part="canvas"] {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+[data-component="page-reader-screen"] [data-part="nav-controls"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  padding: var(--al-space-4);
+  position: sticky;
+  bottom: 0;
+  background: var(--al-surface-app);
+  border-top: var(--al-border-hairline) solid var(--al-border-default);
+}
+
+[data-component="page-reader-screen"] [data-part="prev"],
+[data-component="page-reader-screen"] [data-part="next"] {
+  min-height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-4);
+  background: none;
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-md);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  color: var(--al-text-ui);
+  cursor: pointer;
+}
+
+[data-component="page-reader-screen"] [data-part="prev"]:disabled,
+[data-component="page-reader-screen"] [data-part="next"]:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Mismo bug de especificidad ya encontrado dos veces esta sesión
+   (Vista de Página, Fase 2; StudyWorkspace más arriba) — se corrige
+   aquí antes de que llegue a manifestarse, no después. */
+[data-component="page-reader-screen"] [data-part="prev"][disabled],
+[data-component="page-reader-screen"] [data-part="next"][disabled] {
+  cursor: default;
+}

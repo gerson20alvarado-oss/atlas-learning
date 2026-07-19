@@ -39,3 +39,7 @@
 @import url('../presentation/screens/unit/unit-screen.css');
 @import url('../presentation/screens/lesson-entry/lesson-entry-screen.css');
 @import url('../presentation/screens/learning-session/learning-session-screen.css');
+@import url('../presentation/components/page-marker-layer/page-marker-layer.css');
+@import url('../presentation/components/resource-panel-overlay/resource-panel-overlay.css');
+@import url('../presentation/components/resource-panels/study-workspace-sheet.css');
+@import url('../presentation/screens/page-reader/page-reader-screen.css');

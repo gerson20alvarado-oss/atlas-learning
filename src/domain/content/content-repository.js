@@ -87,3 +87,30 @@ export function getLessonById(bookId, unitId, lessonId) {
   if (!unit) return null;
   return unit.lessons.find((lesson) => lesson.id === lessonId) ?? null;
 }
+
+/**
+ * Busca el ContentBlock `practice` real (con su `prompt`) que
+ * corresponde a un `exerciseId`, junto con el `lessonId` al que
+ * pertenece — necesario porque el nuevo Reader (Technical
+ * Specification v2.1, §0) ya no recorre Unit → Lesson → Section para
+ * mostrar contenido, pero el Exercise Engine sigue necesitando el
+ * prompt real del ejercicio (vive en el ContentBlock, no en
+ * PageResource) y Attempt sigue exigiendo `lessonId` (contrato ya
+ * congelado, sin cambios) para registrar un intento. Recorre todo el
+ * Book una sola vez — aceptable para el tamaño actual del catálogo;
+ * si esto se vuelve un costo real con más libros, es un candidato
+ * claro a memoización, no a rediseño.
+ */
+export function getExerciseContentContext(bookId, exerciseId) {
+  const book = getBookById(bookId);
+  if (!book) return null;
+  for (const unit of book.units) {
+    for (const lesson of unit.lessons) {
+      for (const section of lesson.sections) {
+        const block = section.blocks.find((b) => b.type === 'practice' && b.exerciseId === exerciseId);
+        if (block) return { block, lessonId: lesson.id };
+      }
+    }
+  }
+  return null;
+}

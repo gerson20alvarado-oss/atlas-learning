@@ -18,6 +18,7 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'unitPosition',
   'lessonPosition',
   'mode',
+  'pagePosition',
 ]);
 
 export function createEmptyNavigationState() {
@@ -27,6 +28,14 @@ export function createEmptyNavigationState() {
     unitPosition: null,
     lessonPosition: null,
     mode: null,
+    // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): número
+    // de página dentro de un Book — nunca reutiliza lessonPosition,
+    // que conserva exactamente su significado de siempre. Mismo
+    // patrón que los cinco campos anteriores: siempre presente como
+    // clave, null salvo en la ruta que sí lo puebla. Uso exclusivo
+    // del Reader — ningún otro flujo (Library, Book, Unit, Lesson)
+    // lo lee ni lo escribe.
+    pagePosition: null,
   });
 }
 

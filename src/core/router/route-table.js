@@ -92,6 +92,20 @@ const ROUTES = Object.freeze([
       mode: 'learn',
     }),
   },
+  {
+    // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): el
+    // Reader abre directamente desde Library (§5.1, ya aprobado),
+    // sin pasar por Book/Unit/Lesson — de ahí que esta ruta no
+    // comparta prefijo con las anteriores más allá de "/book/:id".
+    // `pagePosition` es de uso exclusivo de esta ruta.
+    pattern: /^\/book\/([^/]+)\/read\/(\d+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      pagePosition: Number(match[2]),
+    }),
+  },
 ]);
 
 /**

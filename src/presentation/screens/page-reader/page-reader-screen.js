@@ -1,0 +1,189 @@
+/**
+ * presentation/screens/page-reader/page-reader-screen.js
+ *
+ * Pantalla principal del nuevo Reader (Sprint Proposal — Nuevo
+ * Reader, Etapas 7–9 combinadas). Muestra la página real vía
+ * `PageSource`, dibuja los marcadores resueltos de `PageResource`, y
+ * despacha al panel correspondiente al tocar uno — sin conocer
+ * Exercise Engine, Storage, ni Supabase directamente: cada panel
+ * resuelve lo suyo, esta pantalla solo los monta.
+ *
+ * Navegación de página como estado interno (mismo patrón ya usado en
+ * la Learning Session heredada para `currentIndex`) — el número de
+ * página inicial llega ya resuelto desde app/screen-router.js
+ * (última página visitada, o `firstPage` si no hay ninguna); cambiar
+ * de página no cambia de ruta, solo actualiza `ReaderPosition`.
+ */
+
+import { createBackNav } from '../../components/back-nav/back-nav.js';
+import { createPageMarkerLayer } from '../../components/page-marker-layer/page-marker-layer.js';
+import { createAudioPanel } from '../../components/resource-panels/audio-panel.js';
+import { createTranscriptPanel } from '../../components/resource-panels/transcript-panel.js';
+import { createStudyWorkspaceSheet } from '../../components/resource-panels/study-workspace-sheet.js';
+import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
+import { createAnchorPlacementStrategy } from '../../../domain/page-layout/anchor-placement-strategy.js';
+import { getPageResources } from '../../../domain/content/page-resource-catalog.js';
+
+export function createPageReaderScreen({
+  bookId,
+  initialPageNumber,
+  firstPage,
+  lastPage,
+  userId,
+  accessToken,
+  runtimeConfig,
+  pageSourceRepository,
+  sessionRepository,
+  bookmarkRepository,
+  studyWorkspaceRepository,
+  attemptRepository,
+  onBack,
+}) {
+  const element = document.createElement('div');
+  element.setAttribute('data-component', 'page-reader-screen');
+
+  const chrome = document.createElement('div');
+  chrome.setAttribute('data-part', 'chrome');
+
+  const backNav = createBackNav({ parentLabel: 'library', onSelect: onBack });
+
+  const bookmarkButton = document.createElement('button');
+  bookmarkButton.type = 'button';
+  bookmarkButton.setAttribute('data-part', 'bookmark-toggle');
+
+  const pageIndicator = document.createElement('span');
+  pageIndicator.setAttribute('data-part', 'page-indicator');
+  pageIndicator.className = 'al-type-ui-caption';
+
+  chrome.appendChild(backNav.element);
+  chrome.appendChild(pageIndicator);
+  chrome.appendChild(bookmarkButton);
+
+  const canvasContainer = document.createElement('div');
+  canvasContainer.setAttribute('data-part', 'canvas-container');
+
+  const img = document.createElement('img');
+  img.setAttribute('data-part', 'canvas');
+
+  const markerStrategy = createAnchorPlacementStrategy();
+  const markerLayer = createPageMarkerLayer({ markers: [], onSelect: handleResourceSelect });
+
+  canvasContainer.appendChild(img);
+  canvasContainer.appendChild(markerLayer.element);
+
+  const navControls = document.createElement('div');
+  navControls.setAttribute('data-part', 'nav-controls');
+
+  const prevButton = document.createElement('button');
+  prevButton.type = 'button';
+  prevButton.setAttribute('data-part', 'prev');
+  prevButton.textContent = '‹ Anterior';
+  prevButton.addEventListener('click', () => goToPage(currentPage - 1));
+
+  const nextButton = document.createElement('button');
+  nextButton.type = 'button';
+  nextButton.setAttribute('data-part', 'next');
+  nextButton.textContent = 'Siguiente ›';
+  nextButton.addEventListener('click', () => goToPage(currentPage + 1));
+
+  navControls.appendChild(prevButton);
+  navControls.appendChild(nextButton);
+
+  element.appendChild(chrome);
+  element.appendChild(canvasContainer);
+  element.appendChild(navControls);
+
+  let currentPage = Math.min(Math.max(initialPageNumber, firstPage), lastPage);
+  let bookmarkedPages = [];
+  let activePanel = null;
+
+  function closeActivePanel() {
+    activePanel?.destroy();
+    activePanel = null;
+  }
+
+  function handleResourceSelect(resource) {
+    closeActivePanel();
+    if (resource.type === 'audio') {
+      activePanel = createAudioPanel({ resource, runtimeConfig, onClose: closeActivePanel });
+    } else if (resource.type === 'transcript') {
+      activePanel = createTranscriptPanel({ resource, onClose: closeActivePanel });
+    } else if (resource.type === 'studyWorkspace') {
+      const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
+      activePanel = createStudyWorkspaceSheet({
+        resource,
+        answerKeyResource,
+        bookId,
+        pageNumber: currentPage,
+        userId,
+        accessToken,
+        attemptRepository,
+        studyWorkspaceRepository,
+        onClose: closeActivePanel,
+      });
+    } else {
+      return; // answerKey (u otro tipo sin marcador propio): nunca debería llegar aquí
+    }
+    element.appendChild(activePanel.element);
+  }
+
+  async function renderCurrentPage() {
+    closeActivePanel();
+    prevButton.disabled = currentPage <= firstPage;
+    nextButton.disabled = currentPage >= lastPage;
+    pageIndicator.textContent = `Página ${currentPage}`;
+    img.alt = `Página ${currentPage} del libro`;
+
+    const url = await pageSourceRepository.getPageImageUrl(bookId, currentPage);
+    img.src = url ?? '';
+
+    const markers = resolvePageMarkers(bookId, currentPage, markerStrategy);
+    markerLayer.update({ markers });
+
+    updateBookmarkButton();
+
+    sessionRepository.saveSession({ bookId, pageNumber: currentPage });
+  }
+
+  function updateBookmarkButton() {
+    const marked = bookmarkedPages.includes(currentPage);
+    bookmarkButton.textContent = marked ? '★ Marcada' : '☆ Marcar página';
+    bookmarkButton.setAttribute('aria-pressed', String(marked));
+  }
+
+  bookmarkButton.addEventListener('click', async () => {
+    const marked = bookmarkedPages.includes(currentPage);
+    if (marked) {
+      await bookmarkRepository.removeBookmark({ userId, bookId, pageNumber: currentPage, accessToken });
+      bookmarkedPages = bookmarkedPages.filter((p) => p !== currentPage);
+    } else {
+      await bookmarkRepository.addBookmark({ userId, bookId, pageNumber: currentPage, accessToken });
+      bookmarkedPages = [...bookmarkedPages, currentPage];
+    }
+    updateBookmarkButton();
+  });
+
+  function goToPage(pageNumber) {
+    if (pageNumber < firstPage || pageNumber > lastPage) return;
+    currentPage = pageNumber;
+    renderCurrentPage();
+  }
+
+  // Carga inicial: Marcadores reales de la cuenta, luego la página.
+  bookmarkRepository.getBookmarkedPages({ userId, bookId, accessToken }).then((pages) => {
+    bookmarkedPages = pages;
+    updateBookmarkButton();
+  });
+  renderCurrentPage();
+
+  function update() {}
+
+  function destroy() {
+    closeActivePanel();
+    backNav.destroy();
+    markerLayer.destroy();
+    element.remove();
+  }
+
+  return Object.freeze({ element, update, destroy });
+}

@@ -1,0 +1,69 @@
+/**
+ * resource-panel-overlay.css
+ *
+ * Mismos tokens que sign-out-confirm.css — sin ningún token nuevo.
+ */
+
+[data-component="resource-panel-overlay"] {
+  position: fixed;
+  inset: 0;
+  background: var(--al-surface-scrim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  z-index: 20;
+}
+
+@media (min-width: 640px) {
+  [data-component="resource-panel-overlay"] {
+    align-items: center;
+    padding: var(--al-space-4);
+  }
+}
+
+[data-component="resource-panel-overlay"] [data-part="panel"] {
+  width: 100%;
+  max-width: var(--al-dialog-max-width);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--al-surface-app);
+  border-radius: var(--al-radius-lg) var(--al-radius-lg) 0 0;
+  box-shadow: var(--al-shadow-dialog);
+  padding: var(--al-space-6);
+}
+
+@media (min-width: 640px) {
+  [data-component="resource-panel-overlay"] [data-part="panel"] {
+    border-radius: var(--al-radius-lg);
+  }
+}
+
+[data-component="resource-panel-overlay"] [data-part="header"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--al-space-4);
+}
+
+[data-component="resource-panel-overlay"] [data-part="title"] {
+  color: var(--al-text-ui);
+}
+
+[data-component="resource-panel-overlay"] [data-part="close"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--al-hit-target-min);
+  height: var(--al-hit-target-min);
+  background: none;
+  border: none;
+  color: var(--al-text-muted);
+  font-size: var(--al-size-22);
+  cursor: pointer;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="resource-panel-overlay"] [data-part="close"]:hover {
+  color: var(--al-text-ui);
+}
