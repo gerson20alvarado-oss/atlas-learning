@@ -38,8 +38,8 @@ export function createPageReaderScreen({
   lastPage,
   userId,
   accessToken,
-  runtimeConfig,
   pageSourceRepository,
+  audioSourceRepository,
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
@@ -221,7 +221,7 @@ export function createPageReaderScreen({
   function handleResourceSelect(resource) {
     if (resource.type === 'audio') {
       closeActivePanel();
-      activePanel = createAudioPanel({ resource, runtimeConfig, onClose: closeActivePanel });
+      activePanel = createAudioPanel({ resource, audioSourceRepository, onClose: closeActivePanel });
       element.appendChild(activePanel.element);
     } else if (resource.type === 'transcript') {
       closeActivePanel();

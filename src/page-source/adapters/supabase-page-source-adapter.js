@@ -1,9 +1,9 @@
 /**
  * page-source/adapters/supabase-page-source-adapter.js
  *
- * Única pieza de todo el sistema que sabe que las páginas de un
- * libro viven en un bucket público de Supabase Storage, y cuál es su
- * convención de ruta. Ruta congelada en esta sesión:
+ * Única pieza que sabe que las páginas de un libro viven en un
+ * bucket público de Supabase Storage, y cuál es su convención de
+ * ruta. Ruta congelada en esta sesión:
  *
  *   book-pages/{bookId}/page-{NNN}.webp
  *
@@ -17,8 +17,15 @@
  * hace falta pedir una URL firmada ni autenticar la petición, a
  * diferencia del bucket privado del Espacio de Estudio (Technical
  * Specification v2.0, §13). Por eso este adaptador no necesita
- * `fetch` en absoluto: solo construye la URL.
+ * `fetch` en absoluto: solo construye la URL, reutilizando
+ * `buildPublicStorageUrl` (storage/public-storage-url.js) — la misma
+ * pieza que ahora también usa AudioSource, para que la construcción
+ * de la URL nunca se duplique entre adaptadores de bucket público
+ * (corrección de esta sesión: antes cada adapter la escribía por su
+ * cuenta).
  */
+
+import { buildPublicStorageUrl } from '../../storage/public-storage-url.js';
 
 function formatPageNumber(pageNumber) {
   return String(pageNumber).padStart(3, '0');
@@ -34,7 +41,7 @@ export function createSupabasePageSourceAdapter({ supabaseUrl, bucket = 'book-pa
   async function getPageImageUrl({ bookId, pageNumber }) {
     assertConfigured();
     const path = `${bookId}/page-${formatPageNumber(pageNumber)}.webp`;
-    return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+    return buildPublicStorageUrl({ supabaseUrl, bucket, path });
   }
 
   return Object.freeze({ getPageImageUrl });

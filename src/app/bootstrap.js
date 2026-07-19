@@ -45,6 +45,9 @@ import { createLibraryAccessRepository } from '../domain/library-access/library-
 import { createPageSourceService } from '../page-source/page-source-contract.js';
 import { createSupabasePageSourceAdapter } from '../page-source/adapters/supabase-page-source-adapter.js';
 import { createPageSourceRepository } from '../domain/page-source/page-source-repository.js';
+import { createAudioSourceService } from '../audio-source/audio-source-contract.js';
+import { createSupabaseAudioSourceAdapter } from '../audio-source/adapters/supabase-audio-source-adapter.js';
+import { createAudioSourceRepository } from '../domain/audio-source/audio-source-repository.js';
 import { createReaderPositionService } from '../reader-position/reader-position-contract.js';
 import { createSupabaseReaderPositionAdapter } from '../reader-position/adapters/supabase-reader-position-adapter.js';
 import { createReaderPositionRepository } from '../domain/reader-position/reader-position-repository.js';
@@ -122,6 +125,17 @@ function bootstrap() {
   const pageSourceService = createPageSourceService(supabasePageSourceAdapter, errorBoundary);
   const pageSourceRepository = createPageSourceRepository(pageSourceService);
 
+  // AudioSource (corrección de esta sesión): mismo patrón exacto que
+  // PageSource — antes, el panel de audio construía la URL de
+  // Supabase directamente, una fuga de detalles de infraestructura
+  // hacia un componente de presentación. Ahora la resolución queda
+  // centralizada aquí, igual que todo lo demás.
+  const supabaseAudioSourceAdapter = createSupabaseAudioSourceAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+  });
+  const audioSourceService = createAudioSourceService(supabaseAudioSourceAdapter, errorBoundary);
+  const audioSourceRepository = createAudioSourceRepository(audioSourceService);
+
   // ReaderPosition, Supabase puro (esta sesión): a diferencia de
   // todo lo demás compuesto en este archivo, esta entidad
   // deliberadamente no recibe ninguna capa local — ni storage, ni
@@ -195,6 +209,7 @@ function bootstrap() {
     accountLinkingFlow,
     libraryAccessRepository,
     pageSourceRepository,
+    audioSourceRepository,
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
@@ -220,6 +235,7 @@ function bootstrap() {
     attemptRepository,
     authContract,
     pageSourceRepository,
+    audioSourceRepository,
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,

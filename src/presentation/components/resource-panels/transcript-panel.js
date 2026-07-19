@@ -1,12 +1,12 @@
 /**
  * presentation/components/resource-panels/transcript-panel.js
  *
- * Panel de solo lectura. El contenido real de la transcripción vive
- * en el apéndice del libro (pp. 208–212), todavía no producido ni
- * subido (hallazgo registrado desde la Etapa 3) — se muestra un
- * estado honesto en vez de fabricar texto, mismo criterio ya
- * aplicado desde Sprint 8 ("no fabriques audio, no inventes
- * assets").
+ * Panel de solo lectura. `resource.transcriptLines` (esta sesión,
+ * contenido real aportado por el usuario desde el apéndice del
+ * libro) es un arreglo de `{ speaker, text }` — `speaker` es `null`
+ * en un pasaje narrado, sin turnos de diálogo (p. ej. p.53). Cuando
+ * no existe todavía (páginas sin producir aún), se muestra el mismo
+ * estado honesto de siempre — nunca se fabrica contenido.
  */
 
 import { createResourcePanelOverlay } from '../resource-panel-overlay/resource-panel-overlay.js';
@@ -14,13 +14,33 @@ import { createResourcePanelOverlay } from '../resource-panel-overlay/resource-p
 export function createTranscriptPanel({ resource, onClose }) {
   const overlay = createResourcePanelOverlay({ title: `Transcripción — ${resource.pageTemplate}`, onClose });
 
-  const content = document.createElement('p');
-  content.className = 'al-type-ui-caption';
-  content.textContent = resource.sourcePageRef
-    ? 'La transcripción todavía no está disponible — pendiente de producir el apéndice del libro.'
-    : 'Este recurso no tiene transcripción asociada.';
+  if (resource.transcriptLines?.length) {
+    const container = document.createElement('div');
+    container.setAttribute('data-part', 'transcript-lines');
 
-  overlay.setContent(content);
+    resource.transcriptLines.forEach(({ speaker, text }) => {
+      const line = document.createElement('p');
+      line.setAttribute('data-part', speaker ? 'transcript-turn' : 'transcript-narration');
+      if (speaker) {
+        const speakerLabel = document.createElement('strong');
+        speakerLabel.textContent = speaker;
+        line.appendChild(speakerLabel);
+        line.appendChild(document.createTextNode(' ' + text));
+      } else {
+        line.textContent = text;
+      }
+      container.appendChild(line);
+    });
+
+    overlay.setContent(container);
+  } else {
+    const content = document.createElement('p');
+    content.className = 'al-type-ui-caption';
+    content.textContent = resource.sourcePageRef
+      ? 'La transcripción todavía no está disponible — pendiente de producir el apéndice del libro.'
+      : 'Este recurso no tiene transcripción asociada.';
+    overlay.setContent(content);
+  }
 
   return Object.freeze({ element: overlay.element, destroy: overlay.destroy });
 }
