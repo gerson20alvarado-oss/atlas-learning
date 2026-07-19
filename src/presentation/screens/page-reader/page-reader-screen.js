@@ -25,6 +25,7 @@ import { createAudioPanel } from '../../components/resource-panels/audio-panel.j
 import { createTranscriptPanel } from '../../components/resource-panels/transcript-panel.js';
 import { createStudyWorkspaceSheet } from '../../components/resource-panels/study-workspace-sheet.js';
 import { createSidePanel } from '../../components/side-panel/side-panel.js';
+import { createStudyNoteIcon } from '../../components/icons/study-note-icon.js';
 import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
 import { createAnchorPlacementStrategy } from '../../../domain/page-layout/anchor-placement-strategy.js';
 import { getPageResources } from '../../../domain/content/page-resource-catalog.js';
@@ -86,7 +87,22 @@ export function createPageReaderScreen({
   sidePanelSlot.setAttribute('data-part', 'side-panel-slot');
   sidePanelSlot.hidden = true;
 
+  // Pestaña del Espacio de Estudio (corrección de UX de esta sesión):
+  // asociada al Reader, no a la interfaz global — vive dentro de
+  // readerBody, se destruye con la pantalla. Siempre visible mientras
+  // se ve una página, en cualquier página (el Espacio de Estudio es
+  // un cuaderno personal, ya no depende de qué recursos tenga esa
+  // página en particular). Se oculta solo mientras el panel ya está
+  // abierto, para no competir con su propio botón de cerrar.
+  const studyWorkspaceTab = document.createElement('button');
+  studyWorkspaceTab.type = 'button';
+  studyWorkspaceTab.setAttribute('data-part', 'study-workspace-tab');
+  studyWorkspaceTab.setAttribute('aria-label', 'Abrir Espacio de Estudio');
+  studyWorkspaceTab.appendChild(createStudyNoteIcon());
+  studyWorkspaceTab.addEventListener('click', openStudyWorkspace);
+
   readerBody.appendChild(canvasContainer);
+  readerBody.appendChild(studyWorkspaceTab);
   readerBody.appendChild(sidePanelSlot);
 
   const navControls = document.createElement('div');
@@ -127,6 +143,28 @@ export function createPageReaderScreen({
     sidePanelSlot.replaceChildren();
     sidePanelSlot.hidden = true;
     readerBody.removeAttribute('data-side-panel-open');
+    studyWorkspaceTab.hidden = false;
+  }
+
+  function openStudyWorkspace() {
+    // Reabrir sobre la misma página no debe apilar paneles.
+    closeSidePanel();
+    const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
+    const sheet = createStudyWorkspaceSheet({
+      answerKeyResource,
+      bookId,
+      pageNumber: currentPage,
+      userId,
+      accessToken,
+      studyWorkspaceRepository,
+    });
+    const panel = createSidePanel({ title: 'Espacio de Estudio', onClose: closeSidePanel });
+    panel.setContent(sheet.element);
+    activeSidePanel = { destroy: () => { sheet.destroy(); panel.destroy(); } };
+    sidePanelSlot.hidden = false;
+    sidePanelSlot.replaceChildren(panel.element);
+    readerBody.setAttribute('data-side-panel-open', 'true');
+    studyWorkspaceTab.hidden = true;
   }
 
   function handleResourceSelect(resource) {
@@ -138,26 +176,11 @@ export function createPageReaderScreen({
       closeActivePanel();
       activePanel = createTranscriptPanel({ resource, onClose: closeActivePanel });
       element.appendChild(activePanel.element);
-    } else if (resource.type === 'studyWorkspace') {
-      // Reabrir sobre la misma página no debe apilar paneles.
-      closeSidePanel();
-      const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
-      const sheet = createStudyWorkspaceSheet({
-        answerKeyResource,
-        bookId,
-        pageNumber: currentPage,
-        userId,
-        accessToken,
-        studyWorkspaceRepository,
-      });
-      const panel = createSidePanel({ title: 'Espacio de Estudio', onClose: closeSidePanel });
-      panel.setContent(sheet.element);
-      activeSidePanel = { destroy: () => { sheet.destroy(); panel.destroy(); } };
-      sidePanelSlot.hidden = false;
-      sidePanelSlot.replaceChildren(panel.element);
-      readerBody.setAttribute('data-side-panel-open', 'true');
     }
-    // answerKey (u otro tipo sin marcador propio): nunca debería llegar aquí.
+    // studyWorkspace ya no se abre desde un marcador de página — ver
+    // la pestaña fija del Reader (studyWorkspaceTab, corrección de UX
+    // de esta sesión). answerKey (u otro tipo sin marcador propio):
+    // nunca debería llegar aquí.
   }
 
   async function renderCurrentPage() {

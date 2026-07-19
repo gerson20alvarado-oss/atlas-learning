@@ -15,8 +15,13 @@
  * `answerKey` nunca recibe posición aquí — decisión ya aprobada
  * (Technical Specification v2.1, §7.4): en Hi! Korean se consume
  * dentro del sheet de `studyWorkspace`, nunca con marcador propio.
- * Un candidato sin posición asignada no es un error — simplemente no
- * genera marcador (§7.3).
+ *
+ * `studyWorkspace` tampoco recibe posición aquí (corrección de UX,
+ * esta sesión): dejó de ser un marcador anclado a una página
+ * específica — es una pestaña fija del propio Reader, siempre
+ * disponible, en cualquier página (page-reader-screen.js,
+ * `studyWorkspaceTab`). Un candidato sin posición asignada no es un
+ * error — simplemente no genera marcador (§7.3).
  */
 
 // Confirmado con evidencia real (dos capítulos, tres páginas de
@@ -24,18 +29,17 @@
 // siempre en la misma región relativa, junto al título.
 const AUDIO_POSITION = Object.freeze({ x: 0.88, y: 0.06 });
 
-// Sin evidencia editorial que fijar — a diferencia del audio, estos
-// dos recursos son adiciones propias de Atlas, sin un ícono
-// impreso en la página real que igualar. Posiciones elegidas por
-// consistencia visual, no por patrón del libro.
+// Sin evidencia editorial que fijar — a diferencia del audio, este
+// recurso es una adición propia de Atlas, sin un ícono impreso en la
+// página real que igualar. Posición elegida por consistencia visual,
+// no por patrón del libro.
 const TRANSCRIPT_POSITION = Object.freeze({ x: 0.76, y: 0.06 });
-const STUDY_WORKSPACE_POSITION = Object.freeze({ x: 0.88, y: 0.92 });
 
 const DEFAULT_PLACEMENTS = Object.freeze({
   audio: AUDIO_POSITION,
   transcript: TRANSCRIPT_POSITION,
-  studyWorkspace: STUDY_WORKSPACE_POSITION,
-  // answerKey: sin entrada a propósito — nunca genera marcador propio.
+  // answerKey, studyWorkspace: sin entrada a propósito — ninguno de
+  // los dos genera marcador propio sobre la página.
 });
 
 /**

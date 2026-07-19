@@ -45,6 +45,7 @@
 
 [data-component="page-reader-screen"] [data-part="reader-body"] {
   display: flex;
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -130,4 +131,39 @@
 [data-component="page-reader-screen"] [data-part="prev"][disabled],
 [data-component="page-reader-screen"] [data-part="next"][disabled] {
   cursor: default;
+}
+
+/* Pestaña del Espacio de Estudio (corrección de UX, referencia
+   visual del usuario) — pegada al borde derecho de readerBody,
+   centrada verticalmente, redondeada solo hacia el contenido (nunca
+   hacia el borde de la pantalla, para transmitir "esto se desliza
+   desde aquí"). Nunca un FAB flotante: sin sombra elevada, sin
+   separación del borde. Se oculta mientras el panel ya está abierto
+   (mismo bug de especificidad de siempre, corregido aquí también). */
+[data-component="page-reader-screen"] [data-part="study-workspace-tab"] {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 88px;
+  padding: 0;
+  background: var(--al-green-700);
+  color: var(--al-paper-0);
+  border: none;
+  border-radius: var(--al-radius-lg) 0 0 var(--al-radius-lg);
+  cursor: pointer;
+  z-index: 5;
+  transition: width var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="page-reader-screen"] [data-part="study-workspace-tab"]:hover {
+  width: 44px;
+}
+
+[data-component="page-reader-screen"] [data-part="study-workspace-tab"][hidden] {
+  display: none;
 }
