@@ -45,6 +45,9 @@ import { createLibraryAccessRepository } from '../domain/library-access/library-
 import { createPageSourceService } from '../page-source/page-source-contract.js';
 import { createSupabasePageSourceAdapter } from '../page-source/adapters/supabase-page-source-adapter.js';
 import { createPageSourceRepository } from '../domain/page-source/page-source-repository.js';
+import { createReaderPositionService } from '../reader-position/reader-position-contract.js';
+import { createSupabaseReaderPositionAdapter } from '../reader-position/adapters/supabase-reader-position-adapter.js';
+import { createReaderPositionRepository } from '../domain/reader-position/reader-position-repository.js';
 import { createBookmarkService } from '../bookmark/bookmark-contract.js';
 import { createSupabaseBookmarkAdapter } from '../bookmark/adapters/supabase-bookmark-adapter.js';
 import { createBookmarkRepository } from '../domain/bookmark/bookmark-repository.js';
@@ -119,6 +122,18 @@ function bootstrap() {
   const pageSourceService = createPageSourceService(supabasePageSourceAdapter, errorBoundary);
   const pageSourceRepository = createPageSourceRepository(pageSourceService);
 
+  // ReaderPosition, Supabase puro (esta sesión): a diferencia de
+  // todo lo demás compuesto en este archivo, esta entidad
+  // deliberadamente no recibe ninguna capa local — ni storage, ni
+  // fallback. Mismo patrón contrato + adapter que el resto, con esa
+  // única diferencia intencional.
+  const supabaseReaderPositionAdapter = createSupabaseReaderPositionAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const readerPositionService = createReaderPositionService(supabaseReaderPositionAdapter, errorBoundary);
+  const readerPositionRepository = createReaderPositionRepository(readerPositionService);
+
   // Marcadores (Sprint Proposal — Nuevo Reader, Etapa 5): primera
   // entidad de esta sesión que el propio estudiante escribe en
   // tiempo real, no solo lee — mismo patrón contrato + adapter, tabla
@@ -141,10 +156,8 @@ function bootstrap() {
   const studyWorkspaceRepository = createStudyWorkspaceRepository(studyWorkspaceService);
 
   const accountLinkingFlow = createAccountLinkingFlow({
-    sessionRepository,
     attemptRepository,
     accountSnapshotService,
-    libraryAccessRepository,
   });
 
   // c. Router — inicializado pero sin resolver ninguna ruta todavía;
@@ -182,6 +195,7 @@ function bootstrap() {
     accountLinkingFlow,
     libraryAccessRepository,
     pageSourceRepository,
+    readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
   });
@@ -206,6 +220,7 @@ function bootstrap() {
     attemptRepository,
     authContract,
     pageSourceRepository,
+    readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
   });

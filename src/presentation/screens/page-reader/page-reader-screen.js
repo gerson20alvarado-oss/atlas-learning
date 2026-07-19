@@ -13,6 +13,10 @@
  * página inicial llega ya resuelto desde app/screen-router.js
  * (última página visitada, o `firstPage` si no hay ninguna); cambiar
  * de página no cambia de ruta, solo actualiza `ReaderPosition`.
+ *
+ * ReaderPosition, Supabase puro (esta sesión): cada cambio de página
+ * escribe directo a Supabase, sin ninguna capa local — `readerPositionRepository`
+ * es el único lugar de donde viene y a donde va esa posición.
  */
 
 import { createBackNav } from '../../components/back-nav/back-nav.js';
@@ -34,7 +38,7 @@ export function createPageReaderScreen({
   accessToken,
   runtimeConfig,
   pageSourceRepository,
-  sessionRepository,
+  readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
   attemptRepository,
@@ -175,7 +179,7 @@ export function createPageReaderScreen({
 
     updateBookmarkButton();
 
-    sessionRepository.saveSession({ bookId, pageNumber: currentPage, userId });
+    readerPositionRepository.savePosition({ userId, bookId, pageNumber: currentPage, accessToken });
   }
 
   function updateBookmarkButton() {

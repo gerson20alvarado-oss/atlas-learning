@@ -124,7 +124,9 @@ function buildLibraryScreen({
   runtimeConfig,
   libraryAccessRepository,
   authorizedBookIds,
-  sessionRepository,
+  readerPositionRepository,
+  userId,
+  authContract,
 }) {
   const library = getLibrary();
   // Control de Acceso por Libro (Caso 5, biblioteca vacía incluido):
@@ -150,14 +152,14 @@ function buildLibraryScreen({
   return createLibraryScreen({
     books,
     onBack: () => router.navigateTo('/'),
-    onSelectBook: (bookId) => {
-      // Nuevo Reader: Library abre el Reader directamente, en la
-      // última página real visitada de ESE libro (ReaderPosition
-      // puede apuntar a otro libro, si el estudiante lo dejó a medio
-      // leer) — o en la primera página con recursos si no hay
-      // ninguna posición previa real.
-      const position = sessionRepository.getSession();
-      const rawTargetPage = position?.bookId === bookId ? position.pageNumber : READER_FIRST_PAGE;
+    onSelectBook: async (bookId) => {
+      // ReaderPosition, Supabase puro (esta sesión): se resuelve
+      // directo contra Supabase antes de navegar — sin ninguna
+      // capa local, sin comparación manual de bookId (getPosition ya
+      // está acotado a este libro).
+      const accessToken = authContract.getSession()?.accessToken ?? null;
+      const position = await readerPositionRepository.getPosition({ userId, bookId, accessToken });
+      const rawTargetPage = position?.pageNumber ?? READER_FIRST_PAGE;
       const targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
       router.navigateTo(`/book/${bookId}/read/${targetPage}`);
     },
@@ -179,7 +181,7 @@ function buildPageReaderScreen({
   authContract,
   runtimeConfig,
   pageSourceRepository,
-  sessionRepository,
+  readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
   attemptRepository,
@@ -195,7 +197,7 @@ function buildPageReaderScreen({
     accessToken,
     runtimeConfig,
     pageSourceRepository,
-    sessionRepository,
+    readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
     attemptRepository,
@@ -336,35 +338,29 @@ function buildLearningSessionScreen({
   });
 }
 
-function buildHomeScreen({ router, sessionRepository, libraryAccessRepository, authorizedBookIds }) {
-  const position = sessionRepository.getSession();
+function buildHomeScreen({ router, readerPositionRepository, libraryAccessRepository, userId, authContract }) {
+  // ReaderPosition, Supabase puro (esta sesión): Home ya no necesita
+  // conocer la posición de antemano — ni estado de carga, ni
+  // distinción visual entre "hay algo" y "no hay nada". El botón
+  // resuelve todo al tocarlo, exactamente igual que Library ya
+  // resuelve la página al elegir un libro. Si no hay ninguna
+  // posición real (o el libro ya no está autorizado — Caso 4, mismo
+  // criterio silencioso de siempre), cae a la Library sin ningún
+  // aviso — un destino igual de válido, nunca un error.
+  return createHomeScreen({
+    onContinue: async () => {
+      const accessToken = authContract.getSession()?.accessToken ?? null;
+      const position = await readerPositionRepository.getMostRecentPosition({ userId, accessToken });
+      const authorizedBookIds = await libraryAccessRepository.getAuthorizedBookIds({ userId, accessToken });
+      const bookIsAuthorized =
+        position?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, position.bookId);
 
-  // Control de Acceso por Libro: mismo principio del Caso 4, aplicado
-  // aquí sin pantalla de error — Home nunca muestra un mensaje de
-  // "no disponible", simplemente no promete continuar algo que ya no
-  // es accesible. Cae al mismo estado vacío que "todavía no hay nada
-  // que continuar", sin distinción visible para el estudiante.
-  const bookIsAuthorized =
-    position?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, position.bookId);
-
-  // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): ReaderPosition
-  // ya no expresa unitId/lessonId (Technical Specification v2.1, §5.1)
-  // — "continuar" significa volver a la página exacta, no a una Lesson.
-  if (bookIsAuthorized && position.pageNumber) {
-    const book = getBookById(position.bookId);
-
-    if (book) {
-      return createHomeScreen({
-        bookTitle: book.title,
-        lessonTitle: `Página ${position.pageNumber}`,
-        onContinue: () => router.navigateTo(`/book/${position.bookId}/read/${position.pageNumber}`),
-      });
-    }
-  }
-
-  return createStateView({
-    kind: 'empty',
-    message: 'Todavía no hay nada que continuar. Explora la Library para comenzar.',
+      if (bookIsAuthorized) {
+        router.navigateTo(`/book/${position.bookId}/read/${position.pageNumber}`);
+      } else {
+        router.navigateTo('/library');
+      }
+    },
   });
 }
 
@@ -442,6 +438,7 @@ export function mountScreenRouter({
   accountLinkingFlow,
   libraryAccessRepository,
   pageSourceRepository,
+  readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
 }) {
@@ -516,6 +513,7 @@ export function mountScreenRouter({
       libraryAccessRepository,
       authorizedBookIds,
       pageSourceRepository,
+      readerPositionRepository,
       bookmarkRepository,
       studyWorkspaceRepository,
     });

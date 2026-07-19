@@ -75,11 +75,18 @@ export function createStudyWorkspaceSheet({
   container.appendChild(title);
 
   // --- Ejercicios reales, sin enunciado duplicado ---
+  // Corrección de UX (esta sesión, tras prueba manual): solo se
+  // muestran los ejercicios que de verdad tienen un Exercise
+  // resuelto. Sin el enunciado encima (hidePrompt), un ejercicio sin
+  // Exercise real quedaba como una línea de aviso flotando sin
+  // contexto — no es contenido, es ruido visual. El aviso neutral
+  // sigue existiendo tal cual en la Vista de Lectura heredada, donde
+  // el enunciado que lo precede sí le da sentido.
   const exercisesSection = document.createElement('div');
   exercisesSection.setAttribute('data-part', 'exercises');
-  const exerciseBlocks = resolveExerciseBlocks({ resource, bookId, attemptRepository, userId }).map((block) =>
-    createContentBlock(block),
-  );
+  const exerciseBlocks = resolveExerciseBlocks({ resource, bookId, attemptRepository, userId })
+    .filter((block) => block.exercise)
+    .map((block) => createContentBlock(block));
   exerciseBlocks.forEach((component) => exercisesSection.appendChild(component.element));
 
   // --- Notas ---
@@ -181,7 +188,7 @@ export function createStudyWorkspaceSheet({
     answerSection.appendChild(answerContent);
   }
 
-  container.appendChild(exercisesSection);
+  if (exerciseBlocks.length > 0) container.appendChild(exercisesSection);
   container.appendChild(notesLabel);
   container.appendChild(notesTextarea);
   container.appendChild(imagesGrid);
