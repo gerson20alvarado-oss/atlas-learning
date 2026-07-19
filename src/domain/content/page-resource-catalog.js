@@ -130,6 +130,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     pageNumber: 21,
     type: 'audio',
     pageTemplate: '대화',
+    trackLabel: 'Track 01',
     assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-dialogue.mp3', // pendiente: migrar a Storage (sin decidir todavía)
   },
 
@@ -163,6 +164,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     pageNumber: 23,
     type: 'audio',
     pageTemplate: '듣고 말하기 1',
+    trackLabel: 'Track 02',
     assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-1.mp3',
   },
   {
@@ -193,6 +195,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     pageNumber: 24,
     type: 'audio',
     pageTemplate: '듣고 말하기 2',
+    trackLabel: 'Track 03',
     assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-2.mp3',
   },
   {

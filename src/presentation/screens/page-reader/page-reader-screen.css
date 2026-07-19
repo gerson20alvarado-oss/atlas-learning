@@ -26,8 +26,24 @@
   background: var(--al-surface-app);
 }
 
+[data-component="page-reader-screen"] [data-part="page-indicator-container"] {
+  position: relative;
+}
+
 [data-component="page-reader-screen"] [data-part="page-indicator"] {
+  background: none;
+  border: none;
+  padding: var(--al-space-1) var(--al-space-2);
+  border-radius: var(--al-radius-md);
   color: var(--al-text-muted);
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="page-reader-screen"] [data-part="page-indicator"]:hover {
+  background: var(--al-surface-recessed);
+  color: var(--al-text-ui);
 }
 
 [data-component="page-reader-screen"] [data-part="bookmark-toggle"] {
@@ -92,6 +108,20 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+[data-component="page-reader-screen"] [data-part="canvas"][hidden] {
+  display: none;
+}
+
+[data-component="page-reader-screen"] [data-part="page-unavailable"] {
+  padding: var(--al-space-8) var(--al-space-4);
+  text-align: center;
+  color: var(--al-text-muted);
+}
+
+[data-component="page-reader-screen"] [data-part="page-unavailable"][hidden] {
+  display: none;
 }
 
 [data-component="page-reader-screen"] [data-part="nav-controls"] {

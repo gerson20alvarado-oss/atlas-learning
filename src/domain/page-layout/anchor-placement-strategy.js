@@ -22,18 +22,21 @@
  * disponible, en cualquier página (page-reader-screen.js,
  * `studyWorkspaceTab`). Un candidato sin posición asignada no es un
  * error — simplemente no genera marcador (§7.3).
+ *
+ * Posición definitiva de audio/transcripción (esta sesión, segunda
+ * corrección tras prueba manual): dentro de la franja de encabezado
+ * de la página, a la derecha del título de sección — nunca sobre la
+ * ilustración, el ejercicio, ni junto al QR. Horizontales entre sí,
+ * no apiladas — la posición vertical anterior (cerca del QR) resultó
+ * incorrecta al probarla en el Reader real.
  */
 
-// Confirmado con evidencia real (dos capítulos, tres páginas de
-// audio verificadas visualmente contra el PDF): el audio vive
-// siempre en la misma región relativa, junto al título.
-const AUDIO_POSITION = Object.freeze({ x: 0.88, y: 0.06 });
-
-// Sin evidencia editorial que fijar — a diferencia del audio, este
-// recurso es una adición propia de Atlas, sin un ícono impreso en la
-// página real que igualar. Posición elegida por consistencia visual,
-// no por patrón del libro.
-const TRANSCRIPT_POSITION = Object.freeze({ x: 0.76, y: 0.06 });
+// Separación horizontal calculada, no estimada a ojo: columna de
+// lectura = 680px (--al-measure-reading), tarjeta = 168px de ancho.
+// Una separación menor a ~0.25 (170px) las solapa. 0.265 deja un
+// margen pequeño real entre ambas.
+const AUDIO_POSITION = Object.freeze({ x: 0.55, y: 0.07 });
+const TRANSCRIPT_POSITION = Object.freeze({ x: 0.815, y: 0.07 });
 
 const DEFAULT_PLACEMENTS = Object.freeze({
   audio: AUDIO_POSITION,

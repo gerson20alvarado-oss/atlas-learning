@@ -26,6 +26,7 @@ import { createTranscriptPanel } from '../../components/resource-panels/transcri
 import { createStudyWorkspaceSheet } from '../../components/resource-panels/study-workspace-sheet.js';
 import { createSidePanel } from '../../components/side-panel/side-panel.js';
 import { createStudyNoteIcon } from '../../components/icons/study-note-icon.js';
+import { createPageNavigator } from '../../components/page-navigator/page-navigator.js';
 import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
 import { createAnchorPlacementStrategy } from '../../../domain/page-layout/anchor-placement-strategy.js';
 import { getPageResources } from '../../../domain/content/page-resource-catalog.js';
@@ -56,12 +57,20 @@ export function createPageReaderScreen({
   bookmarkButton.type = 'button';
   bookmarkButton.setAttribute('data-part', 'bookmark-toggle');
 
-  const pageIndicator = document.createElement('span');
+  const pageIndicatorContainer = document.createElement('div');
+  pageIndicatorContainer.setAttribute('data-part', 'page-indicator-container');
+
+  const pageIndicator = document.createElement('button');
+  pageIndicator.type = 'button';
   pageIndicator.setAttribute('data-part', 'page-indicator');
   pageIndicator.className = 'al-type-ui-caption';
+  pageIndicator.setAttribute('aria-label', 'Ir a una página específica');
+  pageIndicator.addEventListener('click', togglePageNavigator);
+
+  pageIndicatorContainer.appendChild(pageIndicator);
 
   chrome.appendChild(backNav.element);
-  chrome.appendChild(pageIndicator);
+  chrome.appendChild(pageIndicatorContainer);
   chrome.appendChild(bookmarkButton);
 
   const canvasContainer = document.createElement('div');
@@ -70,10 +79,28 @@ export function createPageReaderScreen({
   const img = document.createElement('img');
   img.setAttribute('data-part', 'canvas');
 
+  // Rango navegable ampliado a todo el libro (esta sesión, Page
+  // Navigator): solo las páginas 16-25 tienen imagen real subida a
+  // Storage hoy. Un fallo de carga aquí no es un error de la
+  // aplicación — es exactamente lo que el Sprint Proposal ya
+  // anticipó ("el visor podrá recorrer cualquier página... solo las
+  // páginas ya mapeadas mostrarán recursos"). Mismo aviso neutral que
+  // ya usa el resto de Atlas, nunca un ícono de imagen rota.
+  const pageUnavailableNotice = document.createElement('p');
+  pageUnavailableNotice.setAttribute('data-part', 'page-unavailable');
+  pageUnavailableNotice.className = 'al-type-ui-caption';
+  pageUnavailableNotice.textContent = 'Esta página todavía no está disponible.';
+  pageUnavailableNotice.hidden = true;
+  img.addEventListener('error', () => {
+    img.hidden = true;
+    pageUnavailableNotice.hidden = false;
+  });
+
   const markerStrategy = createAnchorPlacementStrategy();
   const markerLayer = createPageMarkerLayer({ markers: [], onSelect: handleResourceSelect });
 
   canvasContainer.appendChild(img);
+  canvasContainer.appendChild(pageUnavailableNotice);
   canvasContainer.appendChild(markerLayer.element);
 
   // Espacio de Estudio (corrección de UX de esta sesión): panel
@@ -131,10 +158,34 @@ export function createPageReaderScreen({
   let bookmarkedPages = [];
   let activePanel = null; // modal centrado: audio, transcripción
   let activeSidePanel = null; // panel lateral: Espacio de Estudio, exclusivamente
+  let activePageNavigator = null; // popover: saltar a una página específica
 
   function closeActivePanel() {
     activePanel?.destroy();
     activePanel = null;
+  }
+
+  function closePageNavigator() {
+    activePageNavigator?.destroy();
+    activePageNavigator = null;
+  }
+
+  function togglePageNavigator() {
+    if (activePageNavigator) {
+      closePageNavigator();
+      return;
+    }
+    activePageNavigator = createPageNavigator({
+      currentPage,
+      firstPage,
+      lastPage,
+      onNavigate: (pageNumber) => {
+        closePageNavigator();
+        goToPage(pageNumber);
+      },
+      onClose: closePageNavigator,
+    });
+    pageIndicatorContainer.appendChild(activePageNavigator.element);
   }
 
   function closeSidePanel() {
@@ -186,10 +237,13 @@ export function createPageReaderScreen({
   async function renderCurrentPage() {
     closeActivePanel();
     closeSidePanel();
+    closePageNavigator();
     prevButton.disabled = currentPage <= firstPage;
     nextButton.disabled = currentPage >= lastPage;
-    pageIndicator.textContent = `Página ${currentPage}`;
+    pageIndicator.textContent = `Página ${currentPage} de ${lastPage} ▾`;
     img.alt = `Página ${currentPage} del libro`;
+    pageUnavailableNotice.hidden = true;
+    img.hidden = false;
 
     const url = await pageSourceRepository.getPageImageUrl(bookId, currentPage);
     img.src = url ?? '';
@@ -238,6 +292,7 @@ export function createPageReaderScreen({
   function destroy() {
     closeActivePanel();
     closeSidePanel();
+    closePageNavigator();
     backNav.destroy();
     markerLayer.destroy();
     element.remove();

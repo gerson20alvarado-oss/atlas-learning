@@ -1,0 +1,82 @@
+/**
+ * page-navigator.css
+ *
+ * Popover pequeño, anclado bajo el indicador de página — mismo
+ * lenguaje visual de tarjeta ya establecido esta sesión (radius-xl,
+ * shadow-card), nunca un modal con scrim.
+ */
+
+[data-component="page-navigator"] {
+  position: absolute;
+  top: calc(100% + var(--al-space-2));
+  left: 0;
+  z-index: 15;
+  width: 220px;
+  padding: var(--al-space-3);
+  background: var(--al-paper-0);
+  border: 1px solid var(--al-border-default);
+  border-radius: var(--al-radius-xl);
+  box-shadow: var(--al-shadow-card);
+}
+
+[data-component="page-navigator"] [data-part="title"] {
+  margin: 0;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-muted);
+}
+
+[data-component="page-navigator"] [data-part="divider"] {
+  border: none;
+  border-top: var(--al-border-hairline) solid var(--al-border-default);
+  margin: var(--al-space-2) 0;
+}
+
+[data-component="page-navigator"] [data-part="input-row"] {
+  display: flex;
+  gap: var(--al-space-2);
+}
+
+[data-component="page-navigator"] [data-part="input"] {
+  flex: 1;
+  min-width: 0;
+  height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-2);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  color: var(--al-text-content);
+  background: var(--al-surface-app);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-md);
+}
+
+[data-component="page-navigator"] [data-part="input"]:focus {
+  outline: none;
+  border-color: var(--al-action-primary);
+}
+
+[data-component="page-navigator"] [data-part="go"] {
+  min-width: 44px;
+  height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-3);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-on-action);
+  background: var(--al-action-primary);
+  border: none;
+  border-radius: var(--al-radius-md);
+  cursor: pointer;
+}
+
+[data-component="page-navigator"] [data-part="error"] {
+  margin: var(--al-space-2) 0 0;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-feedback-incorrect);
+}
+
+[data-component="page-navigator"] [data-part="error"][hidden] {
+  display: none;
+}

@@ -1,10 +1,10 @@
 /**
  * page-marker-layer.css
  *
- * A diferencia de la Fase 3 anterior (solo visual, pointer-events:
- * none), aquí el marcador es un botón real — mismo criterio de
- * estados táctiles ya usado en el resto de Atlas (Design System
- * §22.2): transición suave, nunca un salto.
+ * Rediseño de esta sesión (referencia visual del usuario): tarjetas
+ * de audio/transcripción, no puntos genéricos. Inspiración: Apple
+ * Books, Notion, Linear, Arc — sombras suaves, bordes delicados,
+ * sin efectos exagerados.
  */
 
 [data-component="page-marker-layer"] {
@@ -13,31 +13,75 @@
   pointer-events: none;
 }
 
+/* Base compartida — misma familia visual para audio y transcripción:
+   mismo ancho, alto, radio, borde y sombra (pedido explícito del
+   usuario: "ambos pertenezcan a la misma familia"). */
 [data-component="page-marker-layer"] [data-part="marker"] {
   position: absolute;
   pointer-events: auto;
-  width: var(--al-hit-target-min);
-  height: var(--al-hit-target-min);
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: var(--al-surface-app);
-  border: var(--al-border-active) solid var(--al-ink-900);
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-2);
+  width: 168px;
+  height: 52px;
+  padding: 0 var(--al-space-3);
+  background: var(--al-paper-0);
+  border: 1px solid var(--al-border-default);
+  border-radius: var(--al-radius-xl);
+  box-shadow: var(--al-shadow-card);
   cursor: pointer;
   transition: transform var(--al-duration-fast) var(--al-ease-standard),
-    background var(--al-duration-fast) var(--al-ease-standard);
+    box-shadow var(--al-duration-fast) var(--al-ease-standard);
 }
 
 [data-component="page-marker-layer"] [data-part="marker"]:hover {
-  transform: translate(-50%, -50%) scale(1.08);
+  transform: translate(-50%, -50%) translateY(-1px);
+  box-shadow: 0 2px 4px rgba(33, 31, 28, 0.08), 0 4px 12px rgba(33, 31, 28, 0.1);
 }
 
 [data-component="page-marker-layer"] [data-part="marker"]:active {
-  background: var(--al-surface-recessed);
+  transform: translate(-50%, -50%) translateY(0);
+  box-shadow: var(--al-shadow-card);
 }
 
-/* Sin íconos nuevos — el color de fondo distingue el tipo, mismo
-   criterio de restricción que ya rige el set cerrado de doce
-   íconos: no se introduce ninguno nuevo para esta etapa. */
-[data-component="page-marker-layer"] [data-part="marker"][data-resource-type="studyWorkspace"] {
-  background: var(--al-ink-900);
+[data-component="page-marker-layer"] [data-part="marker-icon"] {
+  flex-shrink: 0;
+  color: var(--al-text-muted);
+}
+
+[data-component="page-marker-layer"] [data-part="marker-label"] {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-ui);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Audio: el botón Play es la única pieza con color de marca — el
+   resto de la tarjeta permanece neutro, para no competir con el
+   libro (WR P7, ningún color de acción fuera de su contexto). */
+[data-component="page-marker-layer"] [data-part="marker"][data-resource-type="audio"] [data-part="marker-play"] {
+  flex-shrink: 0;
+  color: var(--al-green-700);
+  transition: transform var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="page-marker-layer"] [data-part="marker"][data-resource-type="audio"]:hover [data-part="marker-play"] {
+  transform: scale(1.06);
+}
+
+[data-component="page-marker-layer"] [data-part="marker"][data-resource-type="transcript"] [data-part="marker-chevron"] {
+  flex-shrink: 0;
+  color: var(--al-text-muted);
+  transition: transform var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="page-marker-layer"] [data-part="marker"][data-resource-type="transcript"]:hover [data-part="marker-chevron"] {
+  transform: translateX(2px);
 }

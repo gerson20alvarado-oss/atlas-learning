@@ -107,16 +107,18 @@ function resolveLessonExercises(lesson, attemptRepository, userId) {
   };
 }
 
-// Nuevo Reader (Sprint Proposal — Nuevo Reader, §2): rango con
-// recursos reales de Lección 1-1. El propio PageReaderScreen no
-// impone este límite (Technical Specification v2.1, §7.2, "el visor
-// no impone el límite, los PageResource sí") — es esta composición,
-// para este Sprint, la que acota la navegación a lo que de verdad
-// existe en Storage. Ampliar el rango cuando se produzcan más
-// páginas no requiere ningún cambio de arquitectura, solo cambiar
-// estas dos constantes.
-const READER_FIRST_PAGE = 16;
-const READER_LAST_PAGE = 25;
+// Nuevo Reader (Sprint Proposal — Nuevo Reader, §2 + Page Navigator,
+// esta sesión): rango navegable ampliado al libro completo — el
+// propio PageReaderScreen nunca impuso el límite (Technical
+// Specification v2.1, §7.2, "el visor no impone el límite, los
+// PageResource sí"); antes se acotaba aquí a 16-25 porque el Page
+// Navigator todavía no existía y no había forma práctica de navegar
+// lejos. Con el Page Navigator, tiene sentido exponer el rango real.
+// Solo 16-25 tienen imagen real en Storage hoy — el resto cae al
+// aviso honesto de "página todavía no disponible" ya implementado en
+// page-reader-screen.js, nunca un ícono de imagen rota.
+const READER_FIRST_PAGE = 1;
+const READER_LAST_PAGE = 273;
 
 function buildLibraryScreen({
   router,

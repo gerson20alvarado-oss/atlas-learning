@@ -42,5 +42,6 @@
 @import url('../presentation/components/page-marker-layer/page-marker-layer.css');
 @import url('../presentation/components/resource-panel-overlay/resource-panel-overlay.css');
 @import url('../presentation/components/side-panel/side-panel.css');
+@import url('../presentation/components/page-navigator/page-navigator.css');
 @import url('../presentation/components/resource-panels/study-workspace-sheet.css');
 @import url('../presentation/screens/page-reader/page-reader-screen.css');
