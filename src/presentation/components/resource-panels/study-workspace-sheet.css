@@ -8,6 +8,11 @@
   gap: var(--al-space-4);
 }
 
+[data-component="study-workspace-sheet"] [data-part="title"] {
+  color: var(--al-text-ui);
+  margin: var(--al-space-2) 0 0;
+}
+
 [data-component="study-workspace-sheet"] [data-part="exercises"] [data-component="practice-block"] {
   margin-bottom: var(--al-space-6);
 }

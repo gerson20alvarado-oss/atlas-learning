@@ -43,12 +43,48 @@
   cursor: pointer;
 }
 
+[data-component="page-reader-screen"] [data-part="reader-body"] {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 [data-component="page-reader-screen"] [data-part="canvas-container"] {
   position: relative;
   width: 100%;
   max-width: var(--al-measure-reading);
   margin: 0 auto;
   flex: 1;
+  min-width: 0;
+  transition: max-width var(--al-duration-gentle) var(--al-ease-standard);
+  overflow-y: auto;
+}
+
+/* Cuando el panel lateral está abierto, el Reader se encoge — nunca
+   queda cubierto. Mismo umbral que side-panel.css (768px): por
+   debajo de eso, el panel se desliza como overlay y el Reader
+   conserva su ancho completo detrás. */
+@media (min-width: 768px) {
+  [data-component="page-reader-screen"] [data-part="reader-body"][data-side-panel-open] [data-part="canvas-container"] {
+    max-width: none;
+    flex: 0 0 68%;
+  }
+}
+
+[data-component="page-reader-screen"] [data-part="side-panel-slot"] {
+  flex: 0 0 32%;
+  min-width: 0;
+}
+
+[data-component="page-reader-screen"] [data-part="side-panel-slot"][hidden] {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  [data-component="page-reader-screen"] [data-part="side-panel-slot"] {
+    flex-basis: auto;
+  }
 }
 
 [data-component="page-reader-screen"] [data-part="canvas"] {

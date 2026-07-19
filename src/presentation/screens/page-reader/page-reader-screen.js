@@ -20,6 +20,7 @@ import { createPageMarkerLayer } from '../../components/page-marker-layer/page-m
 import { createAudioPanel } from '../../components/resource-panels/audio-panel.js';
 import { createTranscriptPanel } from '../../components/resource-panels/transcript-panel.js';
 import { createStudyWorkspaceSheet } from '../../components/resource-panels/study-workspace-sheet.js';
+import { createSidePanel } from '../../components/side-panel/side-panel.js';
 import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
 import { createAnchorPlacementStrategy } from '../../../domain/page-layout/anchor-placement-strategy.js';
 import { getPageResources } from '../../../domain/content/page-resource-catalog.js';
@@ -71,6 +72,20 @@ export function createPageReaderScreen({
   canvasContainer.appendChild(img);
   canvasContainer.appendChild(markerLayer.element);
 
+  // Espacio de Estudio (corrección de UX de esta sesión): panel
+  // lateral acoplado, no un modal — readerBody es la fila flex que
+  // hace posible que el Reader se encoja en vez de quedar cubierto
+  // (page-reader-screen.css define el ancho exacto del panel).
+  const readerBody = document.createElement('div');
+  readerBody.setAttribute('data-part', 'reader-body');
+
+  const sidePanelSlot = document.createElement('div');
+  sidePanelSlot.setAttribute('data-part', 'side-panel-slot');
+  sidePanelSlot.hidden = true;
+
+  readerBody.appendChild(canvasContainer);
+  readerBody.appendChild(sidePanelSlot);
+
   const navControls = document.createElement('div');
   navControls.setAttribute('data-part', 'nav-controls');
 
@@ -90,27 +105,41 @@ export function createPageReaderScreen({
   navControls.appendChild(nextButton);
 
   element.appendChild(chrome);
-  element.appendChild(canvasContainer);
+  element.appendChild(readerBody);
   element.appendChild(navControls);
 
   let currentPage = Math.min(Math.max(initialPageNumber, firstPage), lastPage);
   let bookmarkedPages = [];
-  let activePanel = null;
+  let activePanel = null; // modal centrado: audio, transcripción
+  let activeSidePanel = null; // panel lateral: Espacio de Estudio, exclusivamente
 
   function closeActivePanel() {
     activePanel?.destroy();
     activePanel = null;
   }
 
+  function closeSidePanel() {
+    activeSidePanel?.destroy();
+    activeSidePanel = null;
+    sidePanelSlot.replaceChildren();
+    sidePanelSlot.hidden = true;
+    readerBody.removeAttribute('data-side-panel-open');
+  }
+
   function handleResourceSelect(resource) {
-    closeActivePanel();
     if (resource.type === 'audio') {
+      closeActivePanel();
       activePanel = createAudioPanel({ resource, runtimeConfig, onClose: closeActivePanel });
+      element.appendChild(activePanel.element);
     } else if (resource.type === 'transcript') {
+      closeActivePanel();
       activePanel = createTranscriptPanel({ resource, onClose: closeActivePanel });
+      element.appendChild(activePanel.element);
     } else if (resource.type === 'studyWorkspace') {
+      // Reabrir sobre la misma página no debe apilar paneles.
+      closeSidePanel();
       const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
-      activePanel = createStudyWorkspaceSheet({
+      const sheet = createStudyWorkspaceSheet({
         resource,
         answerKeyResource,
         bookId,
@@ -119,16 +148,20 @@ export function createPageReaderScreen({
         accessToken,
         attemptRepository,
         studyWorkspaceRepository,
-        onClose: closeActivePanel,
       });
-    } else {
-      return; // answerKey (u otro tipo sin marcador propio): nunca debería llegar aquí
+      const panel = createSidePanel({ title: 'Espacio de Estudio', onClose: closeSidePanel });
+      panel.setContent(sheet.element);
+      activeSidePanel = { destroy: () => { sheet.destroy(); panel.destroy(); } };
+      sidePanelSlot.hidden = false;
+      sidePanelSlot.replaceChildren(panel.element);
+      readerBody.setAttribute('data-side-panel-open', 'true');
     }
-    element.appendChild(activePanel.element);
+    // answerKey (u otro tipo sin marcador propio): nunca debería llegar aquí.
   }
 
   async function renderCurrentPage() {
     closeActivePanel();
+    closeSidePanel();
     prevButton.disabled = currentPage <= firstPage;
     nextButton.disabled = currentPage >= lastPage;
     pageIndicator.textContent = `Página ${currentPage}`;
@@ -142,7 +175,7 @@ export function createPageReaderScreen({
 
     updateBookmarkButton();
 
-    sessionRepository.saveSession({ bookId, pageNumber: currentPage });
+    sessionRepository.saveSession({ bookId, pageNumber: currentPage, userId });
   }
 
   function updateBookmarkButton() {
@@ -180,6 +213,7 @@ export function createPageReaderScreen({
 
   function destroy() {
     closeActivePanel();
+    closeSidePanel();
     backNav.destroy();
     markerLayer.destroy();
     element.remove();

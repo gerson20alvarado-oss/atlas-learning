@@ -1,26 +1,31 @@
 /**
  * presentation/components/resource-panels/study-workspace-sheet.js
  *
- * El Espacio de Estudio (Sprint Proposal — Nuevo Reader, Etapas 8 y
- * 9 combinadas): aloja, para una página, (a) los ejercicios reales
- * de esa página vía el Exercise Engine ya existente, sin modificar
- * su lógica; (b) las notas libres del estudiante, con guardado
- * automático; (c) las imágenes que el estudiante suba; (d) si existe
- * un `PageResource(answerKey)` para la misma página, una sección
- * colapsable de respuestas oficiales — composición en la interfaz,
- * nunca en el dato (Technical Specification v2.1, §8.3, ya
- * aprobado).
+ * El Espacio de Estudio. Corrección de UX (esta sesión, tras prueba
+ * manual): ya no renderiza el enunciado de cada ejercicio — el
+ * estudiante ya lo ve en la página real del libro; duplicarlo
+ * contradecía "el libro es el protagonista". El Exercise Engine
+ * sigue usándose exactamente igual por dentro (Attempt real,
+ * `onCheck` real, sin tocar su lógica) — cada bloque de ejercicio
+ * solo recibe `hidePrompt: true` (practice-block.js, extensión
+ * aditiva) para omitir la Question; Answer area y Feedback quedan
+ * intactos, porque ahí sí ocurre algo que el papel no puede dar.
  *
- * Cada ejercicio se resuelve exactamente como ya lo hace
- * app/screen-router.js para la Vista de Lectura heredada
- * (`getExerciseContentContext` + `getExerciseById` +
- * `attemptRepository`) — mismo ciclo Question → Answer → Feedback,
- * el mismo componente real (`createContentBlock`), sin ninguna
- * reconstrucción propia.
+ * Ya no se auto-envuelve en `resource-panel-overlay` — expone su
+ * contenido en bruto (`{ element, destroy }`) para que quien lo monte
+ * (page-reader-screen.js) decida el contenedor: modal centrado o
+ * panel lateral, según el recurso. Arquitectónicamente sigue siendo
+ * el mismo componente; solo cambió quién decide su presentación.
+ *
+ * Aloja, para una página: (a) los ejercicios reales de esa página,
+ * sin su enunciado; (b) las notas libres del estudiante, con
+ * guardado automático; (c) las imágenes que el estudiante suba; (d)
+ * si existe un `PageResource(answerKey)` para la misma página, una
+ * sección colapsable de respuestas oficiales — composición en la
+ * interfaz, nunca en el dato (Technical Specification v2.1, §8.3).
  */
 
 import { createContentBlock } from '../content-blocks/content-block-renderer.js';
-import { createResourcePanelOverlay } from '../resource-panel-overlay/resource-panel-overlay.js';
 import { getExerciseContentContext } from '../../../domain/content/content-repository.js';
 import { getExerciseById } from '../../../domain/exercise/exercise-repository.js';
 import { evaluateExercise } from '../../../domain/exercise/exercise-evaluator.js';
@@ -31,12 +36,12 @@ function resolveExerciseBlocks({ resource, bookId, attemptRepository, userId }) 
   return resource.exerciseIds.map((exerciseId) => {
     const context = getExerciseContentContext(bookId, exerciseId);
     if (!context) {
-      return { id: exerciseId, type: 'practice', exerciseId, prompt: '', exercise: null, priorAttempt: null, onCheck: null };
+      return { id: exerciseId, type: 'practice', exerciseId, hidePrompt: true, exercise: null, priorAttempt: null, onCheck: null };
     }
     const { block, lessonId } = context;
     const exercise = getExerciseById(exerciseId);
     if (!exercise) {
-      return { ...block, exercise: null, priorAttempt: null, onCheck: null };
+      return { ...block, hidePrompt: true, exercise: null, priorAttempt: null, onCheck: null };
     }
     const latestAttempt = attemptRepository.getLatestAttempt(lessonId, exerciseId);
     const priorAttempt = latestAttempt?.isCorrect ? latestAttempt : null;
@@ -45,7 +50,7 @@ function resolveExerciseBlocks({ resource, bookId, attemptRepository, userId }) 
       attemptRepository.recordAttempt({ exerciseId, lessonId, response, isCorrect: result.isCorrect, userId });
       return result;
     };
-    return { ...block, exercise, priorAttempt, onCheck };
+    return { ...block, hidePrompt: true, exercise, priorAttempt, onCheck };
   });
 }
 
@@ -58,14 +63,18 @@ export function createStudyWorkspaceSheet({
   accessToken,
   attemptRepository,
   studyWorkspaceRepository,
-  onClose,
 }) {
-  const overlay = createResourcePanelOverlay({ title: `Espacio de Estudio — ${resource.pageTemplate}`, onClose });
-
   const container = document.createElement('div');
   container.setAttribute('data-component', 'study-workspace-sheet');
 
-  // --- Ejercicios reales ---
+  // --- Título propio (el contenedor que lo monte ya no lo provee) ---
+  const title = document.createElement('h2');
+  title.setAttribute('data-part', 'title');
+  title.className = 'al-type-ui-label';
+  title.textContent = 'Espacio de Estudio';
+  container.appendChild(title);
+
+  // --- Ejercicios reales, sin enunciado duplicado ---
   const exercisesSection = document.createElement('div');
   exercisesSection.setAttribute('data-part', 'exercises');
   const exerciseBlocks = resolveExerciseBlocks({ resource, bookId, attemptRepository, userId }).map((block) =>
@@ -179,8 +188,6 @@ export function createStudyWorkspaceSheet({
   container.appendChild(imageInput);
   if (answerSection) container.appendChild(answerSection);
 
-  overlay.setContent(container);
-
   // Carga inicial: entrada ya guardada (notas + imágenes reales).
   studyWorkspaceRepository.getEntry({ userId, bookId, pageNumber, accessToken }).then((entry) => {
     notesTextarea.value = entry.notes;
@@ -191,8 +198,8 @@ export function createStudyWorkspaceSheet({
   function destroy() {
     window.clearTimeout(notesSaveTimer);
     exerciseBlocks.forEach((component) => component.destroy());
-    overlay.destroy();
+    container.remove();
   }
 
-  return Object.freeze({ element: overlay.element, destroy });
+  return Object.freeze({ element: container, destroy });
 }

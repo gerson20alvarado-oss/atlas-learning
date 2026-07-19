@@ -9,6 +9,15 @@
  * al área de respuesta; 4) Continue — es el botón compartido de la
  * Session, no vive aquí.
  *
+ * `block.hidePrompt` (opcional, Nuevo Reader — Study Workspace):
+ * omite la Question cuando el enunciado ya es visible en otro lugar
+ * — la página real del libro, en el caso del Espacio de Estudio.
+ * Nunca se activa por defecto (`undefined`/`false` en cualquier
+ * lugar que no lo pida explícitamente), así que la Vista de Lectura
+ * heredada y el resto del Exercise Engine quedan exactamente
+ * iguales. La lógica de verificación (Answer area + Feedback) no
+ * cambia en absoluto — sigue siendo el mismo `onCheck`/Attempt real.
+ *
  * Si `block.exercise` no se resolvió (actividades abiertas,
  * dependientes de audio real, o tipos aún no soportados como
  * matching — ver domain/content/exercise-catalog.js) o el tipo no
@@ -56,11 +65,13 @@ export function createPracticeBlock(block) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'practice-block');
 
-  const question = document.createElement('p');
-  question.setAttribute('data-part', 'question');
-  question.className = 'al-type-reading-body';
-  question.textContent = block.prompt ?? '';
-  element.appendChild(question);
+  if (!block.hidePrompt) {
+    const question = document.createElement('p');
+    question.setAttribute('data-part', 'question');
+    question.className = 'al-type-reading-body';
+    question.textContent = block.prompt ?? '';
+    element.appendChild(question);
+  }
 
   const factory = block.exercise ? ANSWER_AREA_FACTORY_BY_TYPE[block.exercise.type] : null;
   const answerArea = factory

@@ -1,0 +1,62 @@
+/**
+ * side-panel.css
+ *
+ * Desktop/tablet ancho (≥768px, mismo umbral de "ancho suficiente"
+ * ya usado en el proyecto): panel acoplado, ~32% del ancho — el
+ * Reader se encoge, nunca queda cubierto (page-reader-screen.css
+ * define el layout flex que hace esto real).
+ *
+ * Pantallas angostas: compartir el ancho con una imagen de página ya
+ * de por sí estrecha no sería usable — el panel se desliza como
+ * overlay que cubre la mayor parte del ancho, mismo criterio de
+ * "bottom sheet" que ya usa resource-panel-overlay.css en su propio
+ * umbral angosto.
+ */
+
+[data-component="side-panel"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--al-surface-app);
+  border-left: var(--al-border-hairline) solid var(--al-border-default);
+  overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+  [data-component="side-panel"] {
+    position: fixed;
+    inset: 0;
+    left: 12%;
+    z-index: 20;
+    border-left: none;
+    box-shadow: var(--al-shadow-dialog);
+  }
+}
+
+[data-component="side-panel"] [data-part="header"] {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--al-space-2);
+}
+
+[data-component="side-panel"] [data-part="close"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--al-hit-target-min);
+  height: var(--al-hit-target-min);
+  background: none;
+  border: none;
+  color: var(--al-text-muted);
+  font-size: var(--al-size-22);
+  cursor: pointer;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="side-panel"] [data-part="close"]:hover {
+  color: var(--al-text-ui);
+}
+
+[data-component="side-panel"] [data-part="content"] {
+  padding: 0 var(--al-space-4) var(--al-space-4);
+}
