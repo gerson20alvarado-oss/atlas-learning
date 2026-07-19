@@ -338,6 +338,10 @@
   color: var(--al-text-muted);
 }
 
+[data-component="typing-block"] [data-part="input"]::placeholder {
+  color: var(--al-text-muted);
+}
+
 /* ---- Fill in the blank (§17.4) — inline within the sentence ---- */
 
 [data-component="fill-blank-block"] {

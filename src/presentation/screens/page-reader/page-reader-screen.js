@@ -41,7 +41,6 @@ export function createPageReaderScreen({
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
-  attemptRepository,
   onBack,
 }) {
   const element = document.createElement('div');
@@ -144,13 +143,11 @@ export function createPageReaderScreen({
       closeSidePanel();
       const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
       const sheet = createStudyWorkspaceSheet({
-        resource,
         answerKeyResource,
         bookId,
         pageNumber: currentPage,
         userId,
         accessToken,
-        attemptRepository,
         studyWorkspaceRepository,
       });
       const panel = createSidePanel({ title: 'Espacio de Estudio', onClose: closeSidePanel });

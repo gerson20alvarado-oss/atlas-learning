@@ -1,103 +1,66 @@
 /**
  * presentation/components/resource-panels/study-workspace-sheet.js
  *
- * El Espacio de Estudio. Corrección de UX (esta sesión, tras prueba
- * manual): ya no renderiza el enunciado de cada ejercicio — el
- * estudiante ya lo ve en la página real del libro; duplicarlo
- * contradecía "el libro es el protagonista". El Exercise Engine
- * sigue usándose exactamente igual por dentro (Attempt real,
- * `onCheck` real, sin tocar su lógica) — cada bloque de ejercicio
- * solo recibe `hidePrompt: true` (practice-block.js, extensión
- * aditiva) para omitir la Question; Answer area y Feedback quedan
- * intactos, porque ahí sí ocurre algo que el papel no puede dar.
+ * El Espacio de Estudio — cuaderno personal del estudiante, y nada
+ * más (corrección de concepto, esta sesión, tras prueba manual). No
+ * es una superficie para resolver ejercicios — el estudiante ya ve
+ * el ejercicio en la página real del libro. Por diseño, deja de
+ * conocer por completo la existencia del Exercise Engine: no importa
+ * `content-block-renderer.js`, no resuelve `exerciseId`, no llama a
+ * `attemptRepository`. Su contenido es idéntico en cualquier página
+ * del libro — gramática, vocabulario, audio, lo que sea — nunca
+ * varía según el tipo de recurso.
  *
- * Ya no se auto-envuelve en `resource-panel-overlay` — expone su
- * contenido en bruto (`{ element, destroy }`) para que quien lo monte
- * (page-reader-screen.js) decida el contenedor: modal centrado o
- * panel lateral, según el recurso. Arquitectónicamente sigue siendo
- * el mismo componente; solo cambió quién decide su presentación.
+ * Consecuencia real, ya conocida y aceptada: ningún `Attempt` se
+ * genera desde este panel. El estudiante lee la pregunta en la
+ * página, escribe lo que quiera en sus notas, y puede revelar la
+ * respuesta oficial para autoevaluarse — nada de eso queda
+ * registrado como intento verificado.
  *
- * Aloja, para una página: (a) los ejercicios reales de esa página,
- * sin su enunciado; (b) las notas libres del estudiante, con
- * guardado automático; (c) las imágenes que el estudiante suba; (d)
- * si existe un `PageResource(answerKey)` para la misma página, una
- * sección colapsable de respuestas oficiales — composición en la
- * interfaz, nunca en el dato (Technical Specification v2.1, §8.3).
+ * Contiene, siempre, exactamente lo mismo: título (con su
+ * equivalente en coreano), notas con guardado automático, adjuntar
+ * imágenes, y una sección colapsable de respuestas oficiales.
  */
 
-import { createContentBlock } from '../content-blocks/content-block-renderer.js';
-import { getExerciseContentContext } from '../../../domain/content/content-repository.js';
-import { getExerciseById } from '../../../domain/exercise/exercise-repository.js';
-import { evaluateExercise } from '../../../domain/exercise/exercise-evaluator.js';
-
+const ANSWER_KEY_PENDING_MESSAGE = 'Aquí podrás ver las respuestas oficiales cuando estén disponibles.';
 const NOTES_SAVE_DEBOUNCE_MS = 800;
 
-function resolveExerciseBlocks({ resource, bookId, attemptRepository, userId }) {
-  return resource.exerciseIds.map((exerciseId) => {
-    const context = getExerciseContentContext(bookId, exerciseId);
-    if (!context) {
-      return { id: exerciseId, type: 'practice', exerciseId, hidePrompt: true, exercise: null, priorAttempt: null, onCheck: null };
-    }
-    const { block, lessonId } = context;
-    const exercise = getExerciseById(exerciseId);
-    if (!exercise) {
-      return { ...block, hidePrompt: true, exercise: null, priorAttempt: null, onCheck: null };
-    }
-    const latestAttempt = attemptRepository.getLatestAttempt(lessonId, exerciseId);
-    const priorAttempt = latestAttempt?.isCorrect ? latestAttempt : null;
-    const onCheck = (response) => {
-      const result = evaluateExercise(exercise, response);
-      attemptRepository.recordAttempt({ exerciseId, lessonId, response, isCorrect: result.isCorrect, userId });
-      return result;
-    };
-    return { ...block, hidePrompt: true, exercise, priorAttempt, onCheck };
-  });
-}
-
 export function createStudyWorkspaceSheet({
-  resource,
   answerKeyResource,
   bookId,
   pageNumber,
   userId,
   accessToken,
-  attemptRepository,
   studyWorkspaceRepository,
 }) {
   const container = document.createElement('div');
   container.setAttribute('data-component', 'study-workspace-sheet');
 
-  // --- Título propio (el contenedor que lo monte ya no lo provee) ---
+  // --- Título, con su equivalente en coreano ---
   const title = document.createElement('h2');
   title.setAttribute('data-part', 'title');
   title.className = 'al-type-ui-label';
   title.textContent = 'Espacio de Estudio';
-  container.appendChild(title);
 
-  // --- Ejercicios reales, sin enunciado duplicado ---
-  // Corrección de UX (esta sesión, tras prueba manual): solo se
-  // muestran los ejercicios que de verdad tienen un Exercise
-  // resuelto. Sin el enunciado encima (hidePrompt), un ejercicio sin
-  // Exercise real quedaba como una línea de aviso flotando sin
-  // contexto — no es contenido, es ruido visual. El aviso neutral
-  // sigue existiendo tal cual en la Vista de Lectura heredada, donde
-  // el enunciado que lo precede sí le da sentido.
-  const exercisesSection = document.createElement('div');
-  exercisesSection.setAttribute('data-part', 'exercises');
-  const exerciseBlocks = resolveExerciseBlocks({ resource, bookId, attemptRepository, userId })
-    .filter((block) => block.exercise)
-    .map((block) => createContentBlock(block));
-  exerciseBlocks.forEach((component) => exercisesSection.appendChild(component.element));
+  const titleKo = document.createElement('p');
+  titleKo.setAttribute('data-part', 'title-ko');
+  titleKo.className = 'al-type-ui-caption';
+  titleKo.lang = 'ko';
+  titleKo.textContent = '학습 공간';
+
+  const titleDivider = document.createElement('hr');
+  titleDivider.setAttribute('data-part', 'divider');
 
   // --- Notas ---
   const notesLabel = document.createElement('label');
-  notesLabel.className = 'al-type-ui-caption';
+  notesLabel.className = 'al-type-ui-label';
   notesLabel.setAttribute('data-part', 'notes-label');
   notesLabel.textContent = 'Mis notas';
 
   const notesTextarea = document.createElement('textarea');
   notesTextarea.setAttribute('data-part', 'notes');
   notesTextarea.setAttribute('aria-label', 'Mis notas');
+  notesTextarea.placeholder = 'Escribe aquí tus notas...';
 
   let notesSaveTimer = null;
   function scheduleSave() {
@@ -123,8 +86,25 @@ export function createStudyWorkspaceSheet({
   const imageInput = document.createElement('input');
   imageInput.type = 'file';
   imageInput.accept = 'image/*';
+  imageInput.id = `study-workspace-image-input-${bookId}-${pageNumber}`;
   imageInput.setAttribute('data-part', 'image-input');
   imageInput.setAttribute('aria-label', 'Añadir imagen');
+
+  const imageInputLabel = document.createElement('label');
+  imageInputLabel.setAttribute('data-part', 'image-input-label');
+  imageInputLabel.setAttribute('for', imageInput.id);
+  imageInputLabel.textContent = '📎 Elegir archivo';
+
+  const imageInputStatus = document.createElement('span');
+  imageInputStatus.setAttribute('data-part', 'image-input-status');
+  imageInputStatus.className = 'al-type-ui-caption';
+  imageInputStatus.textContent = 'Ningún archivo seleccionado';
+
+  const imageInputRow = document.createElement('div');
+  imageInputRow.setAttribute('data-part', 'image-input-row');
+  imageInputRow.appendChild(imageInputLabel);
+  imageInputRow.appendChild(imageInput);
+  imageInputRow.appendChild(imageInputStatus);
 
   async function renderImages() {
     const thumbnails = await Promise.all(
@@ -161,6 +141,7 @@ export function createStudyWorkspaceSheet({
   imageInput.addEventListener('change', async () => {
     const file = imageInput.files?.[0];
     if (!file) return;
+    imageInputStatus.textContent = file.name;
     const path = await studyWorkspaceRepository.uploadImage({ userId, bookId, pageNumber, file, accessToken });
     if (path) {
       currentImageRefs = [...currentImageRefs, path];
@@ -170,30 +151,35 @@ export function createStudyWorkspaceSheet({
       renderImages();
     }
     imageInput.value = '';
+    imageInputStatus.textContent = 'Ningún archivo seleccionado';
   });
 
-  // --- Respuestas oficiales (colapsable, solo si el recurso existe en esta página) ---
-  let answerSection = null;
-  if (answerKeyResource) {
-    answerSection = document.createElement('details');
-    answerSection.setAttribute('data-part', 'answer-key');
-    const summary = document.createElement('summary');
-    summary.className = 'al-type-ui-caption';
-    summary.textContent = 'Mostrar respuestas oficiales';
-    const answerContent = document.createElement('p');
-    answerContent.className = 'al-type-ui-caption';
-    answerContent.textContent =
-      'Las respuestas oficiales todavía no están disponibles — pendiente de producir el apéndice del libro.';
-    answerSection.appendChild(summary);
-    answerSection.appendChild(answerContent);
-  }
+  // --- Respuestas oficiales — siempre presente, mismo contenido en
+  // toda página sin recurso real todavía; se completará sola cuando
+  // el apéndice del libro se produzca (ver page-resource-catalog.js).
+  const answerDivider = document.createElement('hr');
+  answerDivider.setAttribute('data-part', 'divider');
 
-  if (exerciseBlocks.length > 0) container.appendChild(exercisesSection);
+  const answerSection = document.createElement('details');
+  answerSection.setAttribute('data-part', 'answer-key');
+  answerSection.open = true;
+  const summary = document.createElement('summary');
+  summary.textContent = 'Mostrar respuestas oficiales';
+  const answerContent = document.createElement('p');
+  answerContent.className = 'al-type-ui-caption';
+  answerContent.textContent = ANSWER_KEY_PENDING_MESSAGE;
+  answerSection.appendChild(summary);
+  answerSection.appendChild(answerContent);
+
+  container.appendChild(title);
+  container.appendChild(titleKo);
+  container.appendChild(titleDivider);
   container.appendChild(notesLabel);
   container.appendChild(notesTextarea);
+  container.appendChild(imageInputRow);
   container.appendChild(imagesGrid);
-  container.appendChild(imageInput);
-  if (answerSection) container.appendChild(answerSection);
+  container.appendChild(answerDivider);
+  container.appendChild(answerSection);
 
   // Carga inicial: entrada ya guardada (notas + imágenes reales).
   studyWorkspaceRepository.getEntry({ userId, bookId, pageNumber, accessToken }).then((entry) => {
@@ -204,7 +190,6 @@ export function createStudyWorkspaceSheet({
 
   function destroy() {
     window.clearTimeout(notesSaveTimer);
-    exerciseBlocks.forEach((component) => component.destroy());
     container.remove();
   }
 

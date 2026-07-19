@@ -24,6 +24,14 @@ export function createTypingBlock({ exercise, priorAttempt, onCheck }) {
   input.type = 'text';
   input.setAttribute('data-part', 'input');
   input.setAttribute('aria-label', 'Tu respuesta');
+  // Corrección de UX (esta sesión): el input nunca tuvo su propia
+  // señal visual — confiaba enteramente en el enunciado, arriba, para
+  // que el estudiante supiera que ahí se esperaba una respuesta. El
+  // Espacio de Estudio suprime el enunciado a propósito (§1, ya
+  // aprobado); sin este placeholder, el input queda como una línea
+  // sin contexto. No revela la pregunta — solo indica que el campo
+  // espera una respuesta, útil en cualquier contexto, no solo aquí.
+  input.placeholder = 'Escribe tu respuesta';
 
   const feedback = document.createElement('p');
   feedback.setAttribute('data-part', 'feedback');

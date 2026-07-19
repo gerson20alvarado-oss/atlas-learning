@@ -184,7 +184,6 @@ function buildPageReaderScreen({
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
-  attemptRepository,
 }) {
   const accessToken = authContract.getSession()?.accessToken ?? null;
 
@@ -200,7 +199,6 @@ function buildPageReaderScreen({
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
-    attemptRepository,
     onBack: () => router.navigateTo('/library'),
   });
 }
