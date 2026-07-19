@@ -10,6 +10,13 @@
  * inventados) y contra el mapeo editorial de Hi! Korean 3A ya
  * confirmado con evidencia de dos capítulos.
  *
+ * Audio en Supabase Storage (esta sesión): `assetPath` de un recurso
+ * `audio` es una ruta relativa dentro del bucket público
+ * `book-audio` — `{bookId}/{archivo}.mp3` — mismo criterio de
+ * convención ya usado por PageSource para `book-pages`. Se resuelve
+ * en presentation/components/resource-panels/audio-panel.js, no
+ * aquí — este archivo es contenido puro, nunca conoce Supabase.
+ *
  * Resolución de una ambigüedad que la Technical Specification dejó
  * en singular ("el ejercicio real, si existe exerciseId"): una
  * página puede tener más de un ejercicio (p. ej. p.18, que junta dos
@@ -131,7 +138,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     type: 'audio',
     pageTemplate: '대화',
     trackLabel: 'Track 01',
-    assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-dialogue.mp3', // pendiente: migrar a Storage (sin decidir todavía)
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_01.mp3',
   },
 
   // p.22 — 어휘와 표현
@@ -165,7 +172,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     type: 'audio',
     pageTemplate: '듣고 말하기 1',
     trackLabel: 'Track 02',
-    assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-1.mp3',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_02.mp3',
   },
   {
     bookId: HI_KOREAN_3A,
@@ -196,7 +203,7 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     type: 'audio',
     pageTemplate: '듣고 말하기 2',
     trackLabel: 'Track 03',
-    assetPath: 'assets/audio/content/hi-korean-3a/lesson-1-1-listen-2.mp3',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_03.mp3',
   },
   {
     bookId: HI_KOREAN_3A,
@@ -231,6 +238,104 @@ export const PAGE_RESOURCE_CATALOG = Object.freeze([
     type: 'studyWorkspace',
     pageTemplate: '말하기 확장',
     exerciseIds: ['ex-hikorean-1-1-production-01'],
+  },
+
+  // p.31 — 대화 (Lección 1-2). Mismo criterio que p.21: 대화 incluye
+  // el texto completo en la página, sin transcripción adicional
+  // (mapeo confirmado, "reglas de audio"). Pista candidata SB_04 —
+  // hipótesis de trabajo por posición secuencial + duración
+  // plausible (1:18), no verificada palabra por palabra (mismo
+  // límite ya documentado para el resto del Audio Mapping).
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 31,
+    type: 'audio',
+    pageTemplate: '대화',
+    trackLabel: 'Track 04',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_04.mp3',
+  },
+
+  // p.40 — 실전 말하기 (Lección 1-3). Mismo criterio: sin
+  // transcripción, el texto ya está completo en la página. Pista
+  // candidata SB_05 — misma hipótesis de trabajo que la anterior.
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 40,
+    type: 'audio',
+    pageTemplate: '실전 말하기',
+    trackLabel: 'Track 05',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_05.mp3',
+  },
+
+  // ==================== CAPÍTULO 2 (base 44) ====================
+  // Mismo patrón exacto que el Capítulo 1, confirmado con evidencia
+  // real en las páginas clave (44, 45, 46, 51, 53, 54, 56, 61, 66,
+  // 70) antes de escribir estas entradas.
+
+  // p.51 — 대화 (Lección 2-1)
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 51,
+    type: 'audio',
+    pageTemplate: '대화',
+    trackLabel: 'Track 06',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_06.mp3',
+  },
+
+  // p.53 — 듣고 말하기 1 (Lección 2-1) — con transcripción, igual que
+  // en el Capítulo 1: contenido real pendiente de producir el
+  // apéndice (208-212).
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 53,
+    type: 'audio',
+    pageTemplate: '듣고 말하기 1',
+    trackLabel: 'Track 07',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_07.mp3',
+  },
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 53,
+    type: 'transcript',
+    pageTemplate: '듣고 말하기 1',
+    sourcePageRef: 208,
+  },
+
+  // p.54 — 듣고 말하기 2 (Lección 2-1)
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 54,
+    type: 'audio',
+    pageTemplate: '듣고 말하기 2',
+    trackLabel: 'Track 08',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_08.mp3',
+  },
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 54,
+    type: 'transcript',
+    pageTemplate: '듣고 말하기 2',
+    sourcePageRef: 208,
+  },
+
+  // p.61 — 대화 (Lección 2-2)
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 61,
+    type: 'audio',
+    pageTemplate: '대화',
+    trackLabel: 'Track 09',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_09.mp3',
+  },
+
+  // p.70 — 실전 말하기 (Lección 2-3, "한 단계 오르기")
+  {
+    bookId: HI_KOREAN_3A,
+    pageNumber: 70,
+    type: 'audio',
+    pageTemplate: '실전 말하기',
+    trackLabel: 'Track 10',
+    assetPath: 'book-hi-korean-3a/Hi Korean 3A_SB_10.mp3',
   },
 ]);
 
