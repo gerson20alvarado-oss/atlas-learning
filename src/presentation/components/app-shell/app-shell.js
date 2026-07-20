@@ -29,10 +29,15 @@
  * { element, update(nextProps), destroy() }.
  */
 
+import { createAtlasLogoMark } from '../logo/atlas-logo.js';
+
 export function createAppShell({ secondaryNavElement, contentRegionElement }) {
   const wordmark = document.createElement('div');
-  wordmark.textContent = 'Atlas Learning';
   wordmark.setAttribute('data-role', 'wordmark-signature');
+  wordmark.appendChild(createAtlasLogoMark({ size: 22 }));
+  const wordmarkText = document.createElement('span');
+  wordmarkText.textContent = 'Atlas Learning';
+  wordmark.appendChild(wordmarkText);
 
   const header = document.createElement('header');
   header.setAttribute('data-region', 'shell-header');

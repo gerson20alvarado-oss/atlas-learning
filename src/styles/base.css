@@ -36,6 +36,7 @@ body {
   font-size: var(--al-size-30);
   font-weight: var(--al-weight-semibold);
   line-height: var(--al-leading-tight);
+  letter-spacing: -0.015em;
 }
 
 .al-type-title {
@@ -43,6 +44,7 @@ body {
   font-size: var(--al-size-22);
   font-weight: var(--al-weight-semibold);
   line-height: var(--al-leading-tight);
+  letter-spacing: -0.01em;
   color: var(--al-text-ui);
 }
 

@@ -332,6 +332,15 @@ export const LIBRARY_CATALOG = Object.freeze({
       // (app/screen-router.js vía runtimeConfig.resolveAssetPath),
       // nunca aquí — este archivo es contenido, no runtime.
       coverAssetPath: 'assets/images/covers/hi-korean-3a.jpg',
+      // Reader Visual Polish (esta sesión): tinte atmosférico del
+      // fondo del Reader para este libro — verde salvia muy claro,
+      // coherente con la cubierta real. Un único campo de contenido,
+      // nunca un sistema de temas — page-reader-screen.js lo lee vía
+      // getBookById() (mismo tipo de lectura que ya hace para
+      // coverAssetPath en otras screens) y lo aplica como variable
+      // CSS. Un libro sin este campo usa el tinte neutro por defecto
+      // (tokens.css, --al-reader-bg-tint-default).
+      themeAccent: '#EFF3EC',
       units: [
         {
           id: 'unit-hikorean-ch1-seoul',

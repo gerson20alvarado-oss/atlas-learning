@@ -31,6 +31,7 @@ import { createPageNavigator } from '../../components/page-navigator/page-naviga
 import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
 import { createAnchorPlacementStrategy } from '../../../domain/page-layout/anchor-placement-strategy.js';
 import { getPageResources } from '../../../domain/content/page-resource-catalog.js';
+import { getBookById } from '../../../domain/content/content-repository.js';
 
 export function createPageReaderScreen({
   bookId,
@@ -48,6 +49,17 @@ export function createPageReaderScreen({
 }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'page-reader-screen');
+
+  // Reader Visual Polish (esta sesión): tinte atmosférico por libro —
+  // lectura de contenido pura (mismo tipo de llamada que ya usan
+  // otras screens para coverAssetPath), nunca un sistema de temas.
+  // Sin el campo, el CSS ya trae su propio valor por defecto
+  // (tokens.css, --al-reader-bg-tint-default) — esta línea nunca
+  // rompe nada si el libro no lo declara.
+  const book = getBookById(bookId);
+  if (book?.themeAccent) {
+    element.style.setProperty('--al-reader-bg-tint', book.themeAccent);
+  }
 
   const chrome = document.createElement('div');
   chrome.setAttribute('data-part', 'chrome');
@@ -240,7 +252,11 @@ export function createPageReaderScreen({
       // Reabrir sobre la misma página no debe apilar drawers.
       closeAudioDrawer();
       const panelContent = createAudioPanel({ resource, audioSourceRepository });
-      const drawer = createAudioDrawer({ onClose: closeAudioDrawer });
+      const drawer = createAudioDrawer({
+        title: resource.pageTemplate,
+        subtitle: resource.trackLabel,
+        onClose: closeAudioDrawer,
+      });
       drawer.setContent(panelContent.element);
       activeAudioDrawer = { destroy: () => { panelContent.destroy(); drawer.destroy(); } };
       element.appendChild(drawer.element);

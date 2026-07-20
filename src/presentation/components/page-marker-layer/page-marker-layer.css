@@ -27,7 +27,7 @@
   height: 52px;
   padding: 0 var(--al-space-3);
   background: var(--al-paper-0);
-  border: 1px solid var(--al-border-default);
+  border: 1px solid var(--al-border-whisper);
   border-radius: var(--al-radius-xl);
   box-shadow: var(--al-shadow-card);
   cursor: pointer;

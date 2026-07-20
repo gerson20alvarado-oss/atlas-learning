@@ -14,7 +14,7 @@
   width: 220px;
   padding: var(--al-space-3);
   background: var(--al-paper-0);
-  border: 1px solid var(--al-border-default);
+  border: 1px solid var(--al-border-whisper);
   border-radius: var(--al-radius-xl);
   box-shadow: var(--al-shadow-card);
 }
@@ -68,6 +68,16 @@
   border: none;
   border-radius: var(--al-radius-md);
   cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    transform var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="page-navigator"] [data-part="go"]:hover {
+  background: var(--al-action-primary-hover);
+}
+
+[data-component="page-navigator"] [data-part="go"]:active {
+  transform: scale(0.96);
 }
 
 [data-component="page-navigator"] [data-part="error"] {

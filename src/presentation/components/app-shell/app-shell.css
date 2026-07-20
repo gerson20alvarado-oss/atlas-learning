@@ -25,7 +25,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--al-space-4);
-  padding: var(--al-space-4) var(--al-space-6);
+  padding: var(--al-space-3) var(--al-space-6);
+  border-bottom: var(--al-border-hairline) solid var(--al-border-whisper);
 }
 
 /* Corrección de regresión (Sprint 7, validación manual): la regla de
@@ -45,12 +46,20 @@
 }
 
 [data-role="wordmark-signature"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-2);
   font-family: var(--al-font-ui);
   font-size: var(--al-size-13);
   font-weight: var(--al-weight-medium);
   line-height: 1;
   letter-spacing: 0.5px;
   color: var(--al-text-muted);
+}
+
+[data-role="wordmark-signature"] svg {
+  color: var(--al-green-700);
+  flex-shrink: 0;
 }
 
 @media (min-width: 600px) {

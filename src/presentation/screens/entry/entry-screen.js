@@ -15,9 +15,14 @@
 
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
 
+import { createAtlasLogoMark } from '../../components/logo/atlas-logo.js';
+
 export function createEntryScreen({ onSignIn }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'entry-screen');
+
+  const logoMark = createAtlasLogoMark({ size: 40 });
+  logoMark.setAttribute('data-part', 'logo-mark');
 
   const wordmark = document.createElement('p');
   wordmark.setAttribute('data-part', 'wordmark');
@@ -35,6 +40,7 @@ export function createEntryScreen({ onSignIn }) {
   });
   signInButton.element.setAttribute('data-part', 'sign-in');
 
+  element.appendChild(logoMark);
   element.appendChild(wordmark);
   element.appendChild(promise);
   element.appendChild(signInButton.element);

@@ -17,7 +17,7 @@
  * del libro, con la que se sigue interactuando.
  */
 
-export function createAudioDrawer({ onClose }) {
+export function createAudioDrawer({ title, subtitle, onClose }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'audio-drawer');
   element.setAttribute('role', 'complementary');
@@ -30,10 +30,30 @@ export function createAudioDrawer({ onClose }) {
   closeButton.textContent = '×';
   closeButton.addEventListener('click', () => onClose?.());
 
+  const body = document.createElement('div');
+  body.setAttribute('data-part', 'body');
+
+  if (title) {
+    const titleRow = document.createElement('div');
+    titleRow.setAttribute('data-part', 'title-row');
+    const titleEl = document.createElement('span');
+    titleEl.setAttribute('data-part', 'title');
+    titleEl.textContent = title;
+    titleRow.appendChild(titleEl);
+    if (subtitle) {
+      const subtitleEl = document.createElement('span');
+      subtitleEl.setAttribute('data-part', 'subtitle');
+      subtitleEl.textContent = subtitle;
+      titleRow.appendChild(subtitleEl);
+    }
+    body.appendChild(titleRow);
+  }
+
   const contentSlot = document.createElement('div');
   contentSlot.setAttribute('data-part', 'content');
+  body.appendChild(contentSlot);
 
-  element.appendChild(contentSlot);
+  element.appendChild(body);
   element.appendChild(closeButton);
 
   function handleKeydown(event) {

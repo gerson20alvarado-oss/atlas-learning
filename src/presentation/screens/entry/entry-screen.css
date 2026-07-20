@@ -12,6 +12,12 @@
   padding-top: var(--al-space-12);
 }
 
+[data-component="entry-screen"] [data-part="logo-mark"] {
+  color: var(--al-green-700);
+  margin: 0 auto var(--al-space-4);
+  display: block;
+}
+
 [data-component="entry-screen"] [data-part="wordmark"] {
   color: var(--al-text-content);
   margin: 0 0 var(--al-space-4);
