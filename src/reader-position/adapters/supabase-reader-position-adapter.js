@@ -70,5 +70,45 @@ export function createSupabaseReaderPositionAdapter({ supabaseUrl, supabaseAnonK
     return { bookId: rows[0].book_id, pageNumber: rows[0].page_number };
   }
 
-  return Object.freeze({ getPosition, savePosition, getMostRecentPosition });
+  /**
+   * Admin Console (Sprint 14) — todas las posiciones de un
+   * estudiante concreto, entre todos sus libros (a diferencia de
+   * `getPosition`, que ya conoce el libro de antemano). El admin
+   * llega aquí desde Users → un estudiante — mismo patrón que
+   * Bookmarks admin.
+   */
+  async function listForUser({ userId, accessToken }) {
+    assertConfigured();
+    const url =
+      `${supabaseUrl}/rest/v1/reader_positions?user_id=eq.${encodeURIComponent(userId)}` +
+      `&select=book_id,page_number,updated_at&order=updated_at.desc`;
+    const response = await fetchImpl(url, { headers: authHeaders(accessToken) });
+    if (!response.ok) {
+      throw new Error(`Lectura administrativa de posiciones falló con estado ${response.status}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Admin Console (Sprint 14) — "Reiniciar progreso": DELETE de la
+   * fila. Sin fila, el Reader se comporta exactamente igual que
+   * "nunca hubo posición guardada" (mismo camino ya usado por
+   * getPosition → null) — nunca un estado especial nuevo que otras
+   * pantallas deban aprender a distinguir.
+   */
+  async function resetPosition({ userId, bookId, accessToken }) {
+    assertConfigured();
+    const url =
+      `${supabaseUrl}/rest/v1/reader_positions?user_id=eq.${encodeURIComponent(userId)}` +
+      `&book_id=eq.${encodeURIComponent(bookId)}`;
+    const response = await fetchImpl(url, {
+      method: 'DELETE',
+      headers: authHeaders(accessToken, { Prefer: 'return=minimal' }),
+    });
+    if (!response.ok) {
+      throw new Error(`Reinicio de ReaderPosition falló con estado ${response.status}`);
+    }
+  }
+
+  return Object.freeze({ getPosition, savePosition, getMostRecentPosition, listForUser, resetPosition });
 }

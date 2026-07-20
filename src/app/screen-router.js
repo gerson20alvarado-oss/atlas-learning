@@ -60,6 +60,20 @@ import { createLoginScreen } from '../presentation/screens/login/login-screen.js
 import { createLinkingDecisionScreen } from '../presentation/screens/account-linking/linking-decision-screen.js';
 import { createStateView } from '../presentation/components/state-views/state-views.js';
 import { EVENT_NAMES } from '../core/events/event-names.js';
+// Admin Console (Sprint 14): módulo completamente separado de la
+// jerarquía de contenido — ninguno de estos imports es necesario
+// para renderizar Library/Book/Unit/Lesson/Reader, y viceversa
+// (regla de vecinos). El gating real ("¿esta cuenta es admin?") se
+// resuelve en mountScreenRouter, igual que ownedBookIds/
+// hasProfileCompleted — nunca dentro de las screens mismas.
+import { createAdminNav } from '../presentation/components/admin-nav/admin-nav.js';
+import { createAdminDashboardScreen } from '../presentation/screens/admin/admin-dashboard-screen.js';
+import { createAdminUsersScreen } from '../presentation/screens/admin/admin-users-screen.js';
+import { createAdminUserDetailScreen } from '../presentation/screens/admin/admin-user-detail-screen.js';
+import { createAdminLicensesScreen } from '../presentation/screens/admin/admin-licenses-screen.js';
+import { createAdminWorksheetAttemptsScreen } from '../presentation/screens/admin/admin-worksheet-attempts-screen.js';
+import { createAdminReaderProgressScreen } from '../presentation/screens/admin/admin-reader-progress-screen.js';
+import { createAdminBookmarksScreen } from '../presentation/screens/admin/admin-bookmarks-screen.js';
 
 function notFoundView({ errorBoundary, reason, context, message }) {
   errorBoundary.reportRecoverable({ reason, ...context });
@@ -379,6 +393,84 @@ function buildLearningSessionScreen({
   });
 }
 
+/**
+ * Admin Console (Sprint 14): compone admin-nav + la screen de la
+ * sección activa, exactamente como un mini app-shell propio dentro
+ * de content-region — nunca reemplaza el app-shell real (header +
+ * nav-secondary del estudiante siguen montados alrededor, sin
+ * cambios). `router.navigateTo` es la única forma de moverse entre
+ * secciones, igual que el resto de Atlas — admin-nav no conoce
+ * rutas, solo reporta la sección elegida.
+ */
+function buildAdminScreen({
+  router,
+  adminSection,
+  adminUserId,
+  accessToken,
+  profileRepository,
+  licenseRepository,
+  unitAttemptRepository,
+  readerPositionRepository,
+  bookmarkRepository,
+}) {
+  const element = document.createElement('div');
+  element.setAttribute('data-component', 'admin-shell');
+
+  const nav = createAdminNav({
+    activeSection: adminSection === 'user-detail' ? 'users' : adminSection,
+    onSelect: (section) => router.navigateTo(`/admin/${section === 'dashboard' ? '' : section}`),
+  });
+  element.appendChild(nav.element);
+
+  const sectionContainer = document.createElement('div');
+  sectionContainer.setAttribute('data-part', 'admin-section-container');
+  element.appendChild(sectionContainer);
+
+  let screen;
+  if (adminSection === 'users') {
+    screen = createAdminUsersScreen({
+      accessToken,
+      profileRepository,
+      onSelectStudent: (studentUserId) => router.navigateTo(`/admin/users/${studentUserId}`),
+    });
+  } else if (adminSection === 'user-detail') {
+    screen = createAdminUserDetailScreen({
+      userId: adminUserId,
+      accessToken,
+      profileRepository,
+      licenseRepository,
+      unitAttemptRepository,
+      readerPositionRepository,
+      bookmarkRepository,
+      onBack: () => router.navigateTo('/admin/users'),
+    });
+  } else if (adminSection === 'licenses') {
+    screen = createAdminLicensesScreen({ accessToken, licenseRepository });
+  } else if (adminSection === 'worksheet-attempts') {
+    screen = createAdminWorksheetAttemptsScreen({ accessToken, unitAttemptRepository });
+  } else if (adminSection === 'reader-progress') {
+    screen = createAdminReaderProgressScreen({ accessToken, profileRepository, readerPositionRepository });
+  } else if (adminSection === 'bookmarks') {
+    screen = createAdminBookmarksScreen({ accessToken, profileRepository, bookmarkRepository });
+  } else {
+    screen = createAdminDashboardScreen({
+      accessToken,
+      profileRepository,
+      licenseRepository,
+      unitAttemptRepository,
+    });
+  }
+  sectionContainer.appendChild(screen.element);
+
+  function destroy() {
+    nav.destroy();
+    screen.destroy();
+    element.remove();
+  }
+
+  return Object.freeze({ element, update: () => {}, destroy });
+}
+
 function buildHomeScreen({ router, readerPositionRepository, licenseRepository, userId, authContract }) {
   // ReaderPosition, Supabase puro (esta sesión): Home ya no necesita
   // conocer la posición de antemano — ni estado de carga, ni
@@ -406,9 +498,41 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
 }
 
 function resolveScreen(navigationState, deps) {
-  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition, pagePosition } = navigationState;
+  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition, pagePosition, adminSection, adminUserId } =
+    navigationState;
   const userId = deps.authContract.getSession()?.userId ?? null;
+  const accessToken = deps.authContract.getSession()?.accessToken ?? null;
   const fullDeps = { ...deps, userId };
+
+  // Admin Console (Sprint 14): jerarquía separada, se resuelve antes
+  // que cualquier ramal de contenido (nunca tiene bookPosition). Una
+  // cuenta no-admin que llega a /admin por cualquier vía (URL
+  // escrita a mano, enlace viejo) ve exactamente el mismo
+  // notFoundView que "book-not-authorized" — mismo criterio
+  // silencioso ya usado en el resto de Atlas: indistinguible de una
+  // ruta que nunca existió, nunca un mensaje que confirme que Admin
+  // existe.
+  if (adminSection) {
+    if (!deps.isAdmin) {
+      return notFoundView({
+        errorBoundary: deps.errorBoundary,
+        reason: 'admin-not-authorized',
+        context: { userId },
+        message: 'This page is not available.',
+      });
+    }
+    return buildAdminScreen({
+      router: deps.router,
+      adminSection,
+      adminUserId,
+      accessToken,
+      profileRepository: deps.profileRepository,
+      licenseRepository: deps.licenseRepository,
+      unitAttemptRepository: deps.unitAttemptRepository,
+      readerPositionRepository: deps.readerPositionRepository,
+      bookmarkRepository: deps.bookmarkRepository,
+    });
+  }
 
   // Control de Acceso por Libro (Caso 4, diseño cerrado antes de este
   // sprint): un bookId no autorizado para esta cuenta se resuelve
@@ -511,6 +635,13 @@ export function mountScreenRouter({
   // consulta confirme lo contrario — mismo tipo de parpadeo ya
   // aceptado para la Library vacía mientras ownedBookIds resuelve.
   let hasProfileCompleted = false;
+  // Admin Console (Sprint 14): mismo criterio conservador que
+  // hasProfileCompleted — false hasta que la consulta real lo
+  // confirme, nunca asumido true. Un falso negativo momentáneo
+  // (parpadeo hacia notFoundView antes de que resuelva) es aceptable
+  // y ya es el mismo tipo de parpadeo que el resto de Atlas acepta;
+  // un falso positivo nunca lo sería.
+  let isAdmin = false;
 
   function render() {
     const authSession = authContract.getSession();
@@ -618,6 +749,7 @@ export function mountScreenRouter({
       authContract,
       licenseRepository,
       ownedBookIds,
+      isAdmin,
       onShowLicenseActivation: () => {
         libraryUiStage = 'activate';
         render();
@@ -651,12 +783,24 @@ export function mountScreenRouter({
         userId: authSession.userId,
         accessToken: authSession.accessToken,
       });
+      // Admin Console (Sprint 14): misma verificación fresca que
+      // hasProfileCompleted — nunca se conserva de una sesión
+      // anterior (ver el bloque `else` de abajo).
+      isAdmin = await profileRepository.isAdmin({
+        userId: authSession.userId,
+        accessToken: authSession.accessToken,
+      });
     } else {
       // Logout, o cambio a una cuenta distinta en el mismo
       // dispositivo: nunca debe sobrevivir ni la lista de libros
       // poseídos ni la confirmación de perfil de la sesión anterior.
       ownedBookIds = [];
       hasProfileCompleted = false;
+      // Admin Console (Sprint 14): un logout nunca deja `isAdmin`
+      // en `true` para la próxima cuenta que inicie sesión en este
+      // mismo dispositivo — mismo criterio exacto que las dos
+      // líneas de arriba.
+      isAdmin = false;
     }
     render();
   });
@@ -672,7 +816,10 @@ export function mountScreenRouter({
   // Mismo criterio para ownedBookIds: se resuelve aquí también,
   // fresca, nunca asumida de una ejecución anterior. Igual para
   // hasProfileCompleted — mismo tipo de verificación fresca en cada
-  // arranque, nunca asumida de una sesión anterior.
+  // arranque, nunca asumida de una sesión anterior. Admin Console
+  // (Sprint 14): isAdmin sigue exactamente el mismo criterio — nunca
+  // se persiste localmente, se resuelve fresca contra Supabase en
+  // cada arranque, igual que las otras dos.
   const cachedSession = authContract.getSession();
   if (cachedSession) {
     Promise.all([
@@ -684,6 +831,9 @@ export function mountScreenRouter({
         }),
       profileRepository.hasProfile({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
         hasProfileCompleted = result;
+      }),
+      profileRepository.isAdmin({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
+        isAdmin = result;
       }),
     ]).then(render);
   }

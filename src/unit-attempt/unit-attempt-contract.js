@@ -27,5 +27,34 @@ export function createUnitAttemptService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ getAttemptsUsed, incrementAttempt });
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, lista vacía. */
+  async function listAllWithOwner({ accessToken }) {
+    try {
+      const rows = await adapter.listAllWithOwner({ accessToken });
+      return rows ?? [];
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'unit-attempt-list-all-failed', err: String(err) });
+      return [];
+    }
+  }
+
+  /** Admin Console (Sprint 14) — sí propaga éxito/fallo: la consola necesita saber si guardó. */
+  async function setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken }) {
+    try {
+      await adapter.setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken });
+      return true;
+    } catch (err) {
+      errorBoundary.reportRecoverable({
+        reason: 'unit-attempt-set-failed',
+        userId,
+        bookId,
+        unitNumber,
+        attemptsUsed,
+        err: String(err),
+      });
+      return false;
+    }
+  }
+
+  return Object.freeze({ getAttemptsUsed, incrementAttempt, listAllWithOwner, setAttemptsUsed });
 }

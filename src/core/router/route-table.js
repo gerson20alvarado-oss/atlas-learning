@@ -106,6 +106,67 @@ const ROUTES = Object.freeze([
       pagePosition: Number(match[2]),
     }),
   },
+  // Admin Console (Sprint 14): jerarquía propia, sin relación con
+  // Library/Book/Unit/Lesson — de ahí que ninguna de estas rutas
+  // pueble bookPosition/unitPosition/etc. El acceso real (¿esta
+  // cuenta es admin?) no se decide aquí — este archivo solo modela
+  // la FORMA de la ruta (Software Architecture §16.2), igual que ya
+  // hace con `bookId` sin validar. screen-router.js es quien decide
+  // qué hacer si la cuenta no es admin, con el mismo criterio
+  // silencioso ya usado para "book-not-authorized".
+  {
+    pattern: /^\/admin\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'dashboard',
+    }),
+  },
+  {
+    pattern: /^\/admin\/users\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'users',
+    }),
+  },
+  {
+    // Ficha de un estudiante concreto — único punto de la jerarquía
+    // de Admin que necesita un identificador (`adminUserId`), igual
+    // que `/book/:id` lo necesita en la jerarquía de contenido.
+    pattern: /^\/admin\/users\/([^/]+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'user-detail',
+      adminUserId: match[1],
+    }),
+  },
+  {
+    pattern: /^\/admin\/licenses\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'licenses',
+    }),
+  },
+  {
+    pattern: /^\/admin\/worksheet-attempts\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'worksheet-attempts',
+    }),
+  },
+  {
+    pattern: /^\/admin\/reader-progress\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'reader-progress',
+    }),
+  },
+  {
+    pattern: /^\/admin\/bookmarks\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'bookmarks',
+    }),
+  },
 ]);
 
 /**

@@ -68,5 +68,23 @@ export function createSupabaseBookmarkAdapter({ supabaseUrl, supabaseAnonKey, fe
     return true;
   }
 
-  return Object.freeze({ list, add, remove });
+  /**
+   * Admin Console (Sprint 14) — todos los marcadores de un
+   * estudiante, entre todos sus libros (a diferencia de `list`, que
+   * ya conoce el libro de antemano). La eliminación reutiliza
+   * `remove()` tal cual, sin ningún método admin nuevo para borrar.
+   */
+  async function listForUser({ userId, accessToken }) {
+    assertConfigured();
+    const url =
+      `${supabaseUrl}/rest/v1/bookmarks?user_id=eq.${encodeURIComponent(userId)}` +
+      `&select=book_id,page_number&order=book_id.asc,page_number.asc`;
+    const response = await fetchImpl(url, { headers: authHeaders(accessToken) });
+    if (!response.ok) {
+      throw new Error(`Lectura administrativa de Marcadores falló con estado ${response.status}`);
+    }
+    return response.json();
+  }
+
+  return Object.freeze({ list, add, remove, listForUser });
 }

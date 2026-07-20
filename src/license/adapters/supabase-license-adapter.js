@@ -53,5 +53,64 @@ export function createSupabaseLicenseAdapter({ supabaseUrl, supabaseAnonKey, fet
     return response.json(); // { success, book_id, reason }
   }
 
-  return Object.freeze({ getActiveBookIds, activate });
+  /**
+   * Admin Console (Sprint 14) — todas las licencias, de cualquier
+   * estudiante, con su nombre (join a profiles vía embed de
+   * PostgREST). Solo devuelve filas si quien llama es admin
+   * (política "Admins read all license keys"); para cualquier otra
+   * cuenta, RLS ya la reduce a lo suyo.
+   */
+  async function listAll({ accessToken }) {
+    assertConfigured();
+    const url =
+      `${supabaseUrl}/rest/v1/license_keys?select=id,book_id,key_code,status,user_id,` +
+      `activated_at,expires_at,batch_note,profiles(first_name,last_name)` +
+      `&order=activated_at.desc.nullslast`;
+    const response = await fetchImpl(url, { headers: authHeaders(accessToken) });
+    if (!response.ok) {
+      throw new Error(`Lectura administrativa de licencias falló con estado ${response.status}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Admin Console (Sprint 14) — UPDATE directo de status, distinto
+   * a `activate()`: aquí sí es seguro porque solo un admin puede
+   * ejecutarlo (política "Admins update license keys"), a diferencia
+   * de la activación por el propio estudiante, que siempre debe
+   * pasar por la función atómica con bloqueo de fila.
+   */
+  async function setStatus({ licenseId, status, accessToken }) {
+    assertConfigured();
+    const response = await fetchImpl(
+      `${supabaseUrl}/rest/v1/license_keys?id=eq.${encodeURIComponent(licenseId)}`,
+      {
+        method: 'PATCH',
+        headers: authHeaders(accessToken, {
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        }),
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Actualización de licencia falló con estado ${response.status}`);
+    }
+  }
+
+  /** Admin Console (Sprint 14) — Dashboard: conteo por status, sin traer filas (ver countStudents en profile-adapter, mismo idioma). */
+  async function countByStatus({ status, accessToken }) {
+    assertConfigured();
+    const response = await fetchImpl(
+      `${supabaseUrl}/rest/v1/license_keys?select=id&status=eq.${encodeURIComponent(status)}`,
+      { headers: authHeaders(accessToken, { Prefer: 'count=exact', Range: '0-0' }) },
+    );
+    if (!response.ok) {
+      throw new Error(`Conteo de licencias falló con estado ${response.status}`);
+    }
+    const contentRange = response.headers.get('content-range');
+    return Number(contentRange?.split('/')[1] ?? 0);
+  }
+
+  return Object.freeze({ getActiveBookIds, activate, listAll, setStatus, countByStatus });
 }

@@ -22,5 +22,26 @@ export function createProfileRepository(profileService) {
     return profileService.createProfile({ userId, firstName, lastName, accessToken });
   }
 
-  return Object.freeze({ getProfile, hasProfile, createProfile });
+  /**
+   * Admin Console (Sprint 14) — azúcar sobre getProfile, mismo
+   * criterio que hasProfile: la pregunta real que hace
+   * screen-router.js ("¿esta cuenta puede ver Admin?") sin repetir
+   * la comparación de role en cada punto de llamada. Conservador por
+   * defecto: cualquier perfil ausente o sin `role` se trata como no-
+   * admin, nunca al revés.
+   */
+  async function isAdmin({ userId, accessToken }) {
+    const profile = await profileService.getProfile({ userId, accessToken });
+    return profile?.role === 'admin';
+  }
+
+  async function searchProfiles({ query, accessToken }) {
+    return profileService.searchProfiles({ query, accessToken });
+  }
+
+  async function countStudents({ accessToken }) {
+    return profileService.countStudents({ accessToken });
+  }
+
+  return Object.freeze({ getProfile, hasProfile, createProfile, isAdmin, searchProfiles, countStudents });
 }

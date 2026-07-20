@@ -47,5 +47,44 @@ export function createLicenseRepository(licenseService) {
     });
   }
 
-  return Object.freeze({ getOwnedBookIds, isBookOwned, getOwnedBooks, activateLicense });
+  /**
+   * Admin Console (Sprint 14) — todas las licencias con el nombre de
+   * su dueño ya resuelto (embed de PostgREST), normalizadas a la
+   * misma forma plana que el resto del dominio usa, en vez de la
+   * forma anidada `profiles: { first_name, last_name }` que devuelve
+   * PostgREST.
+   */
+  async function listAllLicenses({ accessToken }) {
+    const rows = await licenseService.listAll({ accessToken });
+    return rows.map((row) => ({
+      id: row.id,
+      bookId: row.book_id,
+      keyCode: row.key_code,
+      status: row.status,
+      userId: row.user_id,
+      firstName: row.profiles?.first_name ?? null,
+      lastName: row.profiles?.last_name ?? null,
+      activatedAt: row.activated_at,
+      expiresAt: row.expires_at,
+      batchNote: row.batch_note,
+    }));
+  }
+
+  async function setLicenseStatus({ licenseId, status, accessToken }) {
+    return licenseService.setStatus({ licenseId, status, accessToken });
+  }
+
+  async function countLicensesByStatus({ status, accessToken }) {
+    return licenseService.countByStatus({ status, accessToken });
+  }
+
+  return Object.freeze({
+    getOwnedBookIds,
+    isBookOwned,
+    getOwnedBooks,
+    activateLicense,
+    listAllLicenses,
+    setLicenseStatus,
+    countLicensesByStatus,
+  });
 }

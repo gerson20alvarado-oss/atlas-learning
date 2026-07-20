@@ -254,7 +254,7 @@ function bootstrap() {
     return;
   }
 
-  const { contentRegion } = mountAppShell({ eventBus, mountElement, router, authContract });
+  const { contentRegion } = mountAppShell({ eventBus, mountElement, router, authContract, profileRepository });
 
   // Sprint 2: resuelve qué screen se monta en contentRegion según
   // route:changed (Library, Book, o el placeholder de Home). Se

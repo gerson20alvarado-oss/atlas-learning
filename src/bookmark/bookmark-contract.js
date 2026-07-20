@@ -46,5 +46,16 @@ export function createBookmarkService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ list, add, remove });
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, lista vacía. */
+  async function listForUser({ userId, accessToken }) {
+    try {
+      const rows = await adapter.listForUser({ userId, accessToken });
+      return rows ?? [];
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'bookmark-list-for-user-failed', userId, err: String(err) });
+      return [];
+    }
+  }
+
+  return Object.freeze({ list, add, remove, listForUser });
 }

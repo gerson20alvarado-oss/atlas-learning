@@ -19,6 +19,8 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'lessonPosition',
   'mode',
   'pagePosition',
+  'adminSection',
+  'adminUserId',
 ]);
 
 export function createEmptyNavigationState() {
@@ -36,6 +38,19 @@ export function createEmptyNavigationState() {
     // del Reader — ningún otro flujo (Library, Book, Unit, Lesson)
     // lo lee ni lo escribe.
     pagePosition: null,
+    // Admin Console (Sprint 14): jerarquía completamente separada de
+    // la de contenido (Library → Book → Unit → Lesson) — un
+    // adminSection nunca coexiste con bookPosition/unitPosition en
+    // la misma Navigation State. 'dashboard' | 'users' |
+    // 'user-detail' | 'licenses' | 'worksheet-attempts' |
+    // 'reader-progress' | 'bookmarks' | null.
+    adminSection: null,
+    // Único caso que necesita un identificador propio dentro de
+    // Admin: la ficha de un estudiante concreto ('user-detail').
+    // Análogo a bookPosition/unitPosition — el id no se valida aquí,
+    // solo se transporta (screen-router.js decide qué hacer si no
+    // existe).
+    adminUserId: null,
   });
 }
 

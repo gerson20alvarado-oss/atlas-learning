@@ -30,5 +30,37 @@ export function createLicenseService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ getActiveBookIds, activate });
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, lista vacía. */
+  async function listAll({ accessToken }) {
+    try {
+      const rows = await adapter.listAll({ accessToken });
+      return rows ?? [];
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'license-list-all-failed', err: String(err) });
+      return [];
+    }
+  }
+
+  /** Admin Console (Sprint 14) — sí propaga éxito/fallo: la consola necesita saber si guardó. */
+  async function setStatus({ licenseId, status, accessToken }) {
+    try {
+      await adapter.setStatus({ licenseId, status, accessToken });
+      return true;
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'license-set-status-failed', licenseId, status, err: String(err) });
+      return false;
+    }
+  }
+
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, 0. */
+  async function countByStatus({ status, accessToken }) {
+    try {
+      return await adapter.countByStatus({ status, accessToken });
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'license-count-failed', status, err: String(err) });
+      return 0;
+    }
+  }
+
+  return Object.freeze({ getActiveBookIds, activate, listAll, setStatus, countByStatus });
 }

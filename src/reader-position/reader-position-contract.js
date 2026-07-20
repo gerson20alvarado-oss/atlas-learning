@@ -53,5 +53,27 @@ export function createReaderPositionService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ getPosition, savePosition, getMostRecentPosition });
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, lista vacía. */
+  async function listForUser({ userId, accessToken }) {
+    try {
+      const rows = await adapter.listForUser({ userId, accessToken });
+      return rows ?? [];
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'reader-position-list-failed', userId, err: String(err) });
+      return [];
+    }
+  }
+
+  /** Admin Console (Sprint 14) — sí propaga éxito/fallo. */
+  async function resetPosition({ userId, bookId, accessToken }) {
+    try {
+      await adapter.resetPosition({ userId, bookId, accessToken });
+      return true;
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'reader-position-reset-failed', userId, bookId, err: String(err) });
+      return false;
+    }
+  }
+
+  return Object.freeze({ getPosition, savePosition, getMostRecentPosition, listForUser, resetPosition });
 }

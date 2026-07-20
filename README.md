@@ -1,6 +1,69 @@
 # Atlas Learning
 
-**Estado actual:** Sprint 6 (Authentication) implementado.
+**Estado actual:** Sprint 14 (Admin Console) implementado.
+
+## Sprint 14 — Admin Console
+
+Primera versión de la consola de administración — reemplaza el uso
+diario de Supabase Studio para tareas de soporte a estudiantes. Vive
+dentro de la misma SPA, no es una aplicación aparte: mismo bootstrap,
+mismo router (rutas `#/admin`, `#/admin/users`, `#/admin/users/:id`,
+`#/admin/licenses`, `#/admin/worksheet-attempts`,
+`#/admin/reader-progress`, `#/admin/bookmarks`), mismo ciclo de vida.
+
+**Cero tablas nuevas.** Reutiliza `profiles`, `license_keys`,
+`unit_attempt_limits`, `worksheet_exercise_attempts`,
+`reader_positions` y `bookmarks` tal cual — la única adición de
+esquema es `profiles.role` (`docs/admin-console-schema.sql`), más
+políticas RLS aditivas para admins y `security_invoker` en las dos
+vistas ya existentes (`atlas_admin_overview`,
+`unit_attempts_with_owner`) para poder consultarlas de forma segura
+vía REST. Ejecutar ese archivo completo en Supabase antes de dar de
+alta el primer admin (`update profiles set role = 'admin' where
+user_id = '<uuid>'`).
+
+**Acceso**: gateado por `profileRepository.isAdmin()` en
+`screen-router.js` — una cuenta no-admin que llega a cualquier ruta
+`/admin/*` ve el mismo estado "no disponible" que un libro no
+autorizado, nunca una confirmación de que Admin existe. El ítem
+"Admin" en el nav-secondary (`app-shell.js`) sigue el mismo criterio,
+así que un estudiante normal no ve ningún rastro nuevo en la UI.
+
+**MVP entregado**: Dashboard (conteos), Users (buscar + ver perfil,
+con ficha completa en Users → estudiante), Licenses (ver, activar,
+revocar), Worksheet Attempts (edita únicamente
+`unit_attempt_limits.attempts_used` — `worksheet_exercise_attempts`
+sigue sin controlar intentos, decisión de producto ya cerrada, no
+reintroducida), Reader Progress (ver + reiniciar) y Bookmarks (ver +
+eliminar).
+
+Todos los repositorios de dominio ya existentes
+(`profileRepository`, `licenseRepository`, `unitAttemptRepository`,
+`readerPositionRepository`, `bookmarkRepository`) se extendieron con
+métodos admin aditivos (`searchProfiles`, `isAdmin`, `countStudents`,
+`listAllLicenses`/`setLicenseStatus`,
+`listAllWithOwner`/`setAttemptsUsed`, `listForUser`/`resetPosition`,
+`listAllForUser`) — ninguno se reemplazó ni se duplicó; el flujo del
+propio estudiante no cambió una sola línea.
+
+### Validaciones realizadas (Sprint 14)
+
+Sin navegador real ni `jsdom` disponibles en este entorno: sintaxis
+válida (`node --check`) en los 141 archivos `.js` del proyecto,
+incluidos los ~20 nuevos/tocados de este sprint. Servidor HTTP
+levantado, todos los archivos nuevos responden 200. `route-table.js`
+probado por import directo (no solo por HTTP): las siete rutas
+nuevas de `/admin/*` resuelven a una Navigation State válida, y las
+rutas existentes del estudiante (`/library`, `/book/:id/unit/:id`,
+etc.) siguen resolviendo exactamente igual que antes.
+
+**Pendiente de tu verificación manual real en navegador**: correr
+`docs/admin-console-schema.sql` contra un proyecto Supabase real,
+dar de alta un primer admin, y probar de extremo a extremo las siete
+pantallas — nada de esto se ejecutó contra una base de datos real
+todavía.
+
+---
 
 Static SPA, HTML/CSS/JS ES Modules puro — sin framework, sin bundler
 (Software Architecture, restricción C1). Diseñada para GitHub Pages

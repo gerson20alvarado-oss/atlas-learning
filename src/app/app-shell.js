@@ -31,6 +31,12 @@
  * exactamente el mismo mecanismo (`authContract.onAuthStateChange`)
  * que screen-router.js ya usa para reaccionar a cambios de sesión,
  * sin introducir ningún contrato nuevo.
+ *
+ * Admin Console (Sprint 14): mismo mecanismo, un tercer uso —
+ * `profileRepository.isAdmin()` decide si el ítem "Admin" aparece en
+ * este nav-secondary. `profileRepository` se añade aquí como
+ * dependencia nueva (antes este módulo solo conocía `authContract`)
+ * exclusivamente para esa pregunta; no para nada más de perfil.
  */
 
 import { createAppShell as createAppShellComponent } from '../presentation/components/app-shell/app-shell.js';
@@ -39,7 +45,7 @@ import { createSecondaryNav } from '../presentation/components/nav-secondary/nav
 import { createSignOutConfirm } from '../presentation/components/sign-out-confirm/sign-out-confirm.js';
 import { EVENT_NAMES } from '../core/events/event-names.js';
 
-export function mountAppShell({ eventBus, mountElement, router, authContract }) {
+export function mountAppShell({ eventBus, mountElement, router, authContract, profileRepository }) {
   let signOutConfirm = null;
 
   function closeSignOutConfirm() {
@@ -59,10 +65,15 @@ export function mountAppShell({ eventBus, mountElement, router, authContract }) 
     mountElement.appendChild(signOutConfirm.element);
   }
 
-  const secondaryNav = createSecondaryNav([
+  // Admin Console (Sprint 14): los dos ítems de siempre, sin
+  // ningún cambio para el estudiante — "Admin" se añade
+  // condicionalmente más abajo, nunca reemplazando estos dos.
+  const baseNavItems = [
     { label: 'Library', onSelect: () => router.navigateTo('/library') },
     { label: 'Sign out', onSelect: openSignOutConfirm },
-  ]);
+  ];
+
+  const secondaryNav = createSecondaryNav(baseNavItems);
   const contentRegion = createContentRegion();
 
   const shell = createAppShellComponent({
@@ -93,6 +104,34 @@ export function mountAppShell({ eventBus, mountElement, router, authContract }) 
   authContract.onAuthStateChange((authSession) => {
     shell.update({ authenticated: Boolean(authSession) });
   });
+
+  // Admin Console (Sprint 14): resolución independiente de
+  // isAdmin, deliberadamente separada de la de screen-router.js —
+  // mismo criterio ya establecido arriba para `authenticated` (dos
+  // suscripciones propias a onAuthStateChange, cada una resolviendo
+  // solo lo que su propio componente necesita, en vez de acoplar
+  // app-shell a los internos de screen-router). Conservador por
+  // defecto: sin sesión, o mientras resuelve, el ítem "Admin" no
+  // aparece — nunca un parpadeo hacia "sí aparece y luego se
+  // esconde".
+  async function refreshAdminNavItem(authSession) {
+    if (!authSession) {
+      secondaryNav.update(baseNavItems);
+      return;
+    }
+    const isAdmin = await profileRepository.isAdmin({
+      userId: authSession.userId,
+      accessToken: authSession.accessToken,
+    });
+    secondaryNav.update(
+      isAdmin
+        ? [...baseNavItems, { label: 'Admin', onSelect: () => router.navigateTo('/admin') }]
+        : baseNavItems,
+    );
+  }
+
+  refreshAdminNavItem(authContract.getSession());
+  authContract.onAuthStateChange(refreshAdminNavItem);
 
   return Object.freeze({ shell, secondaryNav, contentRegion });
 }

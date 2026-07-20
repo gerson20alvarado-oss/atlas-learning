@@ -30,5 +30,19 @@ export function createReaderPositionRepository(readerPositionService) {
     return position ?? null;
   }
 
-  return Object.freeze({ getPosition, savePosition, getMostRecentPosition });
+  /** Admin Console (Sprint 14) — normaliza a camelCase, mismo criterio que el resto del dominio. */
+  async function listForUser({ userId, accessToken }) {
+    const rows = await readerPositionService.listForUser({ userId, accessToken });
+    return rows.map((row) => ({
+      bookId: row.book_id,
+      pageNumber: row.page_number,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  async function resetPosition({ userId, bookId, accessToken }) {
+    return readerPositionService.resetPosition({ userId, bookId, accessToken });
+  }
+
+  return Object.freeze({ getPosition, savePosition, getMostRecentPosition, listForUser, resetPosition });
 }

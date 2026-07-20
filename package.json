@@ -1,7 +1,7 @@
 {
   "name": "atlas-learning",
-  "version": "0.6.0",
-  "description": "Atlas Learning — Sprint 6 (Authentication). Static SPA, ES Modules, sin framework (Software Architecture C1).",
+  "version": "0.14.0",
+  "description": "Atlas Learning — Sprint 14 (Admin Console). Static SPA, ES Modules, sin framework (Software Architecture C1).",
   "type": "module",
   "private": true,
   "scripts": {

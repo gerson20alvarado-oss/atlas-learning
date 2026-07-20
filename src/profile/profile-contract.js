@@ -30,5 +30,26 @@ export function createProfileService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ getProfile, createProfile });
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, lista vacía. */
+  async function searchProfiles({ query, accessToken }) {
+    try {
+      const rows = await adapter.searchProfiles({ query, accessToken });
+      return rows ?? [];
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'profile-search-failed', query, err: String(err) });
+      return [];
+    }
+  }
+
+  /** Admin Console (Sprint 14) — nunca lanza: ante fallo, 0 (nunca fabricado). */
+  async function countStudents({ accessToken }) {
+    try {
+      return await adapter.countStudents({ accessToken });
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'profile-count-failed', err: String(err) });
+      return 0;
+    }
+  }
+
+  return Object.freeze({ getProfile, createProfile, searchProfiles, countStudents });
 }

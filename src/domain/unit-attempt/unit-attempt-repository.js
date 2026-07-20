@@ -22,5 +22,33 @@ export function createUnitAttemptRepository(unitAttemptService) {
     return unitAttemptService.incrementAttempt({ bookId, unitNumber, accessToken });
   }
 
-  return Object.freeze({ getAttemptsUsed, canStartUnit, incrementAttempt });
+  /**
+   * Admin Console (Sprint 14) — normaliza las filas de la vista
+   * `unit_attempts_with_owner` a la misma convención camelCase que
+   * el resto del dominio usa.
+   */
+  async function listAllWithOwner({ accessToken }) {
+    const rows = await unitAttemptService.listAllWithOwner({ accessToken });
+    return rows.map((row) => ({
+      userId: row.user_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      bookId: row.book_id,
+      unitNumber: row.unit_number,
+      attemptsUsed: row.attempts_used,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  async function setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken }) {
+    return unitAttemptService.setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken });
+  }
+
+  return Object.freeze({
+    getAttemptsUsed,
+    canStartUnit,
+    incrementAttempt,
+    listAllWithOwner,
+    setAttemptsUsed,
+  });
 }

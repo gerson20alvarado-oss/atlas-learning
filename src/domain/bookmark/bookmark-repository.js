@@ -27,5 +27,17 @@ export function createBookmarkRepository(bookmarkService) {
     return bookmarkedPages.includes(pageNumber);
   }
 
-  return Object.freeze({ getBookmarkedPages, addBookmark, removeBookmark, isBookmarked });
+  /** Admin Console (Sprint 14) — marcadores de un estudiante entre todos sus libros. */
+  async function listAllForUser({ userId, accessToken }) {
+    const rows = await bookmarkService.listForUser({ userId, accessToken });
+    return rows.map((row) => ({ bookId: row.book_id, pageNumber: row.page_number }));
+  }
+
+  return Object.freeze({
+    getBookmarkedPages,
+    addBookmark,
+    removeBookmark,
+    isBookmarked,
+    listAllForUser,
+  });
 }
