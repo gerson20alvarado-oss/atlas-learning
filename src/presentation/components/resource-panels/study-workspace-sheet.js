@@ -22,7 +22,6 @@
  * imágenes, y una sección colapsable de respuestas oficiales.
  */
 
-const ANSWER_KEY_PENDING_MESSAGE = 'Aquí podrás ver las respuestas oficiales cuando estén disponibles.';
 const NOTES_SAVE_DEBOUNCE_MS = 800;
 
 export function createStudyWorkspaceSheet({
@@ -154,22 +153,38 @@ export function createStudyWorkspaceSheet({
     imageInputStatus.textContent = 'Ningún archivo seleccionado';
   });
 
-  // --- Respuestas oficiales — siempre presente, mismo contenido en
-  // toda página sin recurso real todavía; se completará sola cuando
-  // el apéndice del libro se produzca (ver page-resource-catalog.js).
-  const answerDivider = document.createElement('hr');
-  answerDivider.setAttribute('data-part', 'divider');
+  // --- Respuestas oficiales ---
+  // Corrección de UX (esta sesión): con las 52 páginas de Capítulos
+  // 1-4 ya integradas con contenido real, el estado "pendiente" deja
+  // de tener un caso de uso visible salvo confusión — si la página
+  // no tiene answerKeyResource con contenido real, la sección entera
+  // no se crea. Cuando sí existe, empieza siempre colapsada: es el
+  // propio <details> nativo el que oculta el contenido hasta que el
+  // estudiante lo expande — nada que montar ni desmontar a mano.
+  let answerDivider = null;
+  let answerSection = null;
 
-  const answerSection = document.createElement('details');
-  answerSection.setAttribute('data-part', 'answer-key');
-  answerSection.open = true;
-  const summary = document.createElement('summary');
-  summary.textContent = 'Mostrar respuestas oficiales';
-  const answerContent = document.createElement('p');
-  answerContent.className = 'al-type-ui-caption';
-  answerContent.textContent = ANSWER_KEY_PENDING_MESSAGE;
-  answerSection.appendChild(summary);
-  answerSection.appendChild(answerContent);
+  if (answerKeyResource?.answerLines?.length) {
+    answerDivider = document.createElement('hr');
+    answerDivider.setAttribute('data-part', 'divider');
+
+    answerSection = document.createElement('details');
+    answerSection.setAttribute('data-part', 'answer-key');
+    answerSection.open = false;
+
+    const summary = document.createElement('summary');
+    summary.textContent = 'Mostrar respuestas oficiales';
+    answerSection.appendChild(summary);
+
+    // Contenido real — una línea por párrafo, tal cual aparece en el
+    // documento oficial, sin resumir ni reformatear.
+    answerKeyResource.answerLines.forEach((line) => {
+      const p = document.createElement('p');
+      p.setAttribute('data-part', 'answer-line');
+      p.textContent = line;
+      answerSection.appendChild(p);
+    });
+  }
 
   container.appendChild(title);
   container.appendChild(titleKo);
@@ -178,8 +193,10 @@ export function createStudyWorkspaceSheet({
   container.appendChild(notesTextarea);
   container.appendChild(imageInputRow);
   container.appendChild(imagesGrid);
-  container.appendChild(answerDivider);
-  container.appendChild(answerSection);
+  if (answerDivider && answerSection) {
+    container.appendChild(answerDivider);
+    container.appendChild(answerSection);
+  }
 
   // Carga inicial: entrada ya guardada (notas + imágenes reales).
   studyWorkspaceRepository.getEntry({ userId, bookId, pageNumber, accessToken }).then((entry) => {

@@ -147,3 +147,10 @@
 [data-component="study-workspace-sheet"] [data-part="answer-key"] p {
   margin: var(--al-space-2) 0 0;
 }
+
+[data-component="study-workspace-sheet"] [data-part="answer-line"] {
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-15);
+  line-height: 1.6;
+  color: var(--al-text-content);
+}
