@@ -69,14 +69,8 @@
   border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
 }
 
-[data-component="true-false-exercise"] [data-part="grading-row"] {
-  display: flex;
-  align-items: center;
-  gap: var(--al-space-3);
-  margin-top: var(--al-space-1);
-}
-
 [data-component="true-false-exercise"] [data-part="check-button"] {
+  margin-top: var(--al-space-1);
   min-height: var(--al-hit-target-min);
   padding: 0 var(--al-space-4);
   background: var(--al-action-primary);
@@ -97,10 +91,4 @@
 [data-component="true-false-exercise"] [data-part="check-button"]:disabled {
   background: var(--al-action-disabled);
   cursor: default;
-}
-
-[data-component="true-false-exercise"] [data-part="attempts-label"] {
-  font-family: var(--al-font-ui);
-  font-size: var(--al-size-13);
-  color: var(--al-text-muted);
 }

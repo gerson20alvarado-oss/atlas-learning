@@ -6,6 +6,7 @@
 [data-component="worksheet-screen"] [data-part="header"] {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--al-space-3);
   padding: var(--al-space-4) var(--al-space-6);
   border-bottom: var(--al-border-hairline) solid var(--al-border-whisper);
@@ -39,6 +40,78 @@
   font-family: var(--al-font-ui);
   font-weight: var(--al-weight-semibold);
   flex-shrink: 0;
+}
+
+[data-component="worksheet-screen"] [data-part="submit-row"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+  padding: var(--al-space-6) var(--al-space-4);
+  margin-top: var(--al-space-4);
+  border-top: var(--al-border-hairline) solid var(--al-border-whisper);
+}
+
+[data-component="worksheet-screen"] [data-part="submit-row"][hidden] {
+  display: none;
+}
+
+[data-component="worksheet-screen"] [data-part="progress-label"] {
+  color: var(--al-text-muted);
+  margin: 0;
+}
+
+[data-component="worksheet-screen"] [data-part="submit-button"] {
+  flex-shrink: 0;
+  width: auto;
+  min-width: 180px;
+}
+
+[data-component="worksheet-screen"] [data-part="completion-summary"] {
+  max-width: 420px;
+  margin: var(--al-space-16) auto;
+  text-align: center;
+}
+
+[data-component="worksheet-screen"] [data-part="summary-title"] {
+  margin: 0 0 var(--al-space-2);
+}
+
+[data-component="worksheet-screen"] [data-part="summary-score"] {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-1);
+}
+
+[data-component="worksheet-screen"] [data-part="summary-attempts"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-6);
+}
+
+[data-component="worksheet-screen"] [data-part="summary-continue"] {
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+[data-component="worksheet-screen"] [data-part="summary-start-new"] {
+  width: 100%;
+  max-width: 240px;
+  margin: var(--al-space-3) auto 0;
+  background: none;
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  color: var(--al-text-ui);
+}
+
+[data-component="worksheet-screen"] [data-part="completed-banner"] {
+  width: 100%;
+  padding: var(--al-space-2) var(--al-space-3);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-md);
+  color: var(--al-text-muted);
+}
+
+[data-component="worksheet-screen"] [data-part="completed-banner"][hidden] {
+  display: none;
 }
 
 [data-component="worksheet-screen"] [data-part="unit-title"] {

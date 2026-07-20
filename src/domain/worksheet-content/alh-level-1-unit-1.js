@@ -22,6 +22,13 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
   unitNumber: 1,
   unitTitle: 'My city',
 
+  // Control de Intentos por Unidad (esta sesión): cuántas pasadas
+  // completas admite esta unidad — decisión de contenido, nunca de
+  // base de datos (Arquitectura de Intentos por Unidad, §2). `null`
+  // significaría ilimitado; un libro futuro con reglas distintas
+  // solo necesita declarar su propio valor aquí, nunca una migración.
+  maxAttempts: 2,
+
   // Video del Video Hub — recurso a nivel de unidad, no de un
   // ejercicio específico (varios ejercicios de Comprehension lo
   // referencian, ninguno lo "posee"). `assetPath` ya incluye el

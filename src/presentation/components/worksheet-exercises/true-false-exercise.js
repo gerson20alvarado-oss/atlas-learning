@@ -4,23 +4,18 @@
  * Verdadero/Falso con corrección — el campo de texto para corregir
  * el enunciado solo aparece cuando el estudiante marca Falso.
  *
- * Calificación automática: `validate()` compara la elección V/F
- * contra `item.correct` — nunca revela la respuesta esperada. Máximo
- * `MAX_GRADING_ATTEMPTS` intentos.
+ * Sin límite de intentos propio (esta sesión, decisión de producto
+ * cerrada): el estudiante puede presionar "Check answers" cuantas
+ * veces quiera mientras la unidad no se haya enviado. El único
+ * control de intentos real es `unit_attempt_limits`.
  *
- * Alcance real: el texto de corrección libre NO se califica
- * automáticamente (comparar texto libre de forma confiable no es un
- * problema resuelto con una comparación simple) — sí se restaura al
- * volver, como cualquier otro dato guardado, aunque no participe en
- * la calificación.
- *
- * Persistencia (esta sesión): igual que ordering-exercise.js, nunca
- * habla con Supabase — recibe `initialState`, invoca `onGraded(...)`.
+ * Alcance real, sin cambios: el texto de corrección libre sigue sin
+ * calificarse automáticamente.
  */
 
-import { MAX_GRADING_ATTEMPTS } from '../../../domain/contracts/worksheet-exercise-lifecycle.js';
+import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
 
-export function createTrueFalseExercise(exercise, { initialState, onGraded } = {}) {
+export function createTrueFalseExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'true-false-exercise');
 
@@ -106,29 +101,11 @@ export function createTrueFalseExercise(exercise, { initialState, onGraded } = {
 
   element.appendChild(list);
 
-  // --- Calificación ---
-  let attemptsUsed = initialState?.attemptsUsed ?? 0;
-
-  const gradingRow = document.createElement('div');
-  gradingRow.setAttribute('data-part', 'grading-row');
-
   const checkButton = document.createElement('button');
   checkButton.type = 'button';
   checkButton.setAttribute('data-part', 'check-button');
   checkButton.textContent = 'Check answers';
-
-  const attemptsLabel = document.createElement('span');
-  attemptsLabel.setAttribute('data-part', 'attempts-label');
-
-  function updateAttemptsLabel() {
-    const remaining = MAX_GRADING_ATTEMPTS - attemptsUsed;
-    attemptsLabel.textContent = remaining > 0 ? `${remaining} attempt${remaining === 1 ? '' : 's'} left` : 'No attempts left';
-  }
-  updateAttemptsLabel();
-
-  gradingRow.appendChild(checkButton);
-  gradingRow.appendChild(attemptsLabel);
-  element.appendChild(gradingRow);
+  element.appendChild(checkButton);
 
   function lockExercise() {
     radiosByItemId.forEach((radios) => radios.forEach((r) => { r.disabled = true; }));
@@ -142,21 +119,16 @@ export function createTrueFalseExercise(exercise, { initialState, onGraded } = {
     });
   }
 
-  if (initialState?.result) {
-    applyResult(initialState.result);
-    if (attemptsUsed >= MAX_GRADING_ATTEMPTS) lockExercise();
-  }
+  if (initialState?.result) applyResult(initialState.result);
+  if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
 
   checkButton.addEventListener('click', () => {
-    if (!isAnswered() || attemptsUsed >= MAX_GRADING_ATTEMPTS) return;
-    attemptsUsed += 1;
+    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
 
     const result = validate();
     applyResult(result);
-    updateAttemptsLabel();
-    if (attemptsUsed >= MAX_GRADING_ATTEMPTS) lockExercise();
 
-    onGraded?.({ response: getResponse(), result, attemptsUsed });
+    onGraded?.({ response: getResponse(), result });
   });
 
   function update() {}

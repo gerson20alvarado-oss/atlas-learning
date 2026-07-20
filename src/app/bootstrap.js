@@ -57,6 +57,9 @@ import { createVideoSourceRepository } from '../domain/video-source/video-source
 import { createWorksheetAttemptService } from '../worksheet-attempt/worksheet-attempt-contract.js';
 import { createSupabaseWorksheetAttemptAdapter } from '../worksheet-attempt/adapters/supabase-worksheet-attempt-adapter.js';
 import { createWorksheetAttemptRepository } from '../domain/worksheet-attempt/worksheet-attempt-repository.js';
+import { createUnitAttemptService } from '../unit-attempt/unit-attempt-contract.js';
+import { createSupabaseUnitAttemptAdapter } from '../unit-attempt/adapters/supabase-unit-attempt-adapter.js';
+import { createUnitAttemptRepository } from '../domain/unit-attempt/unit-attempt-repository.js';
 import { createReaderPositionService } from '../reader-position/reader-position-contract.js';
 import { createSupabaseReaderPositionAdapter } from '../reader-position/adapters/supabase-reader-position-adapter.js';
 import { createReaderPositionRepository } from '../domain/reader-position/reader-position-repository.js';
@@ -187,6 +190,18 @@ function bootstrap() {
   const worksheetAttemptService = createWorksheetAttemptService(supabaseWorksheetAttemptAdapter, errorBoundary);
   const worksheetAttemptRepository = createWorksheetAttemptRepository(worksheetAttemptService);
 
+  // Control de Intentos por Unidad (esta sesión): tabla aislada,
+  // responsabilidad separada de worksheetAttemptRepository — cuántas
+  // pasadas completas, no qué respondió en cada ejercicio. El único
+  // incremento legítimo pasa por increment_unit_attempt()
+  // (SECURITY DEFINER), nunca un UPDATE directo del cliente.
+  const supabaseUnitAttemptAdapter = createSupabaseUnitAttemptAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const unitAttemptService = createUnitAttemptService(supabaseUnitAttemptAdapter, errorBoundary);
+  const unitAttemptRepository = createUnitAttemptRepository(unitAttemptService);
+
   // ReaderPosition, Supabase puro (esta sesión): a diferencia de
   // todo lo demás compuesto en este archivo, esta entidad
   // deliberadamente no recibe ninguna capa local — ni storage, ni
@@ -264,6 +279,7 @@ function bootstrap() {
     audioSourceRepository,
     videoSourceRepository,
     worksheetAttemptRepository,
+    unitAttemptRepository,
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
@@ -303,12 +319,14 @@ function bootstrap() {
     ALH_LEVEL_1_UNIT_1,
     videoSourceRepository,
     worksheetAttemptRepository,
+    unitAttemptRepository,
     previewWorksheet: () => {
       const session = authContract.getSession();
       const screen = createWorksheetScreen({
         unit: ALH_LEVEL_1_UNIT_1,
         videoSourceRepository,
         worksheetAttemptRepository,
+        unitAttemptRepository,
         userId: session?.userId ?? null,
         accessToken: session?.accessToken ?? null,
       });

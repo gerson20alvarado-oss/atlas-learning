@@ -18,11 +18,13 @@
  *                        sin esto no hay nada que capturar después.
  *   3. Validación      — validate(): compara la respuesta capturada
  *                        contra la respuesta oficial y devuelve un
- *                        resultado. NO implementada todavía en
- *                        ningún componente — cuando exista
- *                        corrección automática, se añade aquí, sin
- *                        tocar cómo el componente renderiza ni
- *                        captura.
+ *                        resultado. Implementada — sin límite propio
+ *                        de intentos por ejercicio (ver más abajo):
+ *                        el estudiante puede recalificar cuantas
+ *                        veces quiera mientras la unidad no se haya
+ *                        enviado. El único control de intentos real
+ *                        vive en `unit_attempt_limits`, un nivel más
+ *                        arriba — nunca aquí.
  *   4. Retroalimentación — showFeedback(result): pinta el resultado
  *                        de validate() sobre el propio componente.
  *                        Tampoco implementada todavía.
@@ -57,11 +59,10 @@ export const WORKSHEET_EXERCISE_LIFECYCLE_PHASES = Object.freeze([
 ]);
 
 /**
- * Intentos máximos para ejercicios con calificación automática
- * (esta sesión) — un único lugar, reutilizado por cada componente
- * que implemente `validate()`, para que nunca queden dos números
- * distintos en dos archivos. Nunca se revela la respuesta correcta,
- * en ningún componente: `validate()` siempre devuelve
- * correcto/incorrecto, jamás el valor esperado.
+ * Tipos de ejercicio que participan en la calificación automática —
+ * los únicos relevantes para "¿ya se completaron todos los
+ * ejercicios evaluables de la unidad?" (Control de Intentos por
+ * Unidad). `discussion`/`ruleReveal` nunca cuentan: no tienen una
+ * respuesta única que calificar.
  */
-export const MAX_GRADING_ATTEMPTS = 2;
+export const GRADABLE_EXERCISE_TYPES = Object.freeze(['ordering', 'trueFalse']);

@@ -1,12 +1,14 @@
 /**
  * worksheet-attempt/worksheet-attempt-contract.js
  *
- * Capacidad de infraestructura para leer y guardar intentos de
- * ejercicios de worksheet — mismo patrón contrato + adapter que
- * `bookmark-contract.js`. `getAttemptsForUnit` nunca lanza: ante
- * cualquier fallo, el estudiante simplemente ve la worksheet sin
- * intentos previos (degradación segura, mismo criterio que el resto
- * de Atlas) en vez de una pantalla rota.
+ * Capacidad de infraestructura para leer y guardar el estado de
+ * ejercicios de worksheet (respuesta, resultado) — mismo patrón
+ * contrato + adapter que `bookmark-contract.js`. Simplificado (esta
+ * sesión): ya no controla intentos, solo guarda qué respondió el
+ * estudiante y qué resultado obtuvo. `getAttemptsForUnit` nunca
+ * lanza: ante cualquier fallo, el estudiante simplemente ve la
+ * worksheet sin estado previo (degradación segura) en vez de una
+ * pantalla rota.
  */
 
 export function createWorksheetAttemptService(adapter, errorBoundary) {
@@ -30,5 +32,15 @@ export function createWorksheetAttemptService(adapter, errorBoundary) {
     }
   }
 
-  return Object.freeze({ getAttemptsForUnit, saveAttempt });
+  async function deleteAttemptsForUnit({ userId, bookId, unitNumber, accessToken }) {
+    try {
+      await adapter.deleteAttemptsForUnit({ userId, bookId, unitNumber, accessToken });
+      return true;
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'worksheet-attempts-delete-failed', userId, bookId, unitNumber, err: String(err) });
+      return false;
+    }
+  }
+
+  return Object.freeze({ getAttemptsForUnit, saveAttempt, deleteAttemptsForUnit });
 }

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Atlas Learning</title>
+  <script>
+    // Sprint 1 Plan §8.2: el routing real de la app es hash-based, así
+    // que un 404 real de GitHub Pages solo puede ocurrir por una URL
+    // con path "limpio" que nadie generó desde dentro de la app (por
+    // ejemplo, un enlace externo mal formado). Esta página es una red
+    // de seguridad mínima, no una solución de deep-linking con paths
+    // limpios (eso queda fuera de alcance, ver plan §8.2).
+    //
+    // Redirige a la raíz publicada del sitio, conservando el hash si
+    // ya existía uno.
+    var pathParts = window.location.pathname.split('/').filter(Boolean);
+    var siteRoot = pathParts.length > 0
+      ? window.location.origin + '/' + pathParts[0] + '/'
+      : window.location.origin + '/';
+    window.location.replace(siteRoot + window.location.hash);
+  </script>
+</head>
+<body></body>
+</html>

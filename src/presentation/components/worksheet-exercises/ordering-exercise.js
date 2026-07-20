@@ -4,27 +4,25 @@
  * Ordenamiento — cada ítem se muestra en su orden impreso original,
  * con un selector de posición (1..N). Deliberadamente sin
  * arrastrar-y-soltar: Atlas no tiene hoy ninguna librería de drag
- * and drop, e introducir una solo para este componente habría sido
- * una dependencia nueva no pedida.
+ * and drop.
  *
- * Calificación automática: `validate()` compara la posición elegida
- * de cada ítem contra `exercise.correctOrder`, y marca cada fila
- * como correcta/incorrecta — nunca revela cuál era la posición
- * correcta. Máximo `MAX_GRADING_ATTEMPTS` intentos.
+ * Sin límite de intentos propio (esta sesión, decisión de producto
+ * cerrada): el estudiante puede presionar "Check answers" cuantas
+ * veces quiera mientras la unidad no se haya enviado. El único
+ * control de intentos real es `unit_attempt_limits`, un nivel más
+ * arriba — este componente nunca cuenta ni recuerda cuántas veces se
+ * calificó a sí mismo.
  *
- * Persistencia (esta sesión): este componente NUNCA habla con
- * Supabase ni con ningún repositorio (regla de vecinos, igual que
- * `audio-panel.js` nunca guarda posición de audio). Recibe
- * `initialState` ya resuelto (respuesta, resultado y intentos
- * previos, o `null` si nunca se intentó) y restaura la UI a partir
- * de eso; al calificar, invoca `onGraded(...)` — es
- * `worksheet-screen.js` quien decide guardar, vía
- * `worksheetAttemptRepository`.
+ * Disponibilidad: sigue consumiendo exclusivamente
+ * `getExerciseAvailability()` — nunca decide por su cuenta si debe
+ * bloquearse. Hoy esa función solo puede devolver bloqueado por
+ * `unitCompleted`; el componente no necesita saberlo ni le importa,
+ * solo obedece el veredicto.
  */
 
-import { MAX_GRADING_ATTEMPTS } from '../../../domain/contracts/worksheet-exercise-lifecycle.js';
+import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
 
-export function createOrderingExercise(exercise, { initialState, onGraded } = {}) {
+export function createOrderingExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'ordering-exercise');
 
@@ -41,8 +39,6 @@ export function createOrderingExercise(exercise, { initialState, onGraded } = {}
   const selectsByItemId = new Map();
   const rowsByItemId = new Map();
 
-  // Si hay una respuesta previa, precomputamos su posición por ítem
-  // para restaurar cada <select> al construirlo.
   const previousPositionByItemId = new Map();
   (initialState?.response ?? []).forEach((itemId, index) => {
     previousPositionByItemId.set(itemId, index + 1);
@@ -91,29 +87,11 @@ export function createOrderingExercise(exercise, { initialState, onGraded } = {}
 
   element.appendChild(list);
 
-  // --- Calificación ---
-  let attemptsUsed = initialState?.attemptsUsed ?? 0;
-
-  const gradingRow = document.createElement('div');
-  gradingRow.setAttribute('data-part', 'grading-row');
-
   const checkButton = document.createElement('button');
   checkButton.type = 'button';
   checkButton.setAttribute('data-part', 'check-button');
   checkButton.textContent = 'Check answers';
-
-  const attemptsLabel = document.createElement('span');
-  attemptsLabel.setAttribute('data-part', 'attempts-label');
-
-  function updateAttemptsLabel() {
-    const remaining = MAX_GRADING_ATTEMPTS - attemptsUsed;
-    attemptsLabel.textContent = remaining > 0 ? `${remaining} attempt${remaining === 1 ? '' : 's'} left` : 'No attempts left';
-  }
-  updateAttemptsLabel();
-
-  gradingRow.appendChild(checkButton);
-  gradingRow.appendChild(attemptsLabel);
-  element.appendChild(gradingRow);
+  element.appendChild(checkButton);
 
   function lockExercise() {
     selectsByItemId.forEach((select) => { select.disabled = true; });
@@ -126,23 +104,16 @@ export function createOrderingExercise(exercise, { initialState, onGraded } = {}
     });
   }
 
-  // Restaurar resultado previo, si lo hay — incluido el bloqueo si ya
-  // se agotaron los intentos en una visita anterior.
-  if (initialState?.result) {
-    applyResult(initialState.result);
-    if (attemptsUsed >= MAX_GRADING_ATTEMPTS) lockExercise();
-  }
+  if (initialState?.result) applyResult(initialState.result);
+  if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
 
   checkButton.addEventListener('click', () => {
-    if (!isAnswered() || attemptsUsed >= MAX_GRADING_ATTEMPTS) return;
-    attemptsUsed += 1;
+    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
 
     const result = validate();
     applyResult(result);
-    updateAttemptsLabel();
-    if (attemptsUsed >= MAX_GRADING_ATTEMPTS) lockExercise();
 
-    onGraded?.({ response: getResponse(), result, attemptsUsed });
+    onGraded?.({ response: getResponse(), result });
   });
 
   function update() {}
