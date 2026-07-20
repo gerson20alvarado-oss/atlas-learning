@@ -1,18 +1,29 @@
 /**
  * presentation/components/resource-panels/transcript-panel.js
  *
- * Panel de solo lectura. `resource.transcriptLines` (esta sesión,
- * contenido real aportado por el usuario desde el apéndice del
- * libro) es un arreglo de `{ speaker, text }` — `speaker` es `null`
- * en un pasaje narrado, sin turnos de diálogo (p. ej. p.53). Cuando
- * no existe todavía (páginas sin producir aún), se muestra el mismo
- * estado honesto de siempre — nunca se fabrica contenido.
+ * Contenido de solo lectura. `resource.transcriptLines` es un
+ * arreglo de `{ speaker, text }` — `speaker` es `null` en un pasaje
+ * narrado, sin turnos de diálogo. Cuando no existe todavía, se
+ * muestra el mismo estado honesto de siempre — nunca se fabrica
+ * contenido.
+ *
+ * Corrección de UX (esta sesión): ya no se auto-envuelve en
+ * `resource-panel-overlay` (modal centrado, cubría el libro). Expone
+ * su contenido en bruto para que quien lo monte
+ * (page-reader-screen.js) decida el contenedor — hoy, `side-panel.js`
+ * reutilizado tal cual (mismo componente que ya usa el Espacio de
+ * Estudio, sin ningún cambio). El contenido en sí no cambió.
  */
 
-import { createResourcePanelOverlay } from '../resource-panel-overlay/resource-panel-overlay.js';
+export function createTranscriptPanel({ resource }) {
+  const element = document.createElement('div');
+  element.setAttribute('data-component', 'transcript-panel-content');
 
-export function createTranscriptPanel({ resource, onClose }) {
-  const overlay = createResourcePanelOverlay({ title: `Transcripción — ${resource.pageTemplate}`, onClose });
+  const heading = document.createElement('h2');
+  heading.setAttribute('data-part', 'title');
+  heading.className = 'al-type-ui-label';
+  heading.textContent = `Transcripción — ${resource.pageTemplate}`;
+  element.appendChild(heading);
 
   if (resource.transcriptLines?.length) {
     const container = document.createElement('div');
@@ -32,15 +43,19 @@ export function createTranscriptPanel({ resource, onClose }) {
       container.appendChild(line);
     });
 
-    overlay.setContent(container);
+    element.appendChild(container);
   } else {
     const content = document.createElement('p');
     content.className = 'al-type-ui-caption';
     content.textContent = resource.sourcePageRef
       ? 'La transcripción todavía no está disponible — pendiente de producir el apéndice del libro.'
       : 'Este recurso no tiene transcripción asociada.';
-    overlay.setContent(content);
+    element.appendChild(content);
   }
 
-  return Object.freeze({ element: overlay.element, destroy: overlay.destroy });
+  function destroy() {
+    element.remove();
+  }
+
+  return Object.freeze({ element, destroy });
 }

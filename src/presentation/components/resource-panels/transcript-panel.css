@@ -1,21 +1,26 @@
 /**
  * transcript-panel.css
  *
- * Espaciado de lectura para el diálogo real (esta sesión) — antes
- * este panel solo mostraba un párrafo de aviso, sin necesidad de
- * estilo propio.
+ * Corrección de UX (esta sesión): los selectores ya no apuntan a
+ * resource-panel-overlay (el contenido dejó de vivir ahí) — apuntan
+ * directamente a transcript-panel-content, el contenedor propio del
+ * componente, portable sin importar qué lo envuelva (antes el modal,
+ * hoy el panel lateral reutilizado).
  */
 
-[data-component="resource-panel-overlay"] [data-part="transcript-lines"] {
+[data-component="transcript-panel-content"] [data-part="title"] {
+  color: var(--al-text-ui);
+  margin: var(--al-space-2) 0 var(--al-space-3);
+}
+
+[data-component="transcript-panel-content"] [data-part="transcript-lines"] {
   display: flex;
   flex-direction: column;
   gap: var(--al-space-3);
-  max-height: 60vh;
-  overflow-y: auto;
 }
 
-[data-component="resource-panel-overlay"] [data-part="transcript-turn"],
-[data-component="resource-panel-overlay"] [data-part="transcript-narration"] {
+[data-component="transcript-panel-content"] [data-part="transcript-turn"],
+[data-component="transcript-panel-content"] [data-part="transcript-narration"] {
   margin: 0;
   font-family: var(--al-font-reading);
   font-size: var(--al-size-16);
@@ -23,12 +28,12 @@
   color: var(--al-text-content);
 }
 
-[data-component="resource-panel-overlay"] [data-part="transcript-turn"] strong {
+[data-component="transcript-panel-content"] [data-part="transcript-turn"] strong {
   color: var(--al-text-ui);
   margin-right: var(--al-space-1);
 }
 
-[data-component="resource-panel-overlay"] [data-part="transcript-narration"] {
+[data-component="transcript-panel-content"] [data-part="transcript-narration"] {
   font-style: italic;
   color: var(--al-text-muted);
 }

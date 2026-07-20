@@ -25,6 +25,7 @@ import { createAudioPanel } from '../../components/resource-panels/audio-panel.j
 import { createTranscriptPanel } from '../../components/resource-panels/transcript-panel.js';
 import { createStudyWorkspaceSheet } from '../../components/resource-panels/study-workspace-sheet.js';
 import { createSidePanel } from '../../components/side-panel/side-panel.js';
+import { createAudioDrawer } from '../../components/audio-drawer/audio-drawer.js';
 import { createStudyNoteIcon } from '../../components/icons/study-note-icon.js';
 import { createPageNavigator } from '../../components/page-navigator/page-navigator.js';
 import { resolvePageMarkers } from '../../../domain/page-layout/page-marker-resolver.js';
@@ -156,13 +157,13 @@ export function createPageReaderScreen({
 
   let currentPage = Math.min(Math.max(initialPageNumber, firstPage), lastPage);
   let bookmarkedPages = [];
-  let activePanel = null; // modal centrado: audio, transcripción
-  let activeSidePanel = null; // panel lateral: Espacio de Estudio, exclusivamente
+  let activeAudioDrawer = null; // drawer inferior: exclusivo del audio
+  let activeSidePanel = null; // panel lateral: Espacio de Estudio o Transcripción — mutuamente excluyentes, nunca dos sistemas de panel distintos
   let activePageNavigator = null; // popover: saltar a una página específica
 
-  function closeActivePanel() {
-    activePanel?.destroy();
-    activePanel = null;
+  function closeAudioDrawer() {
+    activeAudioDrawer?.destroy();
+    activeAudioDrawer = null;
   }
 
   function closePageNavigator() {
@@ -197,9 +198,22 @@ export function createPageReaderScreen({
     studyWorkspaceTab.hidden = false;
   }
 
-  function openStudyWorkspace() {
-    // Reabrir sobre la misma página no debe apilar paneles.
+  // Único mecanismo de panel lateral, reutilizado por Espacio de
+  // Estudio y por Transcripción (corrección de UX de esta sesión) —
+  // "no crear un segundo sistema de paneles" significa, en código,
+  // que ambos pasan por esta misma función, nunca por una copia.
+  function openSidePanel({ title, contentElement, onDestroyContent }) {
     closeSidePanel();
+    const panel = createSidePanel({ title, onClose: closeSidePanel });
+    panel.setContent(contentElement);
+    activeSidePanel = { destroy: () => { onDestroyContent?.(); panel.destroy(); } };
+    sidePanelSlot.hidden = false;
+    sidePanelSlot.replaceChildren(panel.element);
+    readerBody.setAttribute('data-side-panel-open', 'true');
+    studyWorkspaceTab.hidden = true;
+  }
+
+  function openStudyWorkspace() {
     const answerKeyResource = getPageResources(bookId, currentPage).find((r) => r.type === 'answerKey');
     const sheet = createStudyWorkspaceSheet({
       answerKeyResource,
@@ -209,24 +223,29 @@ export function createPageReaderScreen({
       accessToken,
       studyWorkspaceRepository,
     });
-    const panel = createSidePanel({ title: 'Espacio de Estudio', onClose: closeSidePanel });
-    panel.setContent(sheet.element);
-    activeSidePanel = { destroy: () => { sheet.destroy(); panel.destroy(); } };
-    sidePanelSlot.hidden = false;
-    sidePanelSlot.replaceChildren(panel.element);
-    readerBody.setAttribute('data-side-panel-open', 'true');
-    studyWorkspaceTab.hidden = true;
+    openSidePanel({ title: 'Espacio de Estudio', contentElement: sheet.element, onDestroyContent: sheet.destroy });
+  }
+
+  function openTranscript(resource) {
+    const panelContent = createTranscriptPanel({ resource });
+    openSidePanel({
+      title: `Transcripción — ${resource.pageTemplate}`,
+      contentElement: panelContent.element,
+      onDestroyContent: panelContent.destroy,
+    });
   }
 
   function handleResourceSelect(resource) {
     if (resource.type === 'audio') {
-      closeActivePanel();
-      activePanel = createAudioPanel({ resource, audioSourceRepository, onClose: closeActivePanel });
-      element.appendChild(activePanel.element);
+      // Reabrir sobre la misma página no debe apilar drawers.
+      closeAudioDrawer();
+      const panelContent = createAudioPanel({ resource, audioSourceRepository });
+      const drawer = createAudioDrawer({ onClose: closeAudioDrawer });
+      drawer.setContent(panelContent.element);
+      activeAudioDrawer = { destroy: () => { panelContent.destroy(); drawer.destroy(); } };
+      element.appendChild(drawer.element);
     } else if (resource.type === 'transcript') {
-      closeActivePanel();
-      activePanel = createTranscriptPanel({ resource, onClose: closeActivePanel });
-      element.appendChild(activePanel.element);
+      openTranscript(resource);
     }
     // studyWorkspace ya no se abre desde un marcador de página — ver
     // la pestaña fija del Reader (studyWorkspaceTab, corrección de UX
@@ -235,7 +254,7 @@ export function createPageReaderScreen({
   }
 
   async function renderCurrentPage() {
-    closeActivePanel();
+    closeAudioDrawer();
     closeSidePanel();
     closePageNavigator();
     prevButton.disabled = currentPage <= firstPage;
@@ -290,7 +309,7 @@ export function createPageReaderScreen({
   function update() {}
 
   function destroy() {
-    closeActivePanel();
+    closeAudioDrawer();
     closeSidePanel();
     closePageNavigator();
     backNav.destroy();

@@ -1,0 +1,52 @@
+/**
+ * audio-drawer.css
+ *
+ * Compacto y anclado al borde inferior — el objetivo completo de
+ * este componente es que el libro siga siendo visible y que el
+ * estudiante pueda seguir leyendo mientras el audio suena. Mismo
+ * lenguaje visual de tarjeta ya establecido esta sesión (radius-xl,
+ * shadow-card), nunca un modal con scrim.
+ */
+
+[data-component="audio-drawer"] {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(92%, 480px);
+  max-height: 30vh;
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-2);
+  padding: var(--al-space-3) var(--al-space-4);
+  background: var(--al-paper-0);
+  border: 1px solid var(--al-border-default);
+  border-bottom: none;
+  border-radius: var(--al-radius-xl) var(--al-radius-xl) 0 0;
+  box-shadow: 0 -2px 4px rgba(33, 31, 28, 0.06), 0 -4px 16px rgba(33, 31, 28, 0.1);
+  z-index: 15;
+}
+
+[data-component="audio-drawer"] [data-part="content"] {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-component="audio-drawer"] [data-part="close"] {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--al-hit-target-min);
+  height: var(--al-hit-target-min);
+  background: none;
+  border: none;
+  color: var(--al-text-muted);
+  font-size: var(--al-size-22);
+  cursor: pointer;
+  transition: color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="audio-drawer"] [data-part="close"]:hover {
+  color: var(--al-text-ui);
+}
