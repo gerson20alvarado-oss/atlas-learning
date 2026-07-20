@@ -1,0 +1,72 @@
+/**
+ * profile-setup-screen.css
+ *
+ * Misma identidad visual que entry-screen.css/login-screen.css —
+ * ancho máximo centrado, mismos tokens de espaciado y tipografía.
+ * Sin back-nav (profile-setup-screen.js no lo incluye a propósito).
+ */
+
+[data-component="profile-setup-screen"] {
+  max-width: 360px;
+  margin: 0 auto;
+  padding-top: var(--al-space-12);
+  text-align: center;
+}
+
+[data-component="profile-setup-screen"] [data-part="logo-mark"] {
+  color: var(--al-green-700);
+  margin: 0 auto var(--al-space-4);
+  display: block;
+}
+
+[data-component="profile-setup-screen"] [data-part="heading"] {
+  color: var(--al-text-content);
+  margin: 0 0 var(--al-space-2);
+}
+
+[data-component="profile-setup-screen"] [data-part="subheading"] {
+  color: var(--al-text-muted);
+  margin: 0 0 var(--al-space-8);
+}
+
+[data-component="profile-setup-screen"] label {
+  display: block;
+  text-align: left;
+  color: var(--al-text-muted);
+  margin-bottom: var(--al-space-2);
+}
+
+[data-component="profile-setup-screen"] input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--al-space-4);
+  margin-bottom: var(--al-space-4);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  color: var(--al-text-content);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-md);
+  background: transparent;
+}
+
+[data-component="profile-setup-screen"] input:focus {
+  outline: none;
+  border-width: var(--al-border-active);
+  border-color: var(--al-action-primary);
+}
+
+[data-component="profile-setup-screen"] [data-part="error"] {
+  color: var(--al-feedback-incorrect);
+  margin: 0 0 var(--al-space-4);
+  text-align: left;
+}
+
+[data-component="profile-setup-screen"] [data-part="continue"] {
+  width: 100%;
+  margin-top: var(--al-space-2);
+}
+
+[data-component="profile-setup-screen"] [data-part="loading"] {
+  margin-top: var(--al-space-2);
+}

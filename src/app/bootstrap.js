@@ -39,15 +39,24 @@ import { createAuthContract } from '../auth/auth-contract.js';
 import { createSupabaseAuthAdapter } from '../auth/adapters/supabase-auth-adapter.js';
 import { createAccountSnapshotService } from '../remote-account-snapshot/account-snapshot-contract.js';
 import { createSupabaseAccountSnapshotAdapter } from '../remote-account-snapshot/adapters/supabase-account-snapshot-adapter.js';
-import { createLibraryAccessService } from '../library-access/library-access-contract.js';
-import { createSupabaseLibraryAccessAdapter } from '../library-access/adapters/supabase-library-access-adapter.js';
-import { createLibraryAccessRepository } from '../domain/library-access/library-access-repository.js';
+import { createLicenseService } from '../license/license-contract.js';
+import { createSupabaseLicenseAdapter } from '../license/adapters/supabase-license-adapter.js';
+import { createLicenseRepository } from '../domain/license/license-repository.js';
+import { createProfileService } from '../profile/profile-contract.js';
+import { createSupabaseProfileAdapter } from '../profile/adapters/supabase-profile-adapter.js';
+import { createProfileRepository } from '../domain/profile/profile-repository.js';
 import { createPageSourceService } from '../page-source/page-source-contract.js';
 import { createSupabasePageSourceAdapter } from '../page-source/adapters/supabase-page-source-adapter.js';
 import { createPageSourceRepository } from '../domain/page-source/page-source-repository.js';
 import { createAudioSourceService } from '../audio-source/audio-source-contract.js';
 import { createSupabaseAudioSourceAdapter } from '../audio-source/adapters/supabase-audio-source-adapter.js';
 import { createAudioSourceRepository } from '../domain/audio-source/audio-source-repository.js';
+import { createVideoSourceService } from '../video-source/video-source-contract.js';
+import { createSupabaseVideoSourceAdapter } from '../video-source/adapters/supabase-video-source-adapter.js';
+import { createVideoSourceRepository } from '../domain/video-source/video-source-repository.js';
+import { createWorksheetAttemptService } from '../worksheet-attempt/worksheet-attempt-contract.js';
+import { createSupabaseWorksheetAttemptAdapter } from '../worksheet-attempt/adapters/supabase-worksheet-attempt-adapter.js';
+import { createWorksheetAttemptRepository } from '../domain/worksheet-attempt/worksheet-attempt-repository.js';
 import { createReaderPositionService } from '../reader-position/reader-position-contract.js';
 import { createSupabaseReaderPositionAdapter } from '../reader-position/adapters/supabase-reader-position-adapter.js';
 import { createReaderPositionRepository } from '../domain/reader-position/reader-position-repository.js';
@@ -60,6 +69,12 @@ import { createStudyWorkspaceRepository } from '../domain/study-workspace/study-
 import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
+// American Language Hub — solo para el hook de verificación manual
+// (§ más abajo). Sin ninguna otra conexión con el resto del arranque
+// todavía — la worksheet no participa en ningún flujo real de
+// navegación hasta que se resuelva su integración con el Reader.
+import { createWorksheetScreen } from '../presentation/screens/worksheet/worksheet-screen.js';
+import { ALH_LEVEL_1_UNIT_1 } from '../domain/worksheet-content/alh-level-1-unit-1.js';
 
 function bootstrap() {
   // a. Config pública — resuelve base path para GitHub Pages.
@@ -101,17 +116,31 @@ function bootstrap() {
   });
   const accountSnapshotService = createAccountSnapshotService(supabaseSnapshotAdapter, errorBoundary);
 
-  // Control de Acceso por Libro (diseño cerrado antes de este
-  // sprint): dominio propio, hermano de Session — nunca dentro de
-  // Auth, nunca conocido por Library ni por el Content Model. Mismo
-  // patrón contrato + adapter que el resto de la infraestructura
-  // remota de este archivo.
-  const supabaseLibraryAccessAdapter = createSupabaseLibraryAccessAdapter({
+  // Sistema de Licencias por Libro (esta sesión) — reemplaza por
+  // completo LibraryAccess/authorized_users. Mismo patrón contrato +
+  // adapter que el resto de la infraestructura remota de este
+  // archivo; la seguridad real de la activación vive en la función
+  // de Postgres `activate_license` (SECURITY DEFINER, bloqueo de
+  // fila), nunca en este adapter — ver
+  // docs/license-keys-schema.sql.
+  const supabaseLicenseAdapter = createSupabaseLicenseAdapter({
     supabaseUrl: runtimeConfig.env.supabaseUrl,
     supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
   });
-  const libraryAccessService = createLibraryAccessService(supabaseLibraryAccessAdapter, errorBoundary);
-  const libraryAccessRepository = createLibraryAccessRepository(libraryAccessService);
+  const licenseService = createLicenseService(supabaseLicenseAdapter, errorBoundary);
+  const licenseRepository = createLicenseRepository(licenseService);
+
+  // Perfil de Usuario (esta sesión): mismo patrón contrato + adapter
+  // que el resto de la infraestructura remota. A diferencia de
+  // License, aquí un INSERT/UPDATE directo del cliente es seguro
+  // (RLS ya garantiza que solo se toca la propia fila) — sin
+  // necesidad de ninguna función de Postgres.
+  const supabaseProfileAdapter = createSupabaseProfileAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const profileService = createProfileService(supabaseProfileAdapter, errorBoundary);
+  const profileRepository = createProfileRepository(profileService);
 
   // Nuevo Reader (Sprint Proposal aprobado, Etapa 2): PageSource,
   // bucket público — Technical Specification v2.0, "el Reader
@@ -135,6 +164,28 @@ function bootstrap() {
   });
   const audioSourceService = createAudioSourceService(supabaseAudioSourceAdapter, errorBoundary);
   const audioSourceRepository = createAudioSourceRepository(audioSourceService);
+
+  // VideoSource (American Language Hub, esta sesión): mismo patrón
+  // exacto que AudioSource — reutiliza el mismo helper compartido de
+  // construcción de URL. Hi! Korean nunca lo importa ni lo necesita.
+  const supabaseVideoSourceAdapter = createSupabaseVideoSourceAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+  });
+  const videoSourceService = createVideoSourceService(supabaseVideoSourceAdapter, errorBoundary);
+  const videoSourceRepository = createVideoSourceRepository(videoSourceService);
+
+  // WorksheetAttempt (esta sesión): persistencia de intentos de
+  // ejercicios de worksheet, exclusivo de American Language Hub —
+  // tabla propia (worksheet_exercise_attempts), mismo patrón que
+  // BookmarkRepository (necesita supabaseAnonKey además de la URL,
+  // a diferencia de PageSource/AudioSource/VideoSource, que solo
+  // construyen URLs públicas determinísticas).
+  const supabaseWorksheetAttemptAdapter = createSupabaseWorksheetAttemptAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const worksheetAttemptService = createWorksheetAttemptService(supabaseWorksheetAttemptAdapter, errorBoundary);
+  const worksheetAttemptRepository = createWorksheetAttemptRepository(worksheetAttemptService);
 
   // ReaderPosition, Supabase puro (esta sesión): a diferencia de
   // todo lo demás compuesto en este archivo, esta entidad
@@ -207,9 +258,12 @@ function bootstrap() {
     runtimeConfig,
     authContract,
     accountLinkingFlow,
-    libraryAccessRepository,
+    licenseRepository,
+    profileRepository,
     pageSourceRepository,
     audioSourceRepository,
+    videoSourceRepository,
+    worksheetAttemptRepository,
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
@@ -239,6 +293,28 @@ function bootstrap() {
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
+    licenseRepository,
+    profileRepository,
+    // American Language Hub — Unidad 1, sin flujo de navegación real
+    // todavía. previewWorksheet() la monta directamente sobre <body>,
+    // reemplazando lo que la app esté mostrando, solo para
+    // verificación manual — nunca se usa así en producción.
+    createWorksheetScreen,
+    ALH_LEVEL_1_UNIT_1,
+    videoSourceRepository,
+    worksheetAttemptRepository,
+    previewWorksheet: () => {
+      const session = authContract.getSession();
+      const screen = createWorksheetScreen({
+        unit: ALH_LEVEL_1_UNIT_1,
+        videoSourceRepository,
+        worksheetAttemptRepository,
+        userId: session?.userId ?? null,
+        accessToken: session?.accessToken ?? null,
+      });
+      document.body.replaceChildren(screen.element);
+      return screen;
+    },
   });
 }
 

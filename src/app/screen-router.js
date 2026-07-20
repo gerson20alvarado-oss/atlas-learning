@@ -50,6 +50,10 @@ import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
 import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/lesson-entry-screen.js';
 import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
 import { createPageReaderScreen } from '../presentation/screens/page-reader/page-reader-screen.js';
+import { createWorksheetScreen } from '../presentation/screens/worksheet/worksheet-screen.js';
+import { getWorksheetUnit } from '../domain/worksheet-content/worksheet-content-repository.js';
+import { createLicenseActivationScreen } from '../presentation/screens/license-activation/license-activation-screen.js';
+import { createProfileSetupScreen } from '../presentation/screens/profile-setup/profile-setup-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
 import { createEntryScreen } from '../presentation/screens/entry/entry-screen.js';
 import { createLoginScreen } from '../presentation/screens/login/login-screen.js';
@@ -124,11 +128,12 @@ function buildLibraryScreen({
   router,
   attemptRepository,
   runtimeConfig,
-  libraryAccessRepository,
-  authorizedBookIds,
+  licenseRepository,
+  ownedBookIds,
   readerPositionRepository,
   userId,
   authContract,
+  onShowLicenseActivation,
 }) {
   const library = getLibrary();
   // Control de Acceso por Libro (Caso 5, biblioteca vacía incluido):
@@ -139,7 +144,7 @@ function buildLibraryScreen({
   // cualquier colección sin elementos (createEmptyLibrary(), Content
   // Model C8) — sin ningún cambio en ese archivo.
   const authorizedBooks = library.books.filter((book) =>
-    libraryAccessRepository.isBookAuthorized(authorizedBookIds, book.id),
+    licenseRepository.isBookOwned(ownedBookIds, book.id),
   );
   const books = authorizedBooks.map((book) => ({
     id: book.id,
@@ -154,6 +159,7 @@ function buildLibraryScreen({
   return createLibraryScreen({
     books,
     onBack: () => router.navigateTo('/'),
+    onActivateLicense: () => onShowLicenseActivation?.(),
     onSelectBook: async (bookId) => {
       // ReaderPosition, Supabase puro (esta sesión): se resuelve
       // directo contra Supabase antes de navegar — sin ninguna
@@ -183,11 +189,44 @@ function buildPageReaderScreen({
   authContract,
   pageSourceRepository,
   audioSourceRepository,
+  videoSourceRepository,
+  worksheetAttemptRepository,
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
 }) {
   const accessToken = authContract.getSession()?.accessToken ?? null;
+  const book = getBookById(bookId);
+
+  // Bifurcación real de esta sesión: un libro con contentMode
+  // 'worksheet' se resuelve como worksheet interactiva nativa, nunca
+  // como imagen de PageSource. Hi! Korean nunca declara este campo
+  // — su camino de siempre (abajo) queda intacto, sin ningún cambio,
+  // ni un solo `if` nuevo en su propia ejecución.
+  if (book?.contentMode === 'worksheet') {
+    const unit = getWorksheetUnit(bookId, pageNumber);
+    if (!unit) {
+      // Unidad todavía no producida — mismo criterio honesto que ya
+      // usa el resto de Atlas: nunca una pantalla en blanco sin
+      // explicación.
+      const fallback = document.createElement('div');
+      fallback.setAttribute('data-component', 'worksheet-screen');
+      fallback.setAttribute('data-part', 'unit-unavailable');
+      const message = document.createElement('p');
+      message.className = 'al-type-ui-body';
+      message.textContent = `La Unidad ${pageNumber} todavía no está disponible.`;
+      fallback.appendChild(message);
+      return Object.freeze({ element: fallback, update: () => {}, destroy: () => fallback.remove() });
+    }
+    return createWorksheetScreen({
+      unit,
+      videoSourceRepository,
+      worksheetAttemptRepository,
+      userId,
+      accessToken,
+      onBack: () => router.navigateTo('/library'),
+    });
+  }
 
   return createPageReaderScreen({
     bookId,
@@ -338,7 +377,7 @@ function buildLearningSessionScreen({
   });
 }
 
-function buildHomeScreen({ router, readerPositionRepository, libraryAccessRepository, userId, authContract }) {
+function buildHomeScreen({ router, readerPositionRepository, licenseRepository, userId, authContract }) {
   // ReaderPosition, Supabase puro (esta sesión): Home ya no necesita
   // conocer la posición de antemano — ni estado de carga, ni
   // distinción visual entre "hay algo" y "no hay nada". El botón
@@ -351,9 +390,9 @@ function buildHomeScreen({ router, readerPositionRepository, libraryAccessReposi
     onContinue: async () => {
       const accessToken = authContract.getSession()?.accessToken ?? null;
       const position = await readerPositionRepository.getMostRecentPosition({ userId, accessToken });
-      const authorizedBookIds = await libraryAccessRepository.getAuthorizedBookIds({ userId, accessToken });
+      const ownedBookIds = await licenseRepository.getOwnedBookIds({ userId, accessToken });
       const bookIsAuthorized =
-        position?.bookId && libraryAccessRepository.isBookAuthorized(authorizedBookIds, position.bookId);
+        position?.bookId && licenseRepository.isBookOwned(ownedBookIds, position.bookId);
 
       if (bookIsAuthorized) {
         router.navigateTo(`/book/${position.bookId}/read/${position.pageNumber}`);
@@ -376,7 +415,7 @@ function resolveScreen(navigationState, deps) {
   // estudiante. Un único punto de control aquí, antes de dispatchar a
   // cualquiera de las screens que dependen de un libro, en vez de
   // repetir la misma verificación en cada una.
-  if (bookPosition && !deps.libraryAccessRepository.isBookAuthorized(deps.authorizedBookIds, bookPosition)) {
+  if (bookPosition && !deps.licenseRepository.isBookOwned(deps.ownedBookIds, bookPosition)) {
     return notFoundView({
       errorBoundary: deps.errorBoundary,
       reason: 'book-not-authorized',
@@ -436,15 +475,24 @@ export function mountScreenRouter({
   runtimeConfig,
   authContract,
   accountLinkingFlow,
-  libraryAccessRepository,
+  licenseRepository,
+  profileRepository,
   pageSourceRepository,
   audioSourceRepository,
+  videoSourceRepository,
+  worksheetAttemptRepository,
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
+  // Sistema de Licencias por Libro (esta sesión): 'shelf' | 'activate'
+  // — mismo criterio que authUiStage, un estado local de UI, no una
+  // ruta de hash nueva. Activar una licencia no es "navegar a un
+  // libro" (todavía no hay libro), es una interrupción temporal
+  // sobre la Library, igual que Login lo es sobre Entry.
+  let libraryUiStage = 'shelf';
   // Control de Acceso por Libro: en memoria únicamente, nunca
   // persistida (riesgo aceptado en el plan de este sprint: sin caché
   // local en esta primera versión) — se resuelve fresca contra la
@@ -452,7 +500,14 @@ export function mountScreenRouter({
   // autenticación, mismo punto exacto donde ya se resuelve
   // accountLinkingFlow.run(). Vacía por defecto: el mismo resultado
   // seguro que un fallo de verificación (Caso 5).
-  let authorizedBookIds = [];
+  let ownedBookIds = [];
+  // Perfil de Usuario (esta sesión): mismo criterio conservador que
+  // ownedBookIds — falso por defecto hasta que la consulta real
+  // resuelva, nunca asumido verdadero. Un usuario con perfil real
+  // podría ver un parpadeo breve hacia Profile Setup antes de que la
+  // consulta confirme lo contrario — mismo tipo de parpadeo ya
+  // aceptado para la Library vacía mientras ownedBookIds resuelve.
+  let hasProfileCompleted = false;
 
   function render() {
     const authSession = authContract.getSession();
@@ -495,6 +550,53 @@ export function mountScreenRouter({
       return;
     }
 
+    if (!hasProfileCompleted) {
+      const screen = createProfileSetupScreen({
+        onSubmit: async (firstName, lastName) => {
+          const success = await profileRepository.createProfile({
+            userId: authSession.userId,
+            firstName,
+            lastName,
+            accessToken: authSession.accessToken,
+          });
+          if (!success) {
+            return { error: 'We could not save your profile. Please try again.' };
+          }
+          hasProfileCompleted = true;
+          render();
+          return { error: null };
+        },
+      });
+      contentRegion.render(screen);
+      return;
+    }
+
+    if (libraryUiStage === 'activate') {
+      const accessToken = authSession.accessToken;
+      const screen = createLicenseActivationScreen({
+        licenseRepository,
+        accessToken,
+        resolveBookTitle: (bookId) => getBookById(bookId)?.title ?? null,
+        onBack: () => {
+          libraryUiStage = 'shelf';
+          render();
+        },
+        onActivated: async () => {
+          // Refrescar antes de volver — el libro recién activado
+          // debe verse en la Library de inmediato, no en el próximo
+          // login. Mismo criterio ya usado tras vincular cuentas.
+          ownedBookIds = await licenseRepository.getOwnedBookIds({
+            userId: authSession.userId,
+            accessToken,
+          });
+          libraryUiStage = 'shelf';
+          render();
+        },
+      });
+      contentRegion.render(screen);
+      return;
+    }
+
     authUiStage = 'entry'; // reset para un futuro logout
     const navigationState = lastNavigationState ?? {
       libraryPosition: null,
@@ -511,10 +613,16 @@ export function mountScreenRouter({
       attemptRepository,
       runtimeConfig,
       authContract,
-      libraryAccessRepository,
-      authorizedBookIds,
+      licenseRepository,
+      ownedBookIds,
+      onShowLicenseActivation: () => {
+        libraryUiStage = 'activate';
+        render();
+      },
       pageSourceRepository,
       audioSourceRepository,
+      videoSourceRepository,
+      worksheetAttemptRepository,
       readerPositionRepository,
       bookmarkRepository,
       studyWorkspaceRepository,
@@ -531,15 +639,20 @@ export function mountScreenRouter({
   const unsubscribeAuth = authContract.onAuthStateChange(async (authSession) => {
     if (authSession) {
       await accountLinkingFlow.run(authSession);
-      authorizedBookIds = await libraryAccessRepository.getAuthorizedBookIds({
+      ownedBookIds = await licenseRepository.getOwnedBookIds({
+        userId: authSession.userId,
+        accessToken: authSession.accessToken,
+      });
+      hasProfileCompleted = await profileRepository.hasProfile({
         userId: authSession.userId,
         accessToken: authSession.accessToken,
       });
     } else {
       // Logout, o cambio a una cuenta distinta en el mismo
-      // dispositivo: nunca debe sobrevivir la lista de libros
-      // autorizados de la sesión anterior.
-      authorizedBookIds = [];
+      // dispositivo: nunca debe sobrevivir ni la lista de libros
+      // poseídos ni la confirmación de perfil de la sesión anterior.
+      ownedBookIds = [];
+      hasProfileCompleted = false;
     }
     render();
   });
@@ -552,17 +665,22 @@ export function mountScreenRouter({
   // hacer), así que es seguro invocarlo aquí también, en cada
   // arranque con sesión ya cacheada — es lo que garantiza que una
   // interrupción eventualmente se resuelva, sin exigir un nuevo login.
-  // Mismo criterio para authorizedBookIds: se resuelve aquí también,
-  // fresca, nunca asumida de una ejecución anterior.
+  // Mismo criterio para ownedBookIds: se resuelve aquí también,
+  // fresca, nunca asumida de una ejecución anterior. Igual para
+  // hasProfileCompleted — mismo tipo de verificación fresca en cada
+  // arranque, nunca asumida de una sesión anterior.
   const cachedSession = authContract.getSession();
   if (cachedSession) {
     Promise.all([
       accountLinkingFlow.run(cachedSession),
-      libraryAccessRepository
-        .getAuthorizedBookIds({ userId: cachedSession.userId, accessToken: cachedSession.accessToken })
+      licenseRepository
+        .getOwnedBookIds({ userId: cachedSession.userId, accessToken: cachedSession.accessToken })
         .then((ids) => {
-          authorizedBookIds = ids;
+          ownedBookIds = ids;
         }),
+      profileRepository.hasProfile({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
+        hasProfileCompleted = result;
+      }),
     ]).then(render);
   }
 

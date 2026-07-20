@@ -23,8 +23,35 @@
    respecto al borde superior la da back-nav, no un margen propio del
    título), en vez del margen de "llegada" que solo corresponde a
    pantallas raíz sin back-nav (Home). */
-[data-component="library-screen"] [data-part="title"] {
+[data-component="library-screen"] [data-part="header-row"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
   margin: 0 0 var(--al-space-8);
+}
+
+[data-component="library-screen"] [data-part="title"] {
+  margin: 0;
+}
+
+[data-component="library-screen"] [data-part="activate-license"] {
+  flex-shrink: 0;
+  min-height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-4);
+  background: none;
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  border-radius: var(--al-radius-lg);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-ui);
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="library-screen"] [data-part="activate-license"]:hover {
+  background: var(--al-surface-recessed);
 }
 
 [data-component="library-screen"] [data-part="shelf"] {

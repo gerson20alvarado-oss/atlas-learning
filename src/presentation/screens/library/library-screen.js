@@ -36,23 +36,39 @@ function resolveColumnsForCurrentViewport() {
   return 2;
 }
 
-export function createLibraryScreen({ books, onBack, onSelectBook }) {
+export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLicense }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'library-screen');
 
   const backNav = createBackNav({ parentLabel: 'home', onSelect: onBack });
+
+  const headerRow = document.createElement('div');
+  headerRow.setAttribute('data-part', 'header-row');
 
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
   heading.className = 'al-type-title';
   heading.textContent = 'Library';
 
+  headerRow.appendChild(heading);
+
+  // Punto de entrada único a la activación de licencias — siempre
+  // visible, con cero libros o con diez (Arquitectura de Licencias,
+  // §6): sin tarjetas bloqueadas, no hay ningún libro sobre el que
+  // hacer clic para llegar aquí.
+  const activateButton = document.createElement('button');
+  activateButton.type = 'button';
+  activateButton.setAttribute('data-part', 'activate-license');
+  activateButton.textContent = '+ Activate a License Key';
+  activateButton.addEventListener('click', () => onActivateLicense?.());
+  headerRow.appendChild(activateButton);
+
   const shelf = document.createElement('div');
   shelf.setAttribute('data-part', 'shelf');
   shelf.setAttribute('role', 'list');
 
   element.appendChild(backNav.element);
-  element.appendChild(heading);
+  element.appendChild(headerRow);
   element.appendChild(shelf);
 
   let currentBooks = books;

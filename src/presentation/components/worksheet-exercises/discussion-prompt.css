@@ -1,0 +1,39 @@
+[data-component="discussion-prompt"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="discussion-prompt"] [data-part="instruction"] {
+  color: var(--al-text-ui);
+}
+
+[data-component="discussion-prompt"] [data-part="quote"] {
+  margin: 0;
+  padding: var(--al-space-3) var(--al-space-4);
+  border-left: var(--al-border-active) solid var(--al-border-default);
+  font-family: var(--al-font-reading);
+  font-style: italic;
+  color: var(--al-text-content);
+}
+
+[data-component="discussion-prompt"] [data-part="prompts"] {
+  margin: 0;
+  padding-left: var(--al-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-2);
+  color: var(--al-text-content);
+}
+
+[data-component="discussion-prompt"] [data-part="example"] {
+  margin: 0;
+  padding: var(--al-space-3);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-md);
+  font-family: var(--al-font-reading);
+  font-style: italic;
+  color: var(--al-text-muted);
+  white-space: pre-line;
+}

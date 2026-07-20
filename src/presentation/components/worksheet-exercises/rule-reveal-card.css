@@ -1,0 +1,35 @@
+[data-component="rule-reveal-card"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="rule-reveal-card"] [data-part="instruction"] {
+  color: var(--al-text-ui);
+}
+
+[data-component="rule-reveal-card"] [data-part="reveal"] {
+  padding: var(--al-space-3) var(--al-space-4);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="rule-reveal-card"] [data-part="reveal"] summary {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-ui);
+  cursor: pointer;
+}
+
+[data-component="rule-reveal-card"] [data-part="reveal-title"] {
+  margin: var(--al-space-2) 0 0;
+  font-weight: var(--al-weight-medium);
+  color: var(--al-text-ui);
+}
+
+[data-component="rule-reveal-card"] [data-part="reveal-text"] {
+  margin: var(--al-space-1) 0 0;
+  color: var(--al-text-content);
+}

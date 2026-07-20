@@ -1,0 +1,86 @@
+[data-component="ordering-exercise"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="ordering-exercise"] [data-part="instruction"] {
+  color: var(--al-text-ui);
+}
+
+[data-component="ordering-exercise"] [data-part="items"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-2);
+}
+
+[data-component="ordering-exercise"] [data-part="item"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-3);
+  padding: var(--al-space-2) var(--al-space-3);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-md);
+}
+
+[data-component="ordering-exercise"] [data-part="position"] {
+  width: 52px;
+  height: var(--al-hit-target-min);
+  border-radius: var(--al-radius-sm);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  background: var(--al-paper-0);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  text-align: center;
+}
+
+[data-component="ordering-exercise"] [data-part="text"] {
+  color: var(--al-text-content);
+}
+
+[data-component="ordering-exercise"] [data-part="item"][data-result="correct"] {
+  background: var(--al-feedback-correct-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-correct);
+}
+
+[data-component="ordering-exercise"] [data-part="item"][data-result="incorrect"] {
+  background: var(--al-feedback-incorrect-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
+}
+
+[data-component="ordering-exercise"] [data-part="grading-row"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-3);
+  margin-top: var(--al-space-2);
+}
+
+[data-component="ordering-exercise"] [data-part="check-button"] {
+  min-height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-4);
+  background: var(--al-action-primary);
+  color: var(--al-text-on-action);
+  border: none;
+  border-radius: var(--al-radius-lg);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="ordering-exercise"] [data-part="check-button"]:hover:not(:disabled) {
+  background: var(--al-action-primary-hover);
+}
+
+[data-component="ordering-exercise"] [data-part="check-button"]:disabled {
+  background: var(--al-action-disabled);
+  cursor: default;
+}
+
+[data-component="ordering-exercise"] [data-part="attempts-label"] {
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+}

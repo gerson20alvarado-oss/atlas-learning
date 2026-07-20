@@ -925,5 +925,32 @@ export const LIBRARY_CATALOG = Object.freeze({
         },
       ],
     },
+    {
+      // American Language Hub Level 1 (esta sesión) — segundo libro
+      // de Atlas, aislado por completo de Hi! Korean. Portada real,
+      // sin recortar (assets/images/covers/american-language-hub-1.png).
+      id: 'book-american-language-hub-1',
+      title: 'American Language Hub Level 1',
+      coverAssetPath: 'assets/images/covers/american-language-hub-1.png',
+      // Reader Visual Polish: tinte atmosférico propio — rojo muy
+      // claro, coherente con la portada real del libro.
+      themeAccent: '#FBEEEE',
+      // La pieza real que decide cómo el Reader resuelve una
+      // "página" de este libro: en vez de una imagen de PageSource,
+      // una worksheet nativa. Ausente en Hi! Korean (ni siquiera
+      // como `null`) — su comportamiento por defecto en
+      // screen-router.js sigue siendo exactamente el de siempre,
+      // sin ningún cambio, sin necesidad de declarar nada.
+      contentMode: 'worksheet',
+      // `units: []` a propósito, no un olvido: este libro no usa el
+      // modelo Content Model de Lesson/Section/ContentBlock que
+      // Hi! Korean sí usa — su contenido vive en su propio módulo
+      // (domain/worksheet-content/), con su propia forma de datos.
+      // computeBookProgress() ya degrada con seguridad a
+      // { completed: 0, total: 0 } cuando `units` está vacío — no
+      // hace falta ningún cambio ahí para que este libro aparezca en
+      // la Library sin romper nada.
+      units: [],
+    },
   ],
 });

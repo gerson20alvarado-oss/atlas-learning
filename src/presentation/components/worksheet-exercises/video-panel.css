@@ -1,0 +1,14 @@
+[data-component="video-panel-content"] [data-part="title"] {
+  color: var(--al-text-ui);
+  margin: var(--al-space-2) 0 var(--al-space-3);
+}
+
+[data-component="video-panel-content"] [data-part="status"] {
+  color: var(--al-text-muted);
+}
+
+[data-component="video-panel-content"] [data-part="video-el"] {
+  width: 100%;
+  border-radius: var(--al-radius-lg);
+  background: var(--al-ink-900);
+}

@@ -44,6 +44,19 @@
 @import url('../presentation/components/side-panel/side-panel.css');
 @import url('../presentation/components/page-navigator/page-navigator.css');
 @import url('../presentation/components/audio-drawer/audio-drawer.css');
+
+/* American Language Hub — Worksheets interactivas nativas (aislado
+   de Hi! Korean por completo, ningún archivo compartido). */
+@import url('../presentation/components/worksheet-exercises/discussion-prompt.css');
+@import url('../presentation/components/worksheet-exercises/rule-reveal-card.css');
+@import url('../presentation/components/worksheet-exercises/ordering-exercise.css');
+@import url('../presentation/components/worksheet-exercises/true-false-exercise.css');
+@import url('../presentation/components/worksheet-exercises/video-panel.css');
+@import url('../presentation/screens/worksheet/worksheet-screen.css');
+
+/* Sistema de Licencias por Libro */
+@import url('../presentation/screens/license-activation/license-activation-screen.css');
+@import url('../presentation/screens/profile-setup/profile-setup-screen.css');
 @import url('../presentation/components/resource-panels/study-workspace-sheet.css');
 @import url('../presentation/components/resource-panels/transcript-panel.css');
 @import url('../presentation/screens/page-reader/page-reader-screen.css');
