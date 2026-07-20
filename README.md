@@ -1,6 +1,16 @@
 # Atlas Learning
 
-**Estado actual:** Sprint 14 (Admin Console) implementado.
+**Estado actual:** Sprint 14 (Admin Console) implementado. Después de
+Sprint 14: se añadió **Progress Test Unit 1** (American Language Hub
+Level 1) como sección final de la worksheet de la Unidad 1, con tres
+tipos de ejercicio nuevos en el Worksheet Engine — `matching`,
+`choice`, `shortAnswer` (ver
+`src/presentation/components/worksheet-exercises/` y
+`domain/contracts/worksheet-exercise-lifecycle.js`). Contenido y
+respuestas oficiales transcritos de `Progress_Test_Unit_1.pdf`
+(Macmillan Education, 2020), confirmadas por el usuario, no
+inferidas. 50 ítems calificables en total, coincide con el "Total: /
+50" impreso en el propio test.
 
 ## Sprint 14 — Admin Console
 

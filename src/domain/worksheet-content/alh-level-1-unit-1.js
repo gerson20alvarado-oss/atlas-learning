@@ -7,6 +7,14 @@
  * oficiales confirmadas explícitamente por el usuario en esta sesión
  * (no inventadas, no derivadas por inferencia).
  *
+ * Progress Test Unit 1 (esta sesión): sección añadida al final,
+ * transcrita de Progress_Test_Unit_1.pdf (American Language Hub
+ * Level 1 Tests, Macmillan Education, 2020), mismo criterio de
+ * fidelidad. Introduce tres tipos de ejercicio nuevos —
+ * `matching`, `choice`, `shortAnswer` — registrados en
+ * worksheet-exercise-renderer.js y en GRADABLE_EXERCISE_TYPES (ver
+ * domain/contracts/worksheet-exercise-lifecycle.js).
+ *
  * Aislado por completo del Content Model de Hi! Korean — vive en su
  * propio módulo, con su propia forma de datos (`WorksheetExercise`),
  * nunca mezclado con `library-catalog.js`.
@@ -151,6 +159,293 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
           prompts: [
             "What do you like about Reykjavík? What don't you like about it? Why?",
             'Would you like to visit Reykjavík? Why/Why not?',
+          ],
+        },
+      ],
+    },
+    {
+      // Progress Test Unit 1 (esta sesión): transcrito de
+      // Progress_Test_Unit_1.pdf (American Language Hub Level 1
+      // Tests, Macmillan Education, 2020) — texto de enunciados y
+      // opciones verbatim, respuestas oficiales confirmadas
+      // explícitamente por el usuario en esta sesión, no inventadas
+      // ni derivadas por inferencia. Se agrega como una sección más
+      // de esta misma worksheet (no como una unidad/ruta aparte):
+      // "Submit worksheet" sigue enviando la unidad completa de una
+      // sola vez, incluida esta sección, sin ningún cambio al
+      // Control de Intentos por Unidad ni a ningún otro mecanismo ya
+      // existente.
+      id: 'progress-test',
+      title: 'PROGRESS TEST',
+      exercises: [
+        {
+          id: 'pt-gram-a',
+          type: 'matching',
+          instruction:
+            'GRAMMAR — A. Match the sentence halves to form full sentences.',
+          items: [
+            { id: 'pt-gram-a-1', statement: 'I think your seat', correctOptionId: 'f' },
+            { id: 'pt-gram-a-2', statement: 'We live in China. We', correctOptionId: 'e' },
+            { id: 'pt-gram-a-3', statement: 'She speaks Italian but she', correctOptionId: 'b' },
+            { id: 'pt-gram-a-4', statement: 'Oh no! You', correctOptionId: 'c' },
+            { id: 'pt-gram-a-5', statement: 'Right now, my parents', correctOptionId: 'd' },
+          ],
+          // La opción "a" (am from New Zealand) queda deliberadamente
+          // sin usar — era el ejemplo (0), ya resuelto en el propio
+          // enunciado del worksheet.
+          options: [
+            { id: 'a', text: 'am from New Zealand.' },
+            { id: 'b', text: "isn't from Italy." },
+            { id: 'c', text: "aren't in my class this year." },
+            { id: 'd', text: 'are on vacation in Spain.' },
+            { id: 'e', text: 'are Chinese.' },
+            { id: 'f', text: 'is next to mine.' },
+          ],
+        },
+        {
+          id: 'pt-gram-b',
+          type: 'shortAnswer',
+          instruction:
+            'GRAMMAR — B. Put the words into the correct order to form questions.',
+          items: [
+            {
+              id: 'pt-gram-b-1',
+              prompt: 'hot / Japan / is / it / right now / in / ?',
+              acceptableAnswers: ['Is it hot in Japan right now?'],
+            },
+            {
+              id: 'pt-gram-b-2',
+              prompt: 'you / flight / same / as me / are / on the / ?',
+              acceptableAnswers: ['Are you on the same flight as me?'],
+            },
+            {
+              id: 'pt-gram-b-3',
+              prompt: 'Canada / his / in / when / family / is / ?',
+              acceptableAnswers: ['When is his family in Canada?'],
+            },
+            {
+              id: 'pt-gram-b-4',
+              prompt: 'from / airport / here / is / the / far / ?',
+              acceptableAnswers: ['Is the airport far from here?'],
+            },
+            {
+              id: 'pt-gram-b-5',
+              prompt: 'food / kind of / they / what / do / like / ?',
+              acceptableAnswers: ['What kind of food do they like?'],
+            },
+          ],
+        },
+        {
+          id: 'pt-gram-c',
+          type: 'choice',
+          instruction:
+            'GRAMMAR — C. Choose the correct word in italics in each sentence.',
+          items: [
+            {
+              id: 'pt-gram-c-1',
+              before: '',
+              options: ['This', 'These'],
+              after: ' is a picture of my family.',
+              correct: 'This',
+            },
+            {
+              id: 'pt-gram-c-2',
+              before: 'There are some ',
+              options: ['orange', 'oranges'],
+              after: ' on the table.',
+              correct: 'oranges',
+            },
+            {
+              id: 'pt-gram-c-3',
+              before: 'My teacher can send me ',
+              options: ['a', 'an'],
+              after: ' email tonight.',
+              correct: 'an',
+            },
+            {
+              id: 'pt-gram-c-4',
+              before: '',
+              options: ['Those', 'That'],
+              after: " are the keys to John's car.",
+              correct: 'Those',
+            },
+            {
+              id: 'pt-gram-c-5',
+              before: 'Many ',
+              options: ['countries', 'country'],
+              after: ' in the world speak English.',
+              correct: 'countries',
+            },
+          ],
+        },
+        {
+          id: 'pt-gram-d',
+          type: 'shortAnswer',
+          instruction:
+            'GRAMMAR — D. For each sentence, find the error and correct it.',
+          items: [
+            {
+              id: 'pt-gram-d-1',
+              prompt: 'These is my laptop on the table.',
+              acceptableAnswers: ['This is my laptop on the table.'],
+            },
+            {
+              id: 'pt-gram-d-2',
+              prompt: 'How old am your brother?',
+              acceptableAnswers: ['How old is your brother?'],
+            },
+            {
+              id: 'pt-gram-d-3',
+              prompt: 'The capital city of Bulgaria are Sofia.',
+              acceptableAnswers: ['The capital city of Bulgaria is Sofia.'],
+            },
+            {
+              id: 'pt-gram-d-4',
+              prompt: 'There is many children in the classroom.',
+              acceptableAnswers: ['There are many children in the classroom.'],
+            },
+            {
+              id: 'pt-gram-d-5',
+              prompt: 'She has a apple for a snack.',
+              acceptableAnswers: ['She has an apple for a snack.'],
+            },
+            {
+              id: 'pt-gram-d-6',
+              prompt: 'That two books over there are in Russian.',
+              acceptableAnswers: ['Those two books over there are in Russian.'],
+            },
+            {
+              id: 'pt-gram-d-7',
+              prompt: 'We am both students at this college.',
+              acceptableAnswers: ['We are both students at this college.'],
+            },
+            {
+              id: 'pt-gram-d-8',
+              prompt: 'There are some sandwich you can take.',
+              acceptableAnswers: ['There are some sandwiches you can take.'],
+            },
+            {
+              id: 'pt-gram-d-9',
+              prompt: 'I want an wallet for my birthday.',
+              acceptableAnswers: ['I want a wallet for my birthday.'],
+            },
+            {
+              id: 'pt-gram-d-10',
+              prompt: 'Is they new headphones?',
+              acceptableAnswers: ['Are they new headphones?'],
+            },
+          ],
+        },
+        {
+          id: 'pt-vocab-a',
+          type: 'shortAnswer',
+          instruction:
+            'VOCABULARY — A. Complete the sentences with the correct word.',
+          items: [
+            {
+              id: 'pt-vocab-a-1',
+              prompt: 'A person from Sudan is ___.',
+              acceptableAnswers: ['Sudanese'],
+            },
+            {
+              id: 'pt-vocab-a-2',
+              prompt: 'A person from the Netherlands is ___.',
+              acceptableAnswers: ['Dutch'],
+            },
+            {
+              id: 'pt-vocab-a-3',
+              prompt: 'A person from Switzerland is ___.',
+              acceptableAnswers: ['Swiss'],
+            },
+            {
+              id: 'pt-vocab-a-4',
+              prompt: 'A person from Colombia is ___.',
+              acceptableAnswers: ['Colombian'],
+            },
+            {
+              id: 'pt-vocab-a-5',
+              prompt: 'A person from Poland is ___.',
+              acceptableAnswers: ['Polish'],
+            },
+          ],
+        },
+        {
+          id: 'pt-vocab-b',
+          type: 'matching',
+          instruction:
+            'VOCABULARY — B. Match the numbers with the words below. There is an extra number you do not need.',
+          items: [
+            { id: 'pt-vocab-b-1', statement: 'five million', correctOptionId: 'n5000000' },
+            { id: 'pt-vocab-b-2', statement: 'one hundred and eighty-seven', correctOptionId: 'n187' },
+            { id: 'pt-vocab-b-3', statement: 'ten thousand', correctOptionId: 'n10000' },
+            { id: 'pt-vocab-b-4', statement: 'one thousand five hundred', correctOptionId: 'n1500' },
+            { id: 'pt-vocab-b-5', statement: 'twenty-four thousand', correctOptionId: 'n24000' },
+          ],
+          // "150,000" es el número extra que sobra a propósito
+          // (enunciado original: "There is an extra number you do
+          // not need") — "620" no se incluye aquí porque era el
+          // ejemplo (0), ya resuelto.
+          options: [
+            { id: 'n187', text: '187' },
+            { id: 'n1500', text: '1,500' },
+            { id: 'n24000', text: '24,000' },
+            { id: 'n10000', text: '10,000' },
+            { id: 'n150000', text: '150,000' },
+            { id: 'n5000000', text: '5,000,000' },
+          ],
+        },
+        {
+          id: 'pt-vocab-c',
+          type: 'matching',
+          instruction:
+            'VOCABULARY — C. Match the definitions on the left to the words on the right.',
+          items: [
+            { id: 'pt-vocab-c-1', statement: 'You pay for things with this.', correctOptionId: 'd' },
+            { id: 'pt-vocab-c-2', statement: 'You use this to see the time.', correctOptionId: 'e' },
+            { id: 'pt-vocab-c-3', statement: 'You drink this.', correctOptionId: 'f' },
+            { id: 'pt-vocab-c-4', statement: 'You wear these.', correctOptionId: 'b' },
+            { id: 'pt-vocab-c-5', statement: 'You listen to music with these.', correctOptionId: 'c' },
+          ],
+          // "a" (a magazine) queda sin usar — era el ejemplo (0).
+          options: [
+            { id: 'a', text: 'a magazine' },
+            { id: 'b', text: 'sunglasses' },
+            { id: 'c', text: 'headphones' },
+            { id: 'd', text: 'a credit card' },
+            { id: 'e', text: 'a watch' },
+            { id: 'f', text: 'a bottle of water' },
+          ],
+        },
+        {
+          id: 'pt-vocab-d',
+          type: 'matching',
+          instruction:
+            'VOCABULARY — D. Match the sentence halves to form full sentences.',
+          items: [
+            { id: 'pt-vocab-d-1', statement: 'My friend is from', correctOptionId: 'f' },
+            { id: 'pt-vocab-d-2', statement: 'I need an', correctOptionId: 'k' },
+            { id: 'pt-vocab-d-3', statement: 'London is', correctOptionId: 'g' },
+            { id: 'pt-vocab-d-4', statement: 'Our family loves food', correctOptionId: 'd' },
+            { id: 'pt-vocab-d-5', statement: 'A year has three', correctOptionId: 'c' },
+            { id: 'pt-vocab-d-6', statement: 'Do they have', correctOptionId: 'h' },
+            { id: 'pt-vocab-d-7', statement: 'I speak Spanish but', correctOptionId: 'b' },
+            { id: 'pt-vocab-d-8', statement: 'There are', correctOptionId: 'i' },
+            { id: 'pt-vocab-d-9', statement: 'Do you have any', correctOptionId: 'e' },
+            { id: 'pt-vocab-d-10', statement: 'Is your laptop on', correctOptionId: 'j' },
+          ],
+          // "a" (in my bag.) queda sin usar — era el ejemplo (0).
+          options: [
+            { id: 'a', text: 'in my bag.' },
+            { id: 'b', text: "I'm not Mexican." },
+            { id: 'c', text: 'hundred and sixty-five days.' },
+            { id: 'd', text: 'from Japan.' },
+            { id: 'e', text: 'Turkish friends?' },
+            { id: 'f', text: 'Thailand.' },
+            { id: 'g', text: '3,459 miles from New York.' },
+            { id: 'h', text: 'a cell phone?' },
+            { id: 'i', text: 'two million people in this city.' },
+            { id: 'j', text: 'the table?' },
+            { id: 'k', text: "umbrella. It's raining." },
           ],
         },
       ],

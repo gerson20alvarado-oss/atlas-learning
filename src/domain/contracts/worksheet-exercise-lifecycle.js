@@ -65,4 +65,10 @@ export const WORKSHEET_EXERCISE_LIFECYCLE_PHASES = Object.freeze([
  * Unidad). `discussion`/`ruleReveal` nunca cuentan: no tienen una
  * respuesta única que calificar.
  */
-export const GRADABLE_EXERCISE_TYPES = Object.freeze(['ordering', 'trueFalse']);
+export const GRADABLE_EXERCISE_TYPES = Object.freeze([
+  'ordering',
+  'trueFalse',
+  'matching',
+  'choice',
+  'shortAnswer',
+]);
