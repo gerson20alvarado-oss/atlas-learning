@@ -47,6 +47,7 @@ function collectGradableExerciseIds(unit) {
 export function createWorksheetScreen({
   unit,
   videoSourceRepository,
+  imageSourceRepository,
   worksheetAttemptRepository,
   unitAttemptRepository,
   userId,
@@ -291,6 +292,7 @@ export function createWorksheetScreen({
         const component = createWorksheetExercise(exercise, {
           initialState,
           unitCompleted,
+          imageSourceRepository,
           onGraded: ({ response, result }) => {
             worksheetAttemptRepository?.saveAttempt({
               userId,

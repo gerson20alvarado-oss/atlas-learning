@@ -12,6 +12,22 @@ respuestas oficiales transcritos de `Progress_Test_Unit_1.pdf`
 inferidas. 50 ítems calificables en total, coincide con el "Total: /
 50" impreso en el propio test.
 
+También se añadió **ImageSource** — capacidad nueva (mismo patrón
+contrato + adapter que VideoSource/AudioSource), bucket público
+`book-image`, para las fotos fijas que el Video Hub imprime junto a
+ciertos ejercicios de Comprehension (ej. Unit 1, Exercise A: "Look at
+the picture from the video"). `discussion-prompt.js` ahora muestra la
+imagen directamente en el ejercicio (no escondida detrás del botón
+"Watch the video"), con el mismo aviso honesto de siempre si el
+archivo todavía no se subió a Storage.
+
+**Para que la imagen de Unit 1 aparezca**: sube el archivo a Supabase
+Storage, bucket `book-image`, con esta ruta exacta:
+`book-american-language-hub-1/ALH_Level1_VideoHub_U1_comprehension.jpg`
+(o cambia la extensión/ruta en `alh-level-1-unit-1.js` si prefieres
+otro nombre). Mismo bucket y convención para las imágenes de las
+demás unidades cuando su contenido se transcriba.
+
 ## Sprint 14 — Admin Console
 
 Primera versión de la consola de administración — reemplaza el uso

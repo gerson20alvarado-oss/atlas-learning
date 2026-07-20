@@ -54,6 +54,9 @@ import { createAudioSourceRepository } from '../domain/audio-source/audio-source
 import { createVideoSourceService } from '../video-source/video-source-contract.js';
 import { createSupabaseVideoSourceAdapter } from '../video-source/adapters/supabase-video-source-adapter.js';
 import { createVideoSourceRepository } from '../domain/video-source/video-source-repository.js';
+import { createImageSourceService } from '../image-source/image-source-contract.js';
+import { createSupabaseImageSourceAdapter } from '../image-source/adapters/supabase-image-source-adapter.js';
+import { createImageSourceRepository } from '../domain/image-source/image-source-repository.js';
 import { createWorksheetAttemptService } from '../worksheet-attempt/worksheet-attempt-contract.js';
 import { createSupabaseWorksheetAttemptAdapter } from '../worksheet-attempt/adapters/supabase-worksheet-attempt-adapter.js';
 import { createWorksheetAttemptRepository } from '../domain/worksheet-attempt/worksheet-attempt-repository.js';
@@ -177,6 +180,17 @@ function bootstrap() {
   const videoSourceService = createVideoSourceService(supabaseVideoSourceAdapter, errorBoundary);
   const videoSourceRepository = createVideoSourceRepository(videoSourceService);
 
+  // ImageSource (esta sesión): mismo patrón exacto que VideoSource —
+  // imágenes fijas del Video Hub (ej. la foto que acompaña
+  // Comprehension Exercise A), bucket público `book-image`,
+  // deliberadamente separado de VideoSource porque no es un recurso
+  // extraído del video sino una foto impresa junto al ejercicio.
+  const supabaseImageSourceAdapter = createSupabaseImageSourceAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+  });
+  const imageSourceService = createImageSourceService(supabaseImageSourceAdapter, errorBoundary);
+  const imageSourceRepository = createImageSourceRepository(imageSourceService);
+
   // WorksheetAttempt (esta sesión): persistencia de intentos de
   // ejercicios de worksheet, exclusivo de American Language Hub —
   // tabla propia (worksheet_exercise_attempts), mismo patrón que
@@ -278,6 +292,7 @@ function bootstrap() {
     pageSourceRepository,
     audioSourceRepository,
     videoSourceRepository,
+    imageSourceRepository,
     worksheetAttemptRepository,
     unitAttemptRepository,
     readerPositionRepository,
@@ -318,6 +333,7 @@ function bootstrap() {
     createWorksheetScreen,
     ALH_LEVEL_1_UNIT_1,
     videoSourceRepository,
+    imageSourceRepository,
     worksheetAttemptRepository,
     unitAttemptRepository,
     previewWorksheet: () => {
@@ -325,6 +341,7 @@ function bootstrap() {
       const screen = createWorksheetScreen({
         unit: ALH_LEVEL_1_UNIT_1,
         videoSourceRepository,
+        imageSourceRepository,
         worksheetAttemptRepository,
         unitAttemptRepository,
         userId: session?.userId ?? null,

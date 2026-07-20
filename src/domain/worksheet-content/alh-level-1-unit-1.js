@@ -58,6 +58,16 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
           id: 'comp-a',
           type: 'discussion',
           instruction: 'Work in pairs. Look at the picture from the video and discuss the questions.',
+          // ImageSource (esta sesión): la foto impresa junto a este
+          // ejercicio en el worksheet — bucket público `book-image`,
+          // misma convención de ruta que `video.assetPath` (carpeta
+          // = bookId). El archivo todavía no está subido a Storage;
+          // mientras tanto, discussion-prompt.js muestra el mismo
+          // aviso honesto que ya usa VideoPanel.
+          image: {
+            assetPath: 'book-american-language-hub-1/ALH_Level1_VideoHub_U1_comprehension.jpg',
+            alt: 'A view of Reykjavík, Iceland, with colorful rooftops in the foreground and mountains in the background.',
+          },
           prompts: [
             'What can you see in the picture?',
             'Where do you think it is? Why?',
