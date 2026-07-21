@@ -1,0 +1,122 @@
+/**
+ * quick-activity-nav.css
+ *
+ * El disparador (FAB) reutiliza exactamente el lenguaje visual del
+ * "badge circular de número de unidad" ya establecido en
+ * assessment-screen.css/writing-screen.css — mismo círculo
+ * ink-900/paper-0, ahora flotante y con sombra de diálogo. El panel
+ * reutiliza resource-panel-overlay.css sin sobreescribir ninguno de
+ * sus selectores — solo estiliza el contenido que se le inyecta.
+ */
+
+[data-component="quick-activity-nav"] {
+  position: fixed;
+  right: var(--al-space-4);
+  bottom: var(--al-space-4);
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--al-ink-900);
+  border: none;
+  box-shadow: var(--al-shadow-dialog);
+  cursor: pointer;
+  transition: transform var(--al-duration-fast) var(--al-ease-standard),
+    background var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="quick-activity-nav"][hidden] {
+  display: none;
+}
+
+[data-component="quick-activity-nav"]:hover {
+  background: var(--al-action-primary-hover);
+}
+
+[data-component="quick-activity-nav"]:active {
+  transform: scale(0.94);
+}
+
+[data-component="quick-activity-nav"] [data-part="trigger-badge"] {
+  color: var(--al-paper-0);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-16);
+  font-weight: var(--al-weight-semibold);
+}
+
+@media (min-width: 768px) {
+  [data-component="quick-activity-nav"] {
+    right: var(--al-space-6);
+    bottom: var(--al-space-6);
+  }
+}
+
+/* --- Contenido del panel (inyectado dentro de resource-panel-overlay) --- */
+
+[data-part="unit-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-4);
+}
+
+[data-part="unit-group"] {
+  padding: var(--al-space-3);
+  border-radius: var(--al-radius-md);
+  transition: background var(--al-duration-fast) var(--al-ease-standard);
+}
+
+/* La unidad actual se distingue por composición (fondo susurro), no
+   por un color de acento nuevo — mismo criterio de "quiet emphasis"
+   que ya usa el resto de Atlas (WR P7). */
+[data-part="unit-group"][data-current="true"] {
+  background: var(--al-surface-recessed);
+}
+
+[data-part="unit-group-title"] {
+  margin: 0 0 var(--al-space-2);
+  color: var(--al-text-muted);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+[data-part="activity-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-1);
+}
+
+[data-part="activity-item"] {
+  display: flex;
+  align-items: center;
+  min-height: var(--al-hit-target-min);
+  padding: 0 var(--al-space-3);
+  border: none;
+  border-radius: var(--al-radius-sm);
+  background: none;
+  color: var(--al-text-ui);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-15);
+  font-weight: var(--al-weight-regular);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-part="activity-item"]:hover {
+  background: var(--al-surface-recessed);
+}
+
+/* La actividad activa se distingue con peso tipográfico, nunca con
+   color solo (accesible también sin percepción de color). */
+[data-part="activity-item"][data-active="true"] {
+  color: var(--al-text-content);
+  font-weight: var(--al-weight-semibold);
+  background: var(--al-surface-recessed);
+}

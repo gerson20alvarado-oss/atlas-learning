@@ -1,11 +1,61 @@
 # Atlas Learning
 
-**Estado actual:** Writing implementado como actividad independiente
-del sistema de Assessment (ver sección siguiente), sobre la base de
-la Arquitectura de Evaluaciones Independientes y la evolución visual
-del Progress Test.
+**Estado actual:** Navegación rápida entre actividades (Quick
+Activity Nav) implementada como componente flotante independiente —
+ver sección siguiente. Worksheet, Progress Test y Writing permanecen
+completamente intactos: verificado explícitamente que ningún archivo
+de esos tres módulos se tocó en esta sesión.
 
-## Writing (esta sesión)
+## Quick Activity Nav (esta sesión)
+
+FAB flotante (esquina inferior derecha) que abre un panel para saltar
+rápido entre las actividades (Writing/Worksheet/Progress Test) de la
+unidad anterior, la actual, y la siguiente — sin pantalla nueva, sin
+tocar el flujo de navegación existente.
+
+**Cero cambios a Worksheet, Progress Test o Writing** — ni sus
+archivos, ni sus rutas, ni su CSS. Confirmado con
+`find src -newermt` antes de empaquetar: solo se tocaron
+`bootstrap.js` (2 líneas aditivas) y `main.css` (1 `@import`), más 3
+archivos completamente nuevos.
+
+**Arquitectura**: `presentation/components/quick-activity-nav/` —
+componente puro, reutiliza `resource-panel-overlay.js` (scrim +
+Escape, mismo patrón que Audio/Transcripción/Espacio de Estudio) para
+el panel, y el motivo visual del "badge circular de número de unidad"
+ya establecido en assessment-screen.css/writing-screen.css como
+disparador — cero íconos nuevos fuera del set cerrado ya aprobado
+(Design System §10.2).
+
+**Genérico a propósito** (reutilizable a futuro sin depender de
+Worksheet/Progress Test/Writing): el componente puro recibe
+`{ unitNumber, unitTitle, activities: [{id, label, url, isActive}] }`
+— sin ningún campo llamado "worksheet" ni "writing" en su forma.
+`app/mount-quick-activity-nav.js` es el único archivo que sabe
+traducir el contenido real a esa forma neutra; nunca al revés.
+
+**Visibilidad**: solo aparece en libros `contentMode: 'worksheet'`,
+dentro de una actividad real — invisible en Library, Home, Admin, Hi!
+Korean. Se apoya únicamente en lecturas de contenido ya existentes
+(`getWorksheetUnit`, `getWriting`, `listAssessmentIds`,
+`getAssessment`) — cero métodos nuevos en el dominio.
+
+**Verificado** (sin navegador, mismo límite de siempre): sintaxis de
+los 153 `.js`, balance de llaves y tokens del CSS confirmados contra
+`tokens.css`. DOM mínimo hecho a mano probó: visibilidad condicionada
+a que existan unidades reales, el panel completo (título de unidad,
+actividades listadas, marca de actividad activa), selección con
+navegación + cierre automático del panel. Contra el contenido real
+del proyecto: solo Unit 1 aparece (Unit 0 y 2 se omiten
+honestamente, todavía no existen), y las URLs generadas coinciden
+exactamente con las rutas ya existentes de Worksheet/Progress
+Test/Writing.
+
+**Pendiente de verificación manual real en navegador**: cómo se ve y
+se siente de verdad — posición del FAB, transición de apertura del
+panel, tap-through en móvil.
+
+## Writing (sesión anterior)
 
 Nueva actividad, deliberadamente **fuera** del sistema de Assessment:
 sin intentos, sin calificación, sin `assessmentId`, sin relación

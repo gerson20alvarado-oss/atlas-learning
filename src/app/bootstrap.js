@@ -78,6 +78,7 @@ import { createStudyWorkspaceRepository } from '../domain/study-workspace/study-
 import { createAccountLinkingFlow } from './account-linking/account-linking-flow.js';
 import { mountAppShell } from './app-shell.js';
 import { mountScreenRouter } from './screen-router.js';
+import { mountQuickActivityNav } from './mount-quick-activity-nav.js';
 // American Language Hub — solo para el hook de verificación manual
 // (§ más abajo). Sin ninguna otra conexión con el resto del arranque
 // todavía — la worksheet no participa en ningún flujo real de
@@ -318,6 +319,13 @@ function bootstrap() {
     studyWorkspaceRepository,
     writingResponseRepository,
   });
+
+  // Navegación rápida entre actividades (esta sesión): componente
+  // completamente independiente — no participa de qué screen se
+  // monta en content-region, solo observa route:changed desde
+  // afuera. Se monta después de screen-router.js por orden de
+  // lectura, no por dependencia real entre ambos.
+  mountQuickActivityNav({ eventBus, mountElement, router });
 
   // f. El router resuelve la ruta inicial y publica route:changed.
   router.start();
