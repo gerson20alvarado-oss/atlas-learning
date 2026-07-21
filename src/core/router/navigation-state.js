@@ -19,6 +19,7 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'lessonPosition',
   'mode',
   'pagePosition',
+  'assessmentPosition',
   'adminSection',
   'adminUserId',
 ]);
@@ -38,6 +39,14 @@ export function createEmptyNavigationState() {
     // del Reader — ningún otro flujo (Library, Book, Unit, Lesson)
     // lo lee ni lo escribe.
     pagePosition: null,
+    // Evoluciones independientes por unidad (esta sesión): qué
+    // evaluación de la unidad se solicitó ('worksheet',
+    // 'progress-test', futuras) — exclusivo de contenido con
+    // contentMode 'worksheet'. `null` significa "sin segmento en la
+    // URL", que screen-router.js resuelve a 'worksheet' por defecto
+    // (compatibilidad: ningún enlace existente a `/read/:n` cambia
+    // de comportamiento).
+    assessmentPosition: null,
     // Admin Console (Sprint 14): jerarquía completamente separada de
     // la de contenido (Library → Book → Unit → Lesson) — un
     // adminSection nunca coexiste con bookPosition/unitPosition en

@@ -6,23 +6,34 @@
  * arrastrar-y-soltar: Atlas no tiene hoy ninguna librería de drag
  * and drop.
  *
- * Sin límite de intentos propio (esta sesión, decisión de producto
- * cerrada): el estudiante puede presionar "Check answers" cuantas
- * veces quiera mientras la unidad no se haya enviado. El único
+ * Sin límite de intentos propio: el estudiante puede presionar
+ * "Check answers" cuantas veces quiera mientras la unidad no se haya
+ * enviado (en `reviewPolicy: 'practice'` — ver más abajo). El único
  * control de intentos real es `unit_attempt_limits`, un nivel más
  * arriba — este componente nunca cuenta ni recuerda cuántas veces se
  * calificó a sí mismo.
  *
  * Disponibilidad: sigue consumiendo exclusivamente
  * `getExerciseAvailability()` — nunca decide por su cuenta si debe
- * bloquearse. Hoy esa función solo puede devolver bloqueado por
- * `unitCompleted`; el componente no necesita saberlo ni le importa,
- * solo obedece el veredicto.
+ * bloquearse.
+ *
+ * `reviewPolicy` (esta sesión): 'practice' (default) mantiene el
+ * comportamiento de siempre. 'exam' quita el Check Answers propio y
+ * nunca pinta `data-result` — mismo `validate()` de siempre, invocado
+ * una sola vez por assessment-screen.js al enviar toda la evaluación.
+ * Sin uso real todavía (Progress Test Unit 1 no usa `ordering`), pero
+ * el mismo motor queda listo por si una evaluación futura sí lo hace.
  */
 
 import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
+import { createPrimaryButton } from '../primary-button/primary-button.js';
 
-export function createOrderingExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
+export function createOrderingExercise(
+  exercise,
+  { initialState, unitCompleted = false, reviewPolicy = 'practice', onGraded, onChange } = {},
+) {
+  const isExam = reviewPolicy === 'exam';
+
   const element = document.createElement('div');
   element.setAttribute('data-component', 'ordering-exercise');
 
@@ -74,6 +85,7 @@ export function createOrderingExercise(exercise, { initialState, unitCompleted =
     select.addEventListener('change', () => {
       positions.set(item.id, select.value ? Number(select.value) : null);
       row.removeAttribute('data-result');
+      onChange?.();
     });
 
     const text = document.createElement('span');
@@ -87,15 +99,11 @@ export function createOrderingExercise(exercise, { initialState, unitCompleted =
 
   element.appendChild(list);
 
-  const checkButton = document.createElement('button');
-  checkButton.type = 'button';
-  checkButton.setAttribute('data-part', 'check-button');
-  checkButton.textContent = 'Check answers';
-  element.appendChild(checkButton);
+  let checkButton = null;
 
   function lockExercise() {
     selectsByItemId.forEach((select) => { select.disabled = true; });
-    checkButton.disabled = true;
+    if (checkButton) checkButton.disabled = true;
   }
 
   function applyResult(result) {
@@ -104,17 +112,26 @@ export function createOrderingExercise(exercise, { initialState, unitCompleted =
     });
   }
 
-  if (initialState?.result) applyResult(initialState.result);
+  if (initialState?.result && !isExam) applyResult(initialState.result);
+
+  if (!isExam) {
+    const checkButtonComponent = createPrimaryButton({
+      label: 'Check answers',
+      onClick: () => {
+        if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
+
+        const result = validate();
+        applyResult(result);
+
+        onGraded?.({ response: getResponse(), result });
+      },
+    });
+    checkButton = checkButtonComponent.element;
+    checkButton.setAttribute('data-part', 'check-button');
+    element.appendChild(checkButton);
+  }
+
   if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
-
-  checkButton.addEventListener('click', () => {
-    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
-
-    const result = validate();
-    applyResult(result);
-
-    onGraded?.({ response: getResponse(), result });
-  });
 
   function update() {}
 

@@ -15,11 +15,25 @@
  *
  * Sin límite de intentos propio (mismo criterio que el resto de
  * ALH): el único control real es `unit_attempt_limits`.
+ *
+ * `reviewPolicy` (esta sesión): 'practice' (default) mantiene el
+ * comportamiento de siempre — Check Answers propio, marca
+ * correcto/incorrecto por ítem al toque. 'exam' quita el botón
+ * propio por completo y nunca pinta `data-result` — el componente
+ * solo captura respuestas; `validate()` sigue existiendo tal cual,
+ * para que assessment-screen.js la invoque una sola vez, al enviar
+ * toda la evaluación.
  */
 
 import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
+import { createPrimaryButton } from '../primary-button/primary-button.js';
 
-export function createMatchingExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
+export function createMatchingExercise(
+  exercise,
+  { initialState, unitCompleted = false, reviewPolicy = 'practice', onGraded, onChange } = {},
+) {
+  const isExam = reviewPolicy === 'exam';
+
   const element = document.createElement('div');
   element.setAttribute('data-component', 'matching-exercise');
 
@@ -38,13 +52,18 @@ export function createMatchingExercise(exercise, { initialState, unitCompleted =
 
   const previousResponses = initialState?.response ?? {};
 
-  exercise.items.forEach((item) => {
+  exercise.items.forEach((item, index) => {
     const restored = previousResponses[item.id] ?? null;
     responses.set(item.id, restored);
 
     const row = document.createElement('div');
     row.setAttribute('data-part', 'item');
     rowsByItemId.set(item.id, row);
+
+    const number = document.createElement('span');
+    number.setAttribute('data-part', 'item-number');
+    number.textContent = String(index + 1);
+    row.appendChild(number);
 
     const statement = document.createElement('span');
     statement.setAttribute('data-part', 'statement');
@@ -73,6 +92,7 @@ export function createMatchingExercise(exercise, { initialState, unitCompleted =
     select.addEventListener('change', () => {
       responses.set(item.id, select.value || null);
       row.removeAttribute('data-result');
+      onChange?.();
     });
 
     row.appendChild(select);
@@ -81,15 +101,11 @@ export function createMatchingExercise(exercise, { initialState, unitCompleted =
 
   element.appendChild(list);
 
-  const checkButton = document.createElement('button');
-  checkButton.type = 'button';
-  checkButton.setAttribute('data-part', 'check-button');
-  checkButton.textContent = 'Check answers';
-  element.appendChild(checkButton);
+  let checkButton = null;
 
   function lockExercise() {
     selectsByItemId.forEach((select) => { select.disabled = true; });
-    checkButton.disabled = true;
+    if (checkButton) checkButton.disabled = true;
   }
 
   function applyResult(result) {
@@ -98,17 +114,26 @@ export function createMatchingExercise(exercise, { initialState, unitCompleted =
     });
   }
 
-  if (initialState?.result) applyResult(initialState.result);
+  if (initialState?.result && !isExam) applyResult(initialState.result);
+
+  if (!isExam) {
+    const checkButtonComponent = createPrimaryButton({
+      label: 'Check answers',
+      onClick: () => {
+        if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
+
+        const result = validate();
+        applyResult(result);
+
+        onGraded?.({ response: getResponse(), result });
+      },
+    });
+    checkButton = checkButtonComponent.element;
+    checkButton.setAttribute('data-part', 'check-button');
+    element.appendChild(checkButton);
+  }
+
   if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
-
-  checkButton.addEventListener('click', () => {
-    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
-
-    const result = validate();
-    applyResult(result);
-
-    onGraded?.({ response: getResponse(), result });
-  });
 
   function update() {}
 

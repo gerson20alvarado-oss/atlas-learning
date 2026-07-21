@@ -1,0 +1,135 @@
+/**
+ * choice-exercise.css
+ *
+ * Nunca existió antes de esta sesión — el componente se creó con
+ * lógica pero sin CSS (Progress Test Unit 1), y ese es el motivo
+ * real por el que se veía "como un formulario HTML". Diseñado desde
+ * cero, no ajustado.
+ *
+ * Voz de lectura (Design System §5.1, `--al-font-reading` = Source
+ * Serif 4) para el contenido evaluable — enunciado y opciones — la
+ * misma voz que el Design System ya reserva para "contenido
+ * declarado por el libro", nunca antes aplicada a un ejercicio. La
+ * instrucción (el eyebrow "GRAMMAR — C...") se queda en voz UI,
+ * muted: es navegación, no contenido a leer con atención.
+ *
+ * Opciones como chips independientes, con espacio real entre ellas
+ * (nunca "ThisThese" pegado) y un estado seleccionado inequívoco
+ * (relleno `--al-action-primary`, texto invertido) — el estudiante
+ * identifica de un vistazo qué eligió.
+ */
+
+[data-component="choice-exercise"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-6);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="choice-exercise"] [data-part="instruction"] {
+  color: var(--al-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: var(--al-size-13);
+}
+
+[data-component="choice-exercise"] [data-part="items"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-6);
+}
+
+/* Cada ejercicio es una tarjeta independiente — nunca una línea más
+   de una lista continua. */
+[data-component="choice-exercise"] [data-part="item"] {
+  display: flex;
+  gap: var(--al-space-4);
+  padding: var(--al-space-6);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-lg);
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    border-color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="choice-exercise"] [data-part="item-number"] {
+  flex-shrink: 0;
+  width: var(--al-space-6);
+  padding-top: 2px;
+  color: var(--al-text-muted);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+}
+
+[data-component="choice-exercise"] [data-part="sentence"] {
+  flex: 1;
+  margin: 0;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  line-height: var(--al-leading-reading);
+  color: var(--al-text-content);
+}
+
+/* Chips de opción — bloque propio dentro de la línea de lectura,
+   nunca palabras pegadas. `white-space: nowrap` en el grupo evita
+   que las dos opciones se separen en líneas distintas al hacer
+   reflow. */
+[data-component="choice-exercise"] [data-part="choice-group"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--al-space-2);
+  margin: 0 var(--al-space-2);
+  white-space: nowrap;
+}
+
+[data-component="choice-exercise"] [data-part="choice-option"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--al-space-3);
+  border-radius: var(--al-radius-md);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  background: var(--al-paper-0);
+  font-family: var(--al-font-reading);
+  font-style: italic;
+  font-size: var(--al-size-16);
+  color: var(--al-text-content);
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    color var(--al-duration-fast) var(--al-ease-standard),
+    border-color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="choice-exercise"] [data-part="choice-option"]:hover:not(:disabled) {
+  border-color: var(--al-ink-500);
+}
+
+/* Estado seleccionado — el estudiante debe identificarlo de
+   inmediato, sin ambigüedad. */
+[data-component="choice-exercise"] [data-part="choice-option"][data-selected="true"] {
+  background: var(--al-action-primary);
+  border-color: var(--al-action-primary);
+  color: var(--al-text-on-action);
+  font-style: normal;
+  font-weight: var(--al-weight-medium);
+}
+
+[data-component="choice-exercise"] [data-part="choice-option"]:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+[data-component="choice-exercise"] [data-part="item"][data-result="correct"] {
+  background: var(--al-feedback-correct-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-correct);
+}
+
+[data-component="choice-exercise"] [data-part="item"][data-result="incorrect"] {
+  background: var(--al-feedback-incorrect-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
+}
+
+[data-component="choice-exercise"] [data-part="check-button"] {
+  margin-top: var(--al-space-2);
+}

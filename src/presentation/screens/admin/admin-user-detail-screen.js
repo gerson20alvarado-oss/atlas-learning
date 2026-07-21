@@ -1,14 +1,27 @@
 /**
  * presentation/screens/admin/admin-user-detail-screen.js
  *
- * Sprint 14 — "Ver perfil" del MVP, extendido a una ficha completa:
- * un admin que ya identificó a un estudiante concreto necesita ver
- * (y en varios casos actuar sobre) todo lo relacionado a esa cuenta
- * en un solo lugar, sin repetir la búsqueda en cuatro pantallas
- * distintas. Reutiliza exactamente los mismos repositorios que las
- * pantallas globales (Licenses, Worksheet Attempts, Reader Progress,
+ * "Ver perfil" del MVP, extendido a una ficha completa: un admin que
+ * ya identificó a un estudiante concreto necesita ver (y en varios
+ * casos actuar sobre) todo lo relacionado a esa cuenta en un solo
+ * lugar, sin repetir la búsqueda en cuatro pantallas distintas.
+ * Reutiliza exactamente los mismos repositorios que las pantallas
+ * globales (Licenses, Worksheet Attempts, Reader Progress,
  * Bookmarks) — misma fuente de datos, ningún método nuevo aquí.
+ *
+ * Corrección de regresión (Evaluaciones Independientes): una
+ * evaluación sin intentos todavía (ej. Progress Test antes de que el
+ * estudiante lo toque) no tiene fila en `unit_attempt_limits` — nunca
+ * la tuvo, ni antes de esta arquitectura. Antes no importaba porque
+ * solo existía una evaluación por unidad; ahora, mostrar solo lo que
+ * hay en la base de datos deja al Progress Test invisible mientras
+ * nadie lo haya enviado. `listAssessmentIds`/`getAssessment` (mismo
+ * contenido que ya resuelve la pantalla del estudiante) completan lo
+ * que falta con entradas "0 / maxAttempts", nunca inventadas — el
+ * `maxAttempts` es el mismo que gobierna la app real.
  */
+
+import { listAssessmentIds, getAssessment } from '../../../domain/worksheet-content/worksheet-content-repository.js';
 
 function createSectionTitle(text) {
   const el = document.createElement('h2');
@@ -108,8 +121,32 @@ export function createAdminUserDetailScreen({
 
   async function loadAttempts() {
     const allAttempts = await unitAttemptRepository.listAllWithOwner({ accessToken });
-    const attempts = allAttempts.filter((a) => a.userId === userId);
-    attemptsSection.replaceChildren(createSectionTitle('Worksheet Attempts'));
+    const realAttempts = allAttempts.filter((a) => a.userId === userId);
+
+    // Completar evaluaciones declaradas en el contenido que todavía
+    // no tienen fila real (0 intentos) — solo para las unidades donde
+    // el estudiante ya tiene AL MENOS una evaluación con datos reales
+    // (mismo criterio que "No unit attempts yet" de abajo: una unidad
+    // que el estudiante nunca tocó de ninguna forma sigue sin
+    // aparecer, igual que antes).
+    const unitKeys = new Set(realAttempts.map((a) => `${a.bookId}|${a.unitNumber}`));
+    const syntheticAttempts = [];
+    unitKeys.forEach((unitKey) => {
+      const [bookId, unitNumberStr] = unitKey.split('|');
+      const unitNumber = Number(unitNumberStr);
+      const declaredIds = listAssessmentIds(bookId, unitNumber);
+      const presentIds = new Set(
+        realAttempts.filter((a) => a.bookId === bookId && a.unitNumber === unitNumber).map((a) => a.assessmentId),
+      );
+      declaredIds.forEach((assessmentId) => {
+        if (!presentIds.has(assessmentId)) {
+          syntheticAttempts.push({ userId, bookId, unitNumber, assessmentId, attemptsUsed: 0, synthetic: true });
+        }
+      });
+    });
+
+    const attempts = [...realAttempts, ...syntheticAttempts];
+    attemptsSection.replaceChildren(createSectionTitle('Assessment Attempts'));
     if (attempts.length === 0) {
       const empty = document.createElement('p');
       empty.textContent = 'No unit attempts yet.';
@@ -119,9 +156,27 @@ export function createAdminUserDetailScreen({
     attempts.forEach((attempt) => {
       const row = document.createElement('div');
       row.setAttribute('data-part', 'attempt-row');
+
+      const assessmentContent = getAssessment(attempt.bookId, attempt.unitNumber, attempt.assessmentId);
+      const assessmentTitle = assessmentContent?.assessmentTitle ?? attempt.assessmentId;
+      const maxAttempts = assessmentContent?.maxAttempts;
+
       const label = document.createElement('span');
-      label.textContent = `${attempt.bookId} — Unit ${attempt.unitNumber}`;
+      label.textContent =
+        `${attempt.bookId} — Unit ${attempt.unitNumber} — ${assessmentTitle}: ` +
+        `${attempt.attemptsUsed} / ${maxAttempts ?? '—'}` +
+        (attempt.synthetic ? ' (not started)' : '');
       row.appendChild(label);
+
+      if (attempt.synthetic) {
+        // Sin fila real en unit_attempt_limits todavía — un PATCH
+        // (UPDATE) no crea filas nuevas, así que "Save" fallaría en
+        // silencio. Se muestra informativo, nunca editable, hasta
+        // que el propio estudiante genere la fila real (su primer
+        // Submit).
+        attemptsSection.appendChild(row);
+        return;
+      }
 
       const input = document.createElement('input');
       input.type = 'number';
@@ -138,6 +193,7 @@ export function createAdminUserDetailScreen({
           userId,
           bookId: attempt.bookId,
           unitNumber: attempt.unitNumber,
+          assessmentId: attempt.assessmentId,
           attemptsUsed: Number(input.value),
           accessToken,
         });

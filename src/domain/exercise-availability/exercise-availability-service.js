@@ -9,7 +9,7 @@
  * de intentos por ejercicio — `EXERCISE_ATTEMPTS_EXHAUSTED` ya no
  * existe como razón posible. La única fuente de verdad de intentos
  * es `unit_attempt_limits`, consultada un nivel más arriba
- * (worksheet-screen.js) — este servicio solo traduce ese hecho
+ * (assessment-screen.js) — este servicio solo traduce ese hecho
  * (`unitCompleted`) a un veredicto de edición.
  *
  * Deliberadamente puro y síncrono, igual que antes: ninguna llamada a

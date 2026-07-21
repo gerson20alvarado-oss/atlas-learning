@@ -1,9 +1,191 @@
 # Atlas Learning
 
-**Estado actual:** Sprint 14 (Admin Console) implementado. Después de
-Sprint 14: se añadió **Progress Test Unit 1** (American Language Hub
-Level 1) como sección final de la worksheet de la Unidad 1, con tres
-tipos de ejercicio nuevos en el Worksheet Engine — `matching`,
+**Estado actual:** Arquitectura de Evaluaciones Independientes,
+seguida de una evolución visual y pedagógica del Progress Test (ver
+sección siguiente).
+
+## Progress Test — evolución visual y pedagógica (esta sesión)
+
+Objetivo: que el Progress Test se sienta como una evaluación
+profesional (Cambridge/Oxford/Pearson), no como un formulario HTML.
+Sin cambiar arquitectura ni motor de intentos.
+
+**Hallazgo de partida**: 3 de los 4 tipos de ejercicio que usa el
+Progress Test (`matching`, `choice`, `shortAnswer`) nunca tuvieron
+CSS — se construyeron con lógica pero sin estilos en la sesión donde
+se transcribió el contenido. No era un problema de "pulir", era
+ausencia total de diseño. `choice-exercise.css`,
+`matching-exercise.css`, `short-answer-exercise.css` se crearon desde
+cero.
+
+**Tipografía**: se activó la "voz de lectura" del Design System
+(`--al-font-reading`, Source Serif 4) — existía documentada desde
+antes ("reservada para contenido declarado por el libro... nunca
+usada por copy de UI") pero nunca se había aplicado a un ejercicio.
+Ahora el contenido evaluable (enunciados, opciones, prompts) usa esa
+voz; instrucciones y chrome de UI se quedan en Inter.
+
+**Composición**: opciones como chips independientes con espacio
+real y estado seleccionado inequívoco (relleno + texto invertido) —
+nunca palabras pegadas. Cada ejercicio es una tarjeta independiente
+(`--al-surface-recessed`, padding generoso, `gap: --al-space-6`
+entre ejercicios).
+
+**Botones**: los 5 tipos de ejercicio (`ordering`, `trueFalse`,
+`matching`, `choice`, `shortAnswer`) usan ahora `createPrimaryButton`
+real en vez de un `<button>` crudo con CSS duplicado por componente.
+
+**Política de revisión — `reviewPolicy: 'practice' | 'exam'`**
+(campo de contenido nuevo, junto a `maxAttempts`/`title` de cada
+evaluación): Worksheet queda `'practice'` (Check Answers por
+ejercicio, feedback inmediato, sin cambios de comportamiento).
+Progress Test pasa a `'exam'` — sin Check Answers por ejercicio, un
+único "Submit Progress Test", resultado agregado únicamente (Score /
+Correct Answers / Percentage / Attempts Remaining), nunca marca qué
+ítem falló, ni al enviar ni al revisar después. Un segundo intento
+responde la evaluación completa de nuevo. La función `validate()` de
+cada ejercicio no cambió una sola línea — solo cambió cuándo y si se
+revela visualmente.
+
+**Verificado** (sin navegador, mismo límite de siempre): sintaxis de
+los 147 `.js` y balance de llaves de los 4 CSS tocados/nuevos; DOM
+mínimo hecho a mano (sin `jsdom`, sin red disponible) para probar
+`choice-exercise.js`/`matching-exercise.js` en ambos modos —
+confirmado que en `'exam'` nunca aparece Check Answers propio ni se
+pinta `data-result` (ni al elegir, ni llamando `validate()`
+directamente), y que en `'practice'` el comportamiento es idéntico
+al de antes de este cambio. Smoke test de servidor confirma que los
+3 CSS nuevos están registrados en `main.css` y sirven 200.
+
+**Pendiente de verificación manual real en navegador**: cómo se ve
+de verdad — tipografía, espaciado, chips de selección, y el flujo
+completo de Submit → Summary en modo examen.
+
+## Corrección de regresiones (sesión anterior)
+
+Tres regresiones reales, introducidas por la evolución a
+Evaluaciones Independientes, detectadas en pruebas manuales del
+usuario y corregidas antes de seguir agregando funcionalidad:
+
+**1. Video Panel dejó de abrirse en lateral.** Causa raíz: al
+renombrar `worksheet-screen.js` → `assessment-screen.js`, el
+`data-component` del elemento cambió de `"worksheet-screen"` a
+`"assessment-screen"`, pero el CSS (`worksheet-screen.css`, 205
+líneas, incluida la regla que arma el layout de dos columnas para el
+panel lateral) nunca se actualizó ni se movió — quedó apuntando a un
+selector que ya no existía en el DOM, así que dejó de aplicarse por
+completo. Corrección: CSS movido a
+`presentation/screens/assessment/assessment-screen.css`, todos los
+selectores actualizados, `main.css` apunta a la ruta nueva, el
+archivo/carpeta viejos eliminados. La lógica JS del Video Panel
+nunca cambió — el problema era 100% de estilos.
+
+**2. "Continue to Progress Test" desaparecía después de la primera
+vista.** Causa raíz: el botón vivía únicamente dentro de
+`showCompletionSummary()`, que solo se renderiza una vez, justo
+después de presionar Submit. Cualquier visita posterior (recarga,
+volver más tarde) salta directo a la vista de solo lectura vía
+`renderExercises()`, donde el botón nunca existió. Corrección: el
+botón se extrajo a un helper (`appendNextAssessmentButton`) que
+ahora se llama tanto desde el Summary transitorio como desde
+`renderExercises()` cuando la evaluación está completada — visible
+siempre que haya una siguiente evaluación, no solo la primera vez.
+
+**3. Progress Test invisible en el Admin Console mientras nadie lo
+tocara.** Causa raíz: `unit_attempt_limits` solo tiene fila una vez
+que se registra al menos un intento (`increment_unit_attempt` hace
+el primer INSERT) — sin intentos, sin fila, sin nada que mostrar.
+Corrección, solo en la ficha por estudiante
+(`admin-user-detail-screen.js`, que es donde tiene sentido — ver su
+docstring para el porqué no se replicó en la vista global): para
+cada unidad donde el estudiante ya tiene algún intento real,
+`listAssessmentIds`/`getAssessment` (el mismo contenido que resuelve
+la app real) completan las evaluaciones declaradas que todavía no
+tienen fila, mostrando `0 / maxAttempts`, informativo y no editable
+(un PATCH no crea filas). Formato `X / Y` aplicado también en la
+vista global de Worksheet Attempts, con el título real de la
+evaluación en vez del `assessmentId` crudo.
+
+**Verificado**: los 147 `.js` pasan `node --check`; smoke test de
+servidor confirma que la ruta CSS vieja cae al fallback (ya no
+existe) y la nueva sirve con el selector correcto; simulación de la
+lógica de síntesis del Admin confirma `Worksheet: 1/2 (editable)` +
+`Progress Test: 0/2 (not started)` con datos reales de prueba.
+
+**Pendiente de verificación manual real en navegador** (esto sí
+requiere ojos humanos, no puedo confirmarlo desde este entorno): que
+el panel del video efectivamente se vea lateral de nuevo, que el
+botón "Continue to Progress Test" persista tras recargar, y que el
+Admin Console muestre ambas evaluaciones en pantalla real.
+
+## Arquitectura de Evaluaciones Independientes (esta sesión)
+
+El Progress Test dejó de ser una sección dentro de la Worksheet.
+Ahora es una evaluación independiente de la misma unidad, con sus
+propios 2 intentos, que nunca afecta ni es afectada por los intentos
+de la Worksheet:
+
+```
+Unit
+├── Lesson
+├── Worksheet       (assessmentId: 'worksheet',      2 intentos)
+└── Progress Test   (assessmentId: 'progress-test',  2 intentos)
+```
+
+**Motor único, reutilizado, no duplicado.** `assessment_id` se
+convirtió en una dimensión más de la clave de
+`unit_attempt_limits`/`worksheet_exercise_attempts` (ver
+`docs/assessment-id-migration.sql`, default `'worksheet'` — cero
+migración de datos, cero intento perdido de lo ya registrado en Unit
+1). El mismo componente de pantalla, ahora `assessment-screen.js`
+(antes `worksheet-screen.js` — renombrado porque ya no es específico
+de una worksheet), renderiza cualquier evaluación de cualquier
+unidad, con el mismo ciclo completo (Submit, Summary, Start New
+Attempt, bloqueo al agotar intentos). Agregar un Quiz, Speaking
+Assessment o Final Assessment a futuro es: una entrada más en
+`assessments{}` del contenido de la unidad, una ruta más — cero
+tablas nuevas, cero componentes nuevos, cero lógica de intentos
+nueva.
+
+**Contenido**: `alh-level-1-unit-1.js` pasó de `unit.sections`/
+`unit.maxAttempts` (una sola evaluación implícita) a
+`unit.assessments.worksheet`/`unit.assessments['progress-test']`,
+cada una con su propio `title`/`maxAttempts`/`sections`.
+`getAssessment(bookId, unitNumber, assessmentId)` (nuevo, en
+`worksheet-content-repository.js`) resuelve una evaluación concreta,
+aplanada, para la pantalla.
+
+**Routing**: `/book/:id/read/:unitNumber` (sin cambios, sigue
+significando "Worksheet" — ningún enlace existente se rompe) y
+`/book/:id/read/:unitNumber/progress-test` (nueva). `screen-router.js`
+arma el botón "Continue to {siguiente evaluación}" por **orden de
+declaración** en el contenido, nunca hardcodeado a
+"worksheet→progress-test" — así una evaluación agregada después del
+Progress Test se encadena sola, sin tocar este archivo.
+
+**Transición (decisión de producto cerrada)**: nunca automática.
+Terminar la Worksheet muestra el Summary de siempre (puntaje,
+intentos restantes, Start New Attempt) — el botón "Continue to
+Progress Test" aparece ahí, y el estudiante decide cuándo tocarlo.
+
+**Verificado**: además de `node --check` en los 147 `.js` y el smoke
+test de servidor de siempre, se simuló el flujo completo (intentos +
+respuestas) con adapters falsos en memoria, usando el código real de
+contratos/repositorios — confirmado que 2 intentos consumidos en la
+Worksheet dejan al Progress Test en 0, y que "Start New Attempt" en
+la Worksheet borra únicamente sus propias respuestas, nunca las del
+Progress Test.
+
+**Pendiente de tu verificación manual real en navegador**: correr
+`docs/assessment-id-migration.sql` contra un proyecto Supabase real
+(requiere que `docs/atlas-admin-overview.sql` y
+`docs/unit-attempts-with-owner-view.sql` ya se hayan corrido antes),
+y probar de extremo a extremo en pantalla el flujo Lesson → Worksheet
+→ (Continue to Progress Test) → Progress Test → intentos agotados en
+ambas.
+
+Después de Sprint 14 también se añadió **Progress Test Unit 1**
+(American Language Hub Level 1), con tres tipos de ejercicio nuevos en el Worksheet Engine — `matching`,
 `choice`, `shortAnswer` (ver
 `src/presentation/components/worksheet-exercises/` y
 `domain/contracts/worksheet-exercise-lifecycle.js`). Contenido y

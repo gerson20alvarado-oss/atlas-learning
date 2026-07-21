@@ -16,9 +16,18 @@
  *
  * Sin límite de intentos propio (mismo criterio que el resto de
  * ALH): el único control real es `unit_attempt_limits`.
+ *
+ * `reviewPolicy` (esta sesión): 'practice' (default) mantiene el
+ * comportamiento de siempre — Check Answers propio, marca
+ * correcto/incorrecto por ítem al toque. 'exam' quita el botón
+ * propio por completo y nunca pinta `data-result` — el componente
+ * solo captura respuestas; `validate()` sigue existiendo tal cual,
+ * para que assessment-screen.js la invoque una sola vez, al enviar
+ * toda la evaluación.
  */
 
 import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
+import { createPrimaryButton } from '../primary-button/primary-button.js';
 
 function normalize(text) {
   return (text ?? '')
@@ -28,7 +37,12 @@ function normalize(text) {
     .replace(/[.?!]+$/, '');
 }
 
-export function createShortAnswerExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
+export function createShortAnswerExercise(
+  exercise,
+  { initialState, unitCompleted = false, reviewPolicy = 'practice', onGraded, onChange } = {},
+) {
+  const isExam = reviewPolicy === 'exam';
+
   const element = document.createElement('div');
   element.setAttribute('data-component', 'short-answer-exercise');
 
@@ -47,13 +61,18 @@ export function createShortAnswerExercise(exercise, { initialState, unitComplete
 
   const previousResponses = initialState?.response ?? {};
 
-  exercise.items.forEach((item) => {
+  exercise.items.forEach((item, index) => {
     const restored = previousResponses[item.id] ?? '';
     responses.set(item.id, restored);
 
     const row = document.createElement('div');
     row.setAttribute('data-part', 'item');
     rowsByItemId.set(item.id, row);
+
+    const number = document.createElement('span');
+    number.setAttribute('data-part', 'item-number');
+    number.textContent = String(index + 1);
+    row.appendChild(number);
 
     const prompt = document.createElement('p');
     prompt.setAttribute('data-part', 'prompt');
@@ -70,6 +89,7 @@ export function createShortAnswerExercise(exercise, { initialState, unitComplete
     input.addEventListener('input', () => {
       responses.set(item.id, input.value);
       row.removeAttribute('data-result');
+      onChange?.();
     });
 
     row.appendChild(input);
@@ -78,15 +98,11 @@ export function createShortAnswerExercise(exercise, { initialState, unitComplete
 
   element.appendChild(list);
 
-  const checkButton = document.createElement('button');
-  checkButton.type = 'button';
-  checkButton.setAttribute('data-part', 'check-button');
-  checkButton.textContent = 'Check answers';
-  element.appendChild(checkButton);
+  let checkButton = null;
 
   function lockExercise() {
     inputsByItemId.forEach((input) => { input.disabled = true; });
-    checkButton.disabled = true;
+    if (checkButton) checkButton.disabled = true;
   }
 
   function applyResult(result) {
@@ -95,17 +111,26 @@ export function createShortAnswerExercise(exercise, { initialState, unitComplete
     });
   }
 
-  if (initialState?.result) applyResult(initialState.result);
+  if (initialState?.result && !isExam) applyResult(initialState.result);
+
+  if (!isExam) {
+    const checkButtonComponent = createPrimaryButton({
+      label: 'Check answers',
+      onClick: () => {
+        if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
+
+        const result = validate();
+        applyResult(result);
+
+        onGraded?.({ response: getResponse(), result });
+      },
+    });
+    checkButton = checkButtonComponent.element;
+    checkButton.setAttribute('data-part', 'check-button');
+    element.appendChild(checkButton);
+  }
+
   if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
-
-  checkButton.addEventListener('click', () => {
-    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
-
-    const result = validate();
-    applyResult(result);
-
-    onGraded?.({ response: getResponse(), result });
-  });
 
   function update() {}
 

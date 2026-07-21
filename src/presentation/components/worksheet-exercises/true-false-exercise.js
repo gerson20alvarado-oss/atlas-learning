@@ -4,18 +4,29 @@
  * Verdadero/Falso con corrección — el campo de texto para corregir
  * el enunciado solo aparece cuando el estudiante marca Falso.
  *
- * Sin límite de intentos propio (esta sesión, decisión de producto
- * cerrada): el estudiante puede presionar "Check answers" cuantas
- * veces quiera mientras la unidad no se haya enviado. El único
+ * Sin límite de intentos propio: el estudiante puede presionar
+ * "Check answers" cuantas veces quiera mientras la unidad no se haya
+ * enviado (en `reviewPolicy: 'practice'` — ver más abajo). El único
  * control de intentos real es `unit_attempt_limits`.
  *
  * Alcance real, sin cambios: el texto de corrección libre sigue sin
  * calificarse automáticamente.
+ *
+ * `reviewPolicy` (esta sesión): 'practice' (default) mantiene el
+ * comportamiento de siempre. 'exam' quita el Check Answers propio y
+ * nunca pinta `data-result` — mismo `validate()` de siempre, invocado
+ * una sola vez por assessment-screen.js al enviar toda la evaluación.
  */
 
 import { getExerciseAvailability } from '../../../domain/exercise-availability/exercise-availability-service.js';
+import { createPrimaryButton } from '../primary-button/primary-button.js';
 
-export function createTrueFalseExercise(exercise, { initialState, unitCompleted = false, onGraded } = {}) {
+export function createTrueFalseExercise(
+  exercise,
+  { initialState, unitCompleted = false, reviewPolicy = 'practice', onGraded, onChange } = {},
+) {
+  const isExam = reviewPolicy === 'exam';
+
   const element = document.createElement('div');
   element.setAttribute('data-component', 'true-false-exercise');
 
@@ -83,6 +94,7 @@ export function createTrueFalseExercise(exercise, { initialState, unitCompleted 
           correctionField.value = '';
         }
         row.removeAttribute('data-result');
+        onChange?.();
       });
 
       label.appendChild(radio);
@@ -92,6 +104,7 @@ export function createTrueFalseExercise(exercise, { initialState, unitCompleted 
 
     correctionField.addEventListener('input', () => {
       responses.get(item.id).correction = correctionField.value;
+      onChange?.();
     });
 
     row.appendChild(choiceGroup);
@@ -101,16 +114,12 @@ export function createTrueFalseExercise(exercise, { initialState, unitCompleted 
 
   element.appendChild(list);
 
-  const checkButton = document.createElement('button');
-  checkButton.type = 'button';
-  checkButton.setAttribute('data-part', 'check-button');
-  checkButton.textContent = 'Check answers';
-  element.appendChild(checkButton);
+  let checkButton = null;
 
   function lockExercise() {
     radiosByItemId.forEach((radios) => radios.forEach((r) => { r.disabled = true; }));
     correctionFieldsByItemId.forEach((f) => { f.disabled = true; });
-    checkButton.disabled = true;
+    if (checkButton) checkButton.disabled = true;
   }
 
   function applyResult(result) {
@@ -119,17 +128,26 @@ export function createTrueFalseExercise(exercise, { initialState, unitCompleted 
     });
   }
 
-  if (initialState?.result) applyResult(initialState.result);
+  if (initialState?.result && !isExam) applyResult(initialState.result);
+
+  if (!isExam) {
+    const checkButtonComponent = createPrimaryButton({
+      label: 'Check answers',
+      onClick: () => {
+        if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
+
+        const result = validate();
+        applyResult(result);
+
+        onGraded?.({ response: getResponse(), result });
+      },
+    });
+    checkButton = checkButtonComponent.element;
+    checkButton.setAttribute('data-part', 'check-button');
+    element.appendChild(checkButton);
+  }
+
   if (!getExerciseAvailability({ unitCompleted }).editable) lockExercise();
-
-  checkButton.addEventListener('click', () => {
-    if (!isAnswered() || !getExerciseAvailability({ unitCompleted }).editable) return;
-
-    const result = validate();
-    applyResult(result);
-
-    onGraded?.({ response: getResponse(), result });
-  });
 
   function update() {}
 

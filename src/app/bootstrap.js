@@ -79,8 +79,9 @@ import { mountScreenRouter } from './screen-router.js';
 // (§ más abajo). Sin ninguna otra conexión con el resto del arranque
 // todavía — la worksheet no participa en ningún flujo real de
 // navegación hasta que se resuelva su integración con el Reader.
-import { createWorksheetScreen } from '../presentation/screens/worksheet/worksheet-screen.js';
+import { createAssessmentScreen } from '../presentation/screens/assessment/assessment-screen.js';
 import { ALH_LEVEL_1_UNIT_1 } from '../domain/worksheet-content/alh-level-1-unit-1.js';
+import { getAssessment } from '../domain/worksheet-content/worksheet-content-repository.js';
 
 function bootstrap() {
   // a. Config pública — resuelve base path para GitHub Pages.
@@ -327,19 +328,27 @@ function bootstrap() {
     licenseRepository,
     profileRepository,
     // American Language Hub — Unidad 1, sin flujo de navegación real
-    // todavía. previewWorksheet() la monta directamente sobre <body>,
-    // reemplazando lo que la app esté mostrando, solo para
-    // verificación manual — nunca se usa así en producción.
-    createWorksheetScreen,
+    // todavía. previewAssessment(assessmentId) la monta directamente
+    // sobre <body>, reemplazando lo que la app esté mostrando, solo
+    // para verificación manual — nunca se usa así en producción.
+    // Evoluciones independientes por unidad (esta sesión): recibe
+    // 'worksheet' o 'progress-test' — antes solo existía una
+    // evaluación, así que no hacía falta este parámetro.
+    createAssessmentScreen,
     ALH_LEVEL_1_UNIT_1,
     videoSourceRepository,
     imageSourceRepository,
     worksheetAttemptRepository,
     unitAttemptRepository,
-    previewWorksheet: () => {
+    previewAssessment: (assessmentId = 'worksheet') => {
       const session = authContract.getSession();
-      const screen = createWorksheetScreen({
-        unit: ALH_LEVEL_1_UNIT_1,
+      const assessment = getAssessment(ALH_LEVEL_1_UNIT_1.bookId, ALH_LEVEL_1_UNIT_1.unitNumber, assessmentId);
+      if (!assessment) {
+        console.error(`No existe la evaluación "${assessmentId}" en esta unidad.`);
+        return null;
+      }
+      const screen = createAssessmentScreen({
+        assessment,
         videoSourceRepository,
         imageSourceRepository,
         worksheetAttemptRepository,

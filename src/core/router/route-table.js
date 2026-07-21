@@ -106,6 +106,23 @@ const ROUTES = Object.freeze([
       pagePosition: Number(match[2]),
     }),
   },
+  {
+    // Evoluciones independientes por unidad (esta sesión): mismo
+    // libro/página que la ruta anterior, más un segmento de
+    // evaluación ('worksheet', 'progress-test', futuras) — exclusivo
+    // de contenido con contentMode 'worksheet'. Sin este segmento
+    // (ruta anterior), screen-router.js asume 'worksheet' — este
+    // patrón nunca colisiona con el de arriba porque ese exige fin de
+    // cadena justo después del número de página.
+    pattern: /^\/book\/([^/]+)\/read\/(\d+)\/([^/]+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      pagePosition: Number(match[2]),
+      assessmentPosition: match[3],
+    }),
+  },
   // Admin Console (Sprint 14): jerarquía propia, sin relación con
   // Library/Book/Unit/Lesson — de ahí que ninguna de estas rutas
   // pueble bookPosition/unitPosition/etc. El acceso real (¿esta

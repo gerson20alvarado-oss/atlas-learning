@@ -52,14 +52,14 @@ export function createAdminDashboardScreen({
       unitAttemptRepository.listAllWithOwner({ accessToken }),
     ]);
 
-    const unitsWithAtLeastOneAttempt = unitAttempts.filter((row) => row.attemptsUsed >= 1).length;
-    const unitsAtLimit = unitAttempts.filter((row) => row.attemptsUsed >= 2).length;
+    const assessmentsWithAtLeastOneAttempt = unitAttempts.filter((row) => row.attemptsUsed >= 1).length;
+    const assessmentsAtLimit = unitAttempts.filter((row) => row.attemptsUsed >= 2).length;
 
     statsRow.replaceChildren(
       createStatCard({ label: 'Students', value: studentCount }),
       createStatCard({ label: 'Active licenses', value: activeLicenseCount }),
-      createStatCard({ label: 'Units attempted', value: unitsWithAtLeastOneAttempt }),
-      createStatCard({ label: 'Units at attempt limit', value: unitsAtLimit }),
+      createStatCard({ label: 'Assessments attempted', value: assessmentsWithAtLeastOneAttempt }),
+      createStatCard({ label: 'Assessments at attempt limit', value: assessmentsAtLimit }),
     );
   }
 

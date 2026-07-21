@@ -30,13 +30,6 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
   unitNumber: 1,
   unitTitle: 'My city',
 
-  // Control de Intentos por Unidad (esta sesión): cuántas pasadas
-  // completas admite esta unidad — decisión de contenido, nunca de
-  // base de datos (Arquitectura de Intentos por Unidad, §2). `null`
-  // significaría ilimitado; un libro futuro con reglas distintas
-  // solo necesita declarar su propio valor aquí, nunca una migración.
-  maxAttempts: 2,
-
   // Video del Video Hub — recurso a nivel de unidad, no de un
   // ejercicio específico (varios ejercicios de Comprehension lo
   // referencian, ninguno lo "posee"). `assetPath` ya incluye el
@@ -49,7 +42,28 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
     assetPath: 'book-american-language-hub-1/ALH_Level1_VideoHub_U1_subtitles.mp4',
   },
 
-  sections: [
+  // Evoluciones independientes por unidad (esta sesión): la unidad ya
+  // no tiene una sola lista de secciones — contiene un mapa de
+  // evaluaciones independientes, cada una con su propio `maxAttempts`
+  // (Arquitectura de Evaluaciones Independientes, decisión #3) y sus
+  // propias `sections`. Worksheet y Progress Test nunca comparten
+  // intentos ni respuestas — cada una vive aislada bajo su propio
+  // `assessmentId`, la misma clave que ahora distingue sus filas en
+  // `unit_attempt_limits`/`worksheet_exercise_attempts` (ver
+  // docs/assessment-id-migration.sql). Una futura evaluación (Quiz,
+  // Speaking Assessment, Final Assessment) es una entrada más de este
+  // mismo mapa — ningún cambio al motor que la ejecuta
+  // (assessment-screen.js) ni a los repositorios que la respaldan.
+  assessments: {
+    worksheet: Object.freeze({
+      assessmentId: 'worksheet',
+      title: 'Worksheet',
+      maxAttempts: 2,
+      // Política de revisión (esta sesión): práctica — Check Answers
+      // por ejercicio, feedback inmediato por ítem, recalificación
+      // libre mientras no se envíe. Comportamiento sin cambios.
+      reviewPolicy: 'practice',
+      sections: [
     {
       id: 'comprehension',
       title: 'COMPREHENSION',
@@ -173,18 +187,39 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
         },
       ],
     },
+      ], // cierra sections de worksheet
+    }), // cierra assessments.worksheet
+
+    // Progress Test Unit 1: transcrito de Progress_Test_Unit_1.pdf
+    // (American Language Hub Level 1 Tests, Macmillan Education,
+    // 2020) — texto de enunciados y opciones verbatim, respuestas
+    // oficiales confirmadas explícitamente por el usuario, no
+    // inventadas ni derivadas por inferencia.
+    //
+    // Evoluciones independientes por unidad (esta sesión): dejó de
+    // ser una sección más dentro de la worksheet para convertirse en
+    // su propia evaluación — assessmentId propio, 2 intentos propios,
+    // completamente aislada de los intentos/respuestas de Worksheet
+    // (nunca comparte fila en unit_attempt_limits ni en
+    // worksheet_exercise_attempts — cada una tiene la suya, gracias a
+    // `assessment_id` en la clave). El estudiante llega aquí desde el
+    // botón "Continue to Progress Test" en el Summary de la Worksheet
+    // — nunca automáticamente (decisión de producto: el Summary de la
+    // Worksheet sigue existiendo tal cual, el estudiante decide
+    // cuándo continuar).
+    'progress-test': Object.freeze({
+      assessmentId: 'progress-test',
+      title: 'Progress Test',
+      maxAttempts: 2,
+      // Política de revisión (esta sesión): examen — sin Check
+      // Answers por ejercicio, un único Submit, resultado agregado
+      // (Score/Correct Answers/Percentage/Attempts Remaining) sin
+      // marcar jamás qué ítem falló, ni al enviar ni al revisar
+      // después. Un segundo intento responde la evaluación completa
+      // de nuevo — nunca "corrige solo lo que falló".
+      reviewPolicy: 'exam',
+      sections: [
     {
-      // Progress Test Unit 1 (esta sesión): transcrito de
-      // Progress_Test_Unit_1.pdf (American Language Hub Level 1
-      // Tests, Macmillan Education, 2020) — texto de enunciados y
-      // opciones verbatim, respuestas oficiales confirmadas
-      // explícitamente por el usuario en esta sesión, no inventadas
-      // ni derivadas por inferencia. Se agrega como una sección más
-      // de esta misma worksheet (no como una unidad/ruta aparte):
-      // "Submit worksheet" sigue enviando la unidad completa de una
-      // sola vez, incluida esta sección, sin ningún cambio al
-      // Control de Intentos por Unidad ni a ningún otro mecanismo ya
-      // existente.
       id: 'progress-test',
       title: 'PROGRESS TEST',
       exercises: [
@@ -460,5 +495,7 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
         },
       ],
     },
-  ],
+      ], // cierra sections de progress-test
+    }), // cierra assessments['progress-test']
+  }, // cierra assessments
 });

@@ -50,8 +50,8 @@ import { createUnitScreen } from '../presentation/screens/unit/unit-screen.js';
 import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/lesson-entry-screen.js';
 import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
 import { createPageReaderScreen } from '../presentation/screens/page-reader/page-reader-screen.js';
-import { createWorksheetScreen } from '../presentation/screens/worksheet/worksheet-screen.js';
-import { getWorksheetUnit } from '../domain/worksheet-content/worksheet-content-repository.js';
+import { createAssessmentScreen } from '../presentation/screens/assessment/assessment-screen.js';
+import { getAssessment, listAssessmentIds } from '../domain/worksheet-content/worksheet-content-repository.js';
 import { createLicenseActivationScreen } from '../presentation/screens/license-activation/license-activation-screen.js';
 import { createProfileSetupScreen } from '../presentation/screens/profile-setup/profile-setup-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
@@ -199,6 +199,7 @@ function buildPageReaderScreen({
   router,
   bookId,
   pageNumber,
+  assessmentId,
   userId,
   authContract,
   pageSourceRepository,
@@ -220,13 +221,20 @@ function buildPageReaderScreen({
   // — su camino de siempre (abajo) queda intacto, sin ningún cambio,
   // ni un solo `if` nuevo en su propia ejecución.
   if (book?.contentMode === 'worksheet') {
-    const unit = getWorksheetUnit(bookId, pageNumber);
-    if (!unit) {
-      // Unidad todavía no producida — mismo criterio honesto que ya
-      // usa el resto de Atlas: nunca una pantalla en blanco sin
-      // explicación.
+    // Evoluciones independientes por unidad (esta sesión): la unidad
+    // ya no es "una sola worksheet" — es un conjunto de evaluaciones
+    // (Worksheet, Progress Test, futuras), cada una con su propia
+    // ruta. Sin segmento de evaluación en la URL, se asume
+    // 'worksheet' — así ningún enlace existente (`/book/:id/read/:n`)
+    // se rompe con este cambio.
+    const resolvedAssessmentId = assessmentId ?? 'worksheet';
+    const assessment = getAssessment(bookId, pageNumber, resolvedAssessmentId);
+    if (!assessment) {
+      // Unidad o evaluación todavía no producida — mismo criterio
+      // honesto que ya usa el resto de Atlas: nunca una pantalla en
+      // blanco sin explicación.
       const fallback = document.createElement('div');
-      fallback.setAttribute('data-component', 'worksheet-screen');
+      fallback.setAttribute('data-component', 'assessment-screen');
       fallback.setAttribute('data-part', 'unit-unavailable');
       const message = document.createElement('p');
       message.className = 'al-type-ui-body';
@@ -234,8 +242,28 @@ function buildPageReaderScreen({
       fallback.appendChild(message);
       return Object.freeze({ element: fallback, update: () => {}, destroy: () => fallback.remove() });
     }
-    return createWorksheetScreen({
-      unit,
+
+    // "Continue to X" (decisión de producto cerrada: nunca automático,
+    // nunca obligatorio — el botón solo aparece en el Summary, el
+    // estudiante decide cuándo tocarlo). Se resuelve por ORDEN de
+    // declaración en el contenido (`listAssessmentIds`), no
+    // hardcodeado a "worksheet → progress-test": el día que se agregue
+    // un Quiz después del Progress Test, este mismo código ofrece
+    // "Continue to Quiz" desde el Summary del Progress Test sin
+    // ningún cambio aquí.
+    const assessmentIds = listAssessmentIds(bookId, pageNumber);
+    const currentIndex = assessmentIds.indexOf(resolvedAssessmentId);
+    const nextAssessmentId = currentIndex >= 0 ? assessmentIds[currentIndex + 1] : undefined;
+    const nextAssessmentContent = nextAssessmentId ? getAssessment(bookId, pageNumber, nextAssessmentId) : null;
+    const nextAssessment = nextAssessmentContent
+      ? {
+          label: `Continue to ${nextAssessmentContent.assessmentTitle}`,
+          onSelect: () => router.navigateTo(`/book/${bookId}/read/${pageNumber}/${nextAssessmentId}`),
+        }
+      : undefined;
+
+    return createAssessmentScreen({
+      assessment,
       videoSourceRepository,
       imageSourceRepository,
       worksheetAttemptRepository,
@@ -243,6 +271,7 @@ function buildPageReaderScreen({
       userId,
       accessToken,
       onBack: () => router.navigateTo('/library'),
+      nextAssessment,
     });
   }
 
@@ -500,8 +529,17 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
 }
 
 function resolveScreen(navigationState, deps) {
-  const { bookPosition, unitPosition, lessonPosition, mode, libraryPosition, pagePosition, adminSection, adminUserId } =
-    navigationState;
+  const {
+    bookPosition,
+    unitPosition,
+    lessonPosition,
+    mode,
+    libraryPosition,
+    pagePosition,
+    assessmentPosition,
+    adminSection,
+    adminUserId,
+  } = navigationState;
   const userId = deps.authContract.getSession()?.userId ?? null;
   const accessToken = deps.authContract.getSession()?.accessToken ?? null;
   const fullDeps = { ...deps, userId };
@@ -557,7 +595,12 @@ function resolveScreen(navigationState, deps) {
   // Session), que siguen intactos y desacoplados, no eliminados
   // (Sprint Proposal §5.1, ya aprobado).
   if (bookPosition && pagePosition) {
-    return buildPageReaderScreen({ ...fullDeps, bookId: bookPosition, pageNumber: pagePosition });
+    return buildPageReaderScreen({
+      ...fullDeps,
+      bookId: bookPosition,
+      pageNumber: pagePosition,
+      assessmentId: assessmentPosition ?? 'worksheet',
+    });
   }
 
   if (bookPosition && unitPosition && lessonPosition && mode === 'learn') {

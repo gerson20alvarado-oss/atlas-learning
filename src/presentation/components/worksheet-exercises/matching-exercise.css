@@ -1,0 +1,102 @@
+/**
+ * matching-exercise.css
+ *
+ * Nunca existió antes de esta sesión — mismo motivo que
+ * choice-exercise.css (ver ese archivo). Diseñado desde cero.
+ *
+ * Mismo lenguaje visual que choice-exercise.css: voz de lectura para
+ * el enunciado evaluable, instrucción en voz UI muted, cada ejercicio
+ * como tarjeta independiente con aire real entre ítems.
+ */
+
+[data-component="matching-exercise"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-6);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="matching-exercise"] [data-part="instruction"] {
+  color: var(--al-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: var(--al-size-13);
+}
+
+[data-component="matching-exercise"] [data-part="items"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-3);
+}
+
+[data-component="matching-exercise"] [data-part="item"] {
+  display: flex;
+  align-items: center;
+  gap: var(--al-space-4);
+  padding: var(--al-space-4) var(--al-space-6);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="matching-exercise"] [data-part="item-number"] {
+  flex-shrink: 0;
+  width: var(--al-space-4);
+  color: var(--al-text-muted);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+}
+
+[data-component="matching-exercise"] [data-part="statement"] {
+  flex: 1;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  line-height: var(--al-leading-reading);
+  color: var(--al-text-content);
+}
+
+[data-component="matching-exercise"] [data-part="option-select"] {
+  flex-shrink: 0;
+  min-width: 220px;
+  height: var(--al-input-height);
+  padding: 0 var(--al-space-3);
+  border-radius: var(--al-radius-md);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  background: var(--al-paper-0);
+  font-family: var(--al-font-reading);
+  font-style: italic;
+  font-size: var(--al-size-15);
+  color: var(--al-text-content);
+  cursor: pointer;
+}
+
+[data-component="matching-exercise"] [data-part="option-select"]:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+  [data-component="matching-exercise"] [data-part="item"] {
+    flex-wrap: wrap;
+  }
+
+  [data-component="matching-exercise"] [data-part="option-select"] {
+    min-width: 0;
+    width: 100%;
+    margin-left: calc(var(--al-space-4) + var(--al-space-4));
+  }
+}
+
+[data-component="matching-exercise"] [data-part="item"][data-result="correct"] {
+  background: var(--al-feedback-correct-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-correct);
+}
+
+[data-component="matching-exercise"] [data-part="item"][data-result="incorrect"] {
+  background: var(--al-feedback-incorrect-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
+}
+
+[data-component="matching-exercise"] [data-part="check-button"] {
+  margin-top: var(--al-space-2);
+}

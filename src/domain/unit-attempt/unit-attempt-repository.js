@@ -3,29 +3,35 @@
  *
  * Único punto de entrada del dominio para intentos por unidad.
  * `canStartUnit` compara el conteo real (Supabase) contra el máximo
- * declarado en el contenido (`maxAttempts`, nunca en la base de
- * datos — ver Arquitectura de Intentos por Unidad, §2) — un libro
- * nuevo con reglas propias es un campo de contenido, nunca una
- * migración.
+ * declarado en el contenido (`maxAttempts`) — un libro nuevo con
+ * reglas propias es un campo de contenido, nunca una migración.
+ *
+ * Evoluciones independientes por unidad (esta sesión): `assessmentId`
+ * viaja en cada método, con default `'worksheet'`. `maxAttempts` deja
+ * de ser una propiedad de la unidad para serlo de la evaluación
+ * (Worksheet, Progress Test y futuras declaran el suyo propio en su
+ * propio objeto de contenido) — `canStartUnit` no cambia de firma,
+ * solo recibe el `maxAttempts` correcto según qué evaluación llame.
  */
 
 export function createUnitAttemptRepository(unitAttemptService) {
-  async function getAttemptsUsed({ userId, bookId, unitNumber, accessToken }) {
-    return unitAttemptService.getAttemptsUsed({ userId, bookId, unitNumber, accessToken });
+  async function getAttemptsUsed({ userId, bookId, unitNumber, assessmentId = 'worksheet', accessToken }) {
+    return unitAttemptService.getAttemptsUsed({ userId, bookId, unitNumber, assessmentId, accessToken });
   }
 
   function canStartUnit({ attemptsUsed, maxAttempts }) {
     return maxAttempts === null || maxAttempts === undefined || attemptsUsed < maxAttempts;
   }
 
-  async function incrementAttempt({ bookId, unitNumber, accessToken }) {
-    return unitAttemptService.incrementAttempt({ bookId, unitNumber, accessToken });
+  async function incrementAttempt({ bookId, unitNumber, assessmentId = 'worksheet', accessToken }) {
+    return unitAttemptService.incrementAttempt({ bookId, unitNumber, assessmentId, accessToken });
   }
 
   /**
-   * Admin Console (Sprint 14) — normaliza las filas de la vista
+   * Admin Console — normaliza las filas de la vista
    * `unit_attempts_with_owner` a la misma convención camelCase que
-   * el resto del dominio usa.
+   * el resto del dominio usa. Incluye `assessmentId` — el admin
+   * distingue Worksheet de Progress Test en la misma lista.
    */
   async function listAllWithOwner({ accessToken }) {
     const rows = await unitAttemptService.listAllWithOwner({ accessToken });
@@ -35,13 +41,14 @@ export function createUnitAttemptRepository(unitAttemptService) {
       lastName: row.last_name,
       bookId: row.book_id,
       unitNumber: row.unit_number,
+      assessmentId: row.assessment_id,
       attemptsUsed: row.attempts_used,
       updatedAt: row.updated_at,
     }));
   }
 
-  async function setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken }) {
-    return unitAttemptService.setAttemptsUsed({ userId, bookId, unitNumber, attemptsUsed, accessToken });
+  async function setAttemptsUsed({ userId, bookId, unitNumber, assessmentId = 'worksheet', attemptsUsed, accessToken }) {
+    return unitAttemptService.setAttemptsUsed({ userId, bookId, unitNumber, assessmentId, attemptsUsed, accessToken });
   }
 
   return Object.freeze({

@@ -1,0 +1,100 @@
+/**
+ * short-answer-exercise.css
+ *
+ * Nunca existió antes de esta sesión — mismo motivo que
+ * choice-exercise.css (ver ese archivo). Diseñado desde cero.
+ *
+ * Mismo lenguaje visual que choice/matching-exercise.css: voz de
+ * lectura para el prompt evaluable, instrucción en voz UI muted,
+ * cada ejercicio como tarjeta independiente. El campo de respuesta
+ * usa la voz de lectura también — el estudiante está completando una
+ * oración, no llenando un formulario técnico.
+ */
+
+[data-component="short-answer-exercise"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-6);
+  padding: var(--al-space-4) 0;
+}
+
+[data-component="short-answer-exercise"] [data-part="instruction"] {
+  color: var(--al-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: var(--al-size-13);
+}
+
+[data-component="short-answer-exercise"] [data-part="items"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--al-space-4);
+}
+
+/* `item-number` y `prompt` son hermanos en el DOM (no anidados) —
+   ambos comparten la primera "fila" del ítem vía flex-wrap;
+   `answer-input` fuerza su propia fila completa con
+   `flex-basis: 100%`, alineado bajo el texto del prompt. */
+[data-component="short-answer-exercise"] [data-part="item"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--al-space-3);
+  padding: var(--al-space-6);
+  background: var(--al-surface-recessed);
+  border-radius: var(--al-radius-lg);
+}
+
+[data-component="short-answer-exercise"] [data-part="item-number"] {
+  flex-shrink: 0;
+  padding-top: 2px;
+  color: var(--al-text-muted);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+}
+
+[data-component="short-answer-exercise"] [data-part="prompt"] {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  line-height: var(--al-leading-reading);
+  color: var(--al-text-content);
+}
+
+[data-component="short-answer-exercise"] [data-part="answer-input"] {
+  flex-basis: 100%;
+  height: var(--al-input-height);
+  padding: 0 var(--al-space-3);
+  margin-left: calc(var(--al-space-4) + var(--al-space-1));
+  border-radius: var(--al-radius-md);
+  border: var(--al-border-hairline) solid var(--al-border-default);
+  background: var(--al-paper-0);
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-16);
+  color: var(--al-text-content);
+}
+
+[data-component="short-answer-exercise"] [data-part="answer-input"]:focus-visible {
+  border-color: var(--al-border-focus);
+}
+
+[data-component="short-answer-exercise"] [data-part="answer-input"]:disabled {
+  opacity: 0.7;
+}
+
+[data-component="short-answer-exercise"] [data-part="item"][data-result="correct"] {
+  background: var(--al-feedback-correct-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-correct);
+}
+
+[data-component="short-answer-exercise"] [data-part="item"][data-result="incorrect"] {
+  background: var(--al-feedback-incorrect-surface);
+  border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
+}
+
+[data-component="short-answer-exercise"] [data-part="check-button"] {
+  margin-top: var(--al-space-2);
+}

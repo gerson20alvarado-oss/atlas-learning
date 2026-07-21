@@ -69,26 +69,10 @@
   border: var(--al-border-hairline) solid var(--al-feedback-incorrect);
 }
 
+/* El botón "Check answers" es ahora primary-button.js real (esta
+   sesión) — hereda tamaño/tipografía/estados del Design System, sin
+   duplicar esa definición aquí. Solo el espaciado con lo anterior es
+   propio de este componente. */
 [data-component="true-false-exercise"] [data-part="check-button"] {
   margin-top: var(--al-space-1);
-  min-height: var(--al-hit-target-min);
-  padding: 0 var(--al-space-4);
-  background: var(--al-action-primary);
-  color: var(--al-text-on-action);
-  border: none;
-  border-radius: var(--al-radius-lg);
-  font-family: var(--al-font-ui);
-  font-size: var(--al-size-14);
-  font-weight: var(--al-weight-medium);
-  cursor: pointer;
-  transition: background var(--al-duration-fast) var(--al-ease-standard);
-}
-
-[data-component="true-false-exercise"] [data-part="check-button"]:hover:not(:disabled) {
-  background: var(--al-action-primary-hover);
-}
-
-[data-component="true-false-exercise"] [data-part="check-button"]:disabled {
-  background: var(--al-action-disabled);
-  cursor: default;
 }

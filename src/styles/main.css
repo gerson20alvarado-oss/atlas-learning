@@ -51,8 +51,11 @@
 @import url('../presentation/components/worksheet-exercises/rule-reveal-card.css');
 @import url('../presentation/components/worksheet-exercises/ordering-exercise.css');
 @import url('../presentation/components/worksheet-exercises/true-false-exercise.css');
+@import url('../presentation/components/worksheet-exercises/matching-exercise.css');
+@import url('../presentation/components/worksheet-exercises/choice-exercise.css');
+@import url('../presentation/components/worksheet-exercises/short-answer-exercise.css');
 @import url('../presentation/components/worksheet-exercises/video-panel.css');
-@import url('../presentation/screens/worksheet/worksheet-screen.css');
+@import url('../presentation/screens/assessment/assessment-screen.css');
 
 /* Sistema de Licencias por Libro */
 @import url('../presentation/screens/license-activation/license-activation-screen.css');
