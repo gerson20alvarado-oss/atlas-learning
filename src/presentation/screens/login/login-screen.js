@@ -54,7 +54,7 @@ export function createLoginScreen({ onBack, onSubmit }) {
   errorMessage.hidden = true;
 
   const signInButton = createPrimaryButton({
-    label: 'sign in',
+    label: 'Sign In',
     onClick: () => handleSubmit(),
   });
   signInButton.element.setAttribute('data-part', 'sign-in');

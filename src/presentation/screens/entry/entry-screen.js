@@ -59,6 +59,7 @@ export function createEntryScreen({ onSignIn }) {
 
   const signInButton = createPrimaryButton({
     label: 'Sign In',
+    size: 'large',
     onClick: () => onSignIn?.(),
   });
   signInButton.element.setAttribute('data-part', 'sign-in');

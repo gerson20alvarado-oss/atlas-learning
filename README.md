@@ -1,10 +1,75 @@
 # Atlas Learning
 
-**Estado actual:** Refinamiento visual de Entry + `back-nav` (ver
-sección siguiente). Ninguna otra pantalla se tocó — verificado con
-`find src -newermt` antes de empaquetar.
+**Estado actual:** Consolidación de `back-nav` como única
+implementación oficial (ver sección siguiente). Admin Console
+deliberadamente sin tocar — pendiente de revisión aparte.
 
-## Refinamiento visual de Entry + back-nav (esta sesión)
+## Consolidación de back-nav — eliminando implementaciones duplicadas (esta sesión)
+
+Tras el rediseño visual de `back-nav`, se hizo un barrido completo
+del proyecto (`grep` de patrones `'‹ '`/`'← '` y de `data-part="back"`
+fuera de `back-nav.js`) para encontrar botones de "volver"
+implementados a mano en vez de usar el componente oficial.
+
+**Encontrados y corregidos, 2 casos** (mismo patrón exacto en ambos:
+`<button>` crudo con texto `'‹ Library'` literal → reemplazado por
+`createBackNav({ parentLabel: 'library', onSelect: onBack })`, CSS
+muerto correspondiente eliminado de cada screen):
+
+1. `assessment-screen.js` (Worksheet/Progress Test) — corregido en el
+   paso anterior de esta misma sesión.
+2. `license-activation-screen.js` — corregido en este paso.
+
+**Descartados explícitamente por no ser el mismo problema** (aparecieron
+en la búsqueda pero son conceptos distintos): `page-reader-screen.js`
+("‹ Anterior" — paginación del Reader de Hi! Korean, no navegación
+jerárquica) y `session-exit.js` (salir de una sesión de estudio,
+Design System §11.2 — deliberadamente distinto de "volver al padre").
+
+**Pendiente, deliberadamente sin tocar**: `admin-user-detail-screen.js`
+tiene un botón crudo `'← Back to Users'` — mismo problema
+estructural, pero pertenece al flujo de Admin y el usuario prefirió
+revisarlo aparte, en otra sesión.
+
+**Verificado**: sintaxis de los 153 `.js`; balance de llaves de
+ambos CSS tocados en este paso; confirmado con `find src -newermt`
+que solo se tocaron los 2 archivos de `license-activation-screen`
+(ni `admin-user-detail-screen.js` ni ningún otro); DOM mínimo hecho a
+mano confirmó, para ambas correcciones (`assessment-screen` y
+`license-activation-screen`): exactamente una instancia real de
+`back-nav` montada, texto correcto ("Library"), cero rastro del
+`data-part="back"` crudo anterior, y que `onBack()` se dispara igual
+que antes — mismo comportamiento, solo cambió la implementación.
+
+## Refinamiento visual de Entry + back-nav (sesión anterior, reforzado)
+
+**Segunda pasada de `back-nav`** (tras feedback: "todavía se ve
+demasiado básico"): de texto plano a un control de navegación real —
+altura explícita 44px, tipografía 15px/semibold (antes 14px), y una
+superficie propia (`--al-surface-recessed` en hover, `--al-border-
+whisper` en active — tokens neutros ya usados en el resto de Atlas,
+ningún color nuevo) que solo aparece al interactuar, nunca en reposo.
+El padding horizontal se compensa con un margin negativo idéntico
+para que el ícono no se desplace respecto al contenido de la
+pantalla — el área de toque crece sin mover el layout. Mismo
+comportamiento exacto (no se tocó `back-nav.js` en esta pasada).
+
+**`Sign In` (Entry)**: se descubrió que la variante `size: 'large'`
+de `primary-button.js` ya estaba conectada desde la pasada anterior,
+pero sus valores (60px/16px) seguían sintiéndose genéricos. Reforzada
+— solo la regla `[data-size="large"]`, que únicamente usa el botón
+de Entry (confirmado por grep: ningún otro de los 15+ usos del
+componente pasa este parámetro) — ahora 64px de alto, 18px de
+tipografía, mismo peso semibold (el máximo que declara el Design
+System), más letter-spacing. Cero cambios de color.
+
+**Verificado**: sintaxis de los 153 `.js`; balance de llaves de
+ambos CSS; confirmado por grep que `size: 'large'` solo lo usa
+Entry; smoke test de servidor; repetí la prueba funcional de
+`back-nav` (capitalización + clic) tras el cambio de CSS — mismo
+resultado exacto, como se esperaba de un cambio puramente visual.
+
+## Refinamiento visual de Entry + back-nav (primera pasada, sesión anterior)
 
 **`back-nav` (componente compartido, 8 usos en todo el proyecto)**:
 tipografía con más presencia (13px/medium → 14px/semibold), más aire

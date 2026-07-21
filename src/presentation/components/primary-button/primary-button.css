@@ -21,6 +21,21 @@
   height: var(--al-button-primary-height-session);
 }
 
+/* Refinamiento visual (esta sesión, reforzado): variante "large",
+   aditiva — solo aplica a instancias con data-size="large" (hoy,
+   únicamente el "Sign In" de Entry). Sin cambio de color, solo mayor
+   presencia: más alto, tipografía más grande y con más peso (el
+   máximo peso que declara el Design System — no existe un token
+   "bold" más allá de semibold), letter-spacing más marcado. Los
+   otros 15 usos de este componente no tienen este atributo, así que
+   esta regla nunca los alcanza. */
+[data-component="primary-button"][data-size="large"] {
+  height: 64px;
+  font-size: var(--al-size-18);
+  font-weight: var(--al-weight-semibold);
+  letter-spacing: 0.3px;
+}
+
 [data-component="primary-button"]:hover:not(:disabled) {
   background: var(--al-action-primary-hover);
 }

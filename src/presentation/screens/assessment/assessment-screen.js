@@ -43,6 +43,7 @@ import { createWorksheetExercise } from '../../components/worksheet-exercises/wo
 import { createVideoPanel } from '../../components/worksheet-exercises/video-panel.js';
 import { createSidePanel } from '../../components/side-panel/side-panel.js';
 import { createPrimaryButton } from '../../components/primary-button/primary-button.js';
+import { createBackNav } from '../../components/back-nav/back-nav.js';
 import { GRADABLE_EXERCISE_TYPES } from '../../../domain/contracts/worksheet-exercise-lifecycle.js';
 
 function collectGradableExerciseIds(assessment) {
@@ -73,13 +74,16 @@ export function createAssessmentScreen({
   const header = document.createElement('header');
   header.setAttribute('data-part', 'header');
 
+  let backNav = null;
   if (onBack) {
-    const backButton = document.createElement('button');
-    backButton.type = 'button';
-    backButton.setAttribute('data-part', 'back');
-    backButton.textContent = '‹ Library';
-    backButton.addEventListener('click', () => onBack());
-    header.appendChild(backButton);
+    // Corrección arquitectónica (esta sesión): reutiliza el
+    // componente oficial `back-nav.js` — antes era un <button> crudo
+    // escrito a mano aquí mismo, una segunda implementación del
+    // mismo concepto visual que ya existía en el resto de Atlas.
+    // Mismo callback exacto (`onBack`), ningún cambio de
+    // comportamiento — solo deja de duplicar el componente.
+    backNav = createBackNav({ parentLabel: 'library', onSelect: () => onBack() });
+    header.appendChild(backNav.element);
   }
 
   const unitNumber = document.createElement('span');
@@ -527,6 +531,7 @@ export function createAssessmentScreen({
   function destroy() {
     destroyed = true;
     closeSidePanel();
+    backNav?.destroy();
     exerciseComponents.forEach((component) => component.destroy());
     element.remove();
   }

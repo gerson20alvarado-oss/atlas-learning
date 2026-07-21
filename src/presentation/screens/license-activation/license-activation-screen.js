@@ -11,19 +11,24 @@
  * nunca lo conoce de antemano, solo lo muestra una vez la activación
  * responde.
  *
+ * Corrección arquitectónica (esta sesión): el botón de regreso
+ * reutiliza el componente oficial `back-nav.js` — antes era un
+ * `<button>` crudo con texto `'‹ Library'` escrito a mano, una
+ * segunda implementación del mismo concepto que ya existía en el
+ * resto de Atlas. Mismo callback exacto (`onBack`), ningún cambio de
+ * comportamiento — solo deja de duplicar el componente.
+ *
  * Componente puro: recibe `licenseRepository` ya compuesto y
  * `onActivated(bookId)`/`onBack` — no conoce Supabase directamente.
  */
+
+import { createBackNav } from '../../components/back-nav/back-nav.js';
 
 export function createLicenseActivationScreen({ licenseRepository, accessToken, onActivated, onBack, resolveBookTitle }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'license-activation-screen');
 
-  const backButton = document.createElement('button');
-  backButton.type = 'button';
-  backButton.setAttribute('data-part', 'back');
-  backButton.textContent = '‹ Library';
-  backButton.addEventListener('click', () => onBack?.());
+  const backNav = createBackNav({ parentLabel: 'library', onSelect: () => onBack?.() });
 
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
@@ -99,7 +104,7 @@ export function createLicenseActivationScreen({ licenseRepository, accessToken, 
     }
   });
 
-  element.appendChild(backButton);
+  element.appendChild(backNav.element);
   element.appendChild(heading);
   element.appendChild(description);
   element.appendChild(form);
@@ -108,6 +113,7 @@ export function createLicenseActivationScreen({ licenseRepository, accessToken, 
   function update() {}
 
   function destroy() {
+    backNav.destroy();
     element.remove();
   }
 

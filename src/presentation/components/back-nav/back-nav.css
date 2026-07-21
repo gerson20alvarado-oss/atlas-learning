@@ -1,33 +1,39 @@
 /**
  * back-nav.css
  *
- * Back-nav (Design System §15.1): hit area 44px, alineado arriba a
- * la izquierda de su screen. Sigue siendo una "quiet word" (§11.2)
- * — sin fondo, sin borde, sin convertirse en un botón visual — pero
- * con más presencia tipográfica y más aire (esta sesión).
+ * Back-nav (Design System §15.1): alineado arriba a la izquierda de
+ * su screen.
  *
- * Refinamiento visual (esta sesión): de al-size-13/weight-medium (se
- * sentía "técnico y provisional") a al-size-14/weight-semibold, con
- * letter-spacing sutil — más cerca de al-type-ui-label que de una
- * caption, sin dejar de ser discreto. El ícono se ajusta solo aquí
- * (nunca en chevron-icon.js, compartido con list-row/page-marker) vía
- * un tamaño CSS propio de este componente. Más aire respecto al
- * borde superior y al contenido que sigue.
+ * Rediseño visual (esta sesión, segunda pasada): de una "quiet word"
+ * de solo texto a un control de navegación real — mismo
+ * comportamiento exacto, pero con superficie propia (fondo neutro
+ * sutil al interactuar, nunca en reposo), área de interacción mayor,
+ * y mejor jerarquía tipográfica. El padding horizontal se compensa
+ * con un margin negativo igual (`calc(... * -1)`) para que el ícono
+ * siga alineado exactamente con el contenido de la pantalla que
+ * sigue debajo — el área de toque crece sin desplazar el layout.
+ *
+ * Ningún color nuevo: `--al-surface-recessed`/`--al-border-whisper`
+ * ya son los mismos tokens neutros que el resto de Atlas usa para
+ * estados de hover/superficie (book-card, activate-license, etc.) —
+ * aquí solo se reutilizan, no se introduce ninguno.
  */
 
 [data-component="back-nav"] {
   display: inline-flex;
   align-items: center;
   gap: var(--al-space-2);
-  min-height: var(--al-hit-target-min);
-  padding: var(--al-space-3) var(--al-space-2) var(--al-space-3) 0;
+  height: 44px;
+  padding: 0 var(--al-space-3);
+  margin: 0 0 var(--al-space-4) calc(var(--al-space-3) * -1);
+  border-radius: var(--al-radius-lg);
   font-family: var(--al-font-ui);
-  font-size: var(--al-size-14);
+  font-size: var(--al-size-15);
   font-weight: var(--al-weight-semibold);
-  letter-spacing: 0.1px;
+  letter-spacing: 0.15px;
   color: var(--al-text-muted);
-  margin-bottom: var(--al-space-4);
-  transition: color var(--al-duration-fast) var(--al-ease-standard);
+  transition: background var(--al-duration-fast) var(--al-ease-standard),
+    color var(--al-duration-fast) var(--al-ease-standard);
 }
 
 [data-component="back-nav"] [data-part="icon"] {
@@ -36,10 +42,19 @@
   height: 18px;
 }
 
+/* line-height: 1 en el label, no en todo el botón — evita que el
+   alto por defecto del tipo de letra desalinee verticalmente el
+   texto respecto al ícono dentro del mismo eje flex. */
+[data-component="back-nav"] [data-part="label"] {
+  line-height: 1;
+}
+
 [data-component="back-nav"]:hover {
+  background: var(--al-surface-recessed);
   color: var(--al-text-ui);
 }
 
 [data-component="back-nav"]:active {
+  background: var(--al-border-whisper);
   color: var(--al-text-content);
 }
