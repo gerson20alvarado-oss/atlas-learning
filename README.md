@@ -1,10 +1,72 @@
 # Atlas Learning
 
-**Estado actual:** Arquitectura de Evaluaciones Independientes,
-seguida de una evolución visual y pedagógica del Progress Test (ver
-sección siguiente).
+**Estado actual:** Writing implementado como actividad independiente
+del sistema de Assessment (ver sección siguiente), sobre la base de
+la Arquitectura de Evaluaciones Independientes y la evolución visual
+del Progress Test.
 
-## Progress Test — evolución visual y pedagógica (esta sesión)
+## Writing (esta sesión)
+
+Nueva actividad, deliberadamente **fuera** del sistema de Assessment:
+sin intentos, sin calificación, sin `assessmentId`, sin relación
+alguna con `unit_attempt_limits`/`worksheet_exercise_attempts`. El
+flujo de una unidad pasa a ser **Writing → Worksheet → Progress
+Test**.
+
+**Capacidad nueva, patrón idéntico al resto de Atlas** (contrato +
+adapter + domain repository): `writing-response/`, tabla propia
+`writing_responses(user_id, book_id, unit_number, response_text,
+updated_at)` — ver `docs/writing-responses-schema.sql`. Un único
+texto vigente por unidad, sobrescrito con cada autoguardado (mismo
+criterio que `reader_positions`, nunca un historial).
+
+**Contenido**: `unit.writing` vive como campo **hermano** de
+`unit.assessments`, nunca dentro — estructuralmente imposible que el
+motor de evaluación llegue a tratarlo como una evaluación más.
+`getWriting(bookId, unitNumber)` nuevo en
+`worksheet-content-repository.js`.
+
+**Pantalla `writing-screen.js`**: componente completamente
+independiente, no reutiliza `assessment-screen.js` ni ningún
+componente de `worksheet-exercises/`. Autoguardado con debounce de
+800ms (nunca por tecla, nunca mientras se restaura el texto inicial),
+indicador discreto "✓ Saved automatically", sin botón Save. Editor
+con la sombra `--al-shadow-paper` (antes exclusiva del Reader, "hoja
+física sobre un escritorio") y voz de lectura (`Source Serif 4`)
+tanto en las instrucciones como en lo que el estudiante escribe.
+
+**Routing**: ruta nueva `/book/:id/writing/:unitNumber`, con su
+propio campo `writingUnitPosition` en Navigation State — deliberadamente
+separado de `assessmentPosition` para que ni el nombre del campo
+sugiera pertenencia a Assessment. Las rutas de Worksheet
+(`/read/:n`) y Progress Test (`/read/:n/progress-test`) no cambiaron
+en absoluto — probado explícitamente.
+
+**Único cambio de navegación** (aprobado explícitamente, alcance
+acotado): `screen-router.js`, `onSelectBook` — al abrir un libro con
+`contentMode: 'worksheet'`, si la unidad de destino declara Writing,
+el estudiante entra por ahí en vez de directo a Worksheet. El botón
+"Continue to Worksheet" al final de Writing navega a la ruta de
+Worksheet de siempre, sin ningún cambio en ella.
+
+**Verificado** (sin navegador, mismo límite de siempre): sintaxis de
+los 151 `.js`, balance de llaves del CSS nuevo, tokens usados
+confirmados contra `tokens.css` (nunca inventados). DOM mínimo hecho
+a mano (sin `jsdom`) probó `writing-screen.js` de extremo a extremo:
+restauración de texto previo, guardia contra autoguardado prematuro,
+debounce real de 800ms, y el botón Continue. Prueba de rutas
+confirmó que `/writing/:n` resuelve independiente y que
+`/read/:n`/`/read/:n/progress-test` no cambiaron. Smoke test de
+servidor confirma que todos los archivos nuevos sirven 200 y que
+`writing-screen.css` está registrado en `main.css`.
+
+**Pendiente de verificación manual real en navegador**: correr
+`docs/writing-responses-schema.sql` contra un proyecto Supabase
+real, y probar en pantalla el flujo completo Library → Writing →
+Continue to Worksheet → Worksheet (sin cambios) → Continue to
+Progress Test.
+
+## Progress Test — evolución visual y pedagógica (sesión anterior)
 
 Objetivo: que el Progress Test se sienta como una evaluación
 profesional (Cambridge/Oxford/Pearson), no como un formulario HTML.

@@ -123,6 +123,20 @@ const ROUTES = Object.freeze([
       assessmentPosition: match[3],
     }),
   },
+  {
+    // Writing (esta sesión): forma de URL deliberadamente distinta a
+    // "/read/:n" — nunca "/read/:n/writing", que la haría parecer una
+    // evaluación más (el mismo patrón que usa assessmentPosition).
+    // Writing vive fuera del sistema de Assessment también en su
+    // propia ruta, no solo en el modelo de datos.
+    pattern: /^\/book\/([^/]+)\/writing\/(\d+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      writingUnitPosition: Number(match[2]),
+    }),
+  },
   // Admin Console (Sprint 14): jerarquía propia, sin relación con
   // Library/Book/Unit/Lesson — de ahí que ninguna de estas rutas
   // pueble bookPosition/unitPosition/etc. El acceso real (¿esta

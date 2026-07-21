@@ -51,7 +51,8 @@ import { createLessonEntryScreen } from '../presentation/screens/lesson-entry/le
 import { createLearningSessionScreen } from '../presentation/screens/learning-session/learning-session-screen.js';
 import { createPageReaderScreen } from '../presentation/screens/page-reader/page-reader-screen.js';
 import { createAssessmentScreen } from '../presentation/screens/assessment/assessment-screen.js';
-import { getAssessment, listAssessmentIds } from '../domain/worksheet-content/worksheet-content-repository.js';
+import { createWritingScreen } from '../presentation/screens/writing/writing-screen.js';
+import { getAssessment, listAssessmentIds, getWriting } from '../domain/worksheet-content/worksheet-content-repository.js';
 import { createLicenseActivationScreen } from '../presentation/screens/license-activation/license-activation-screen.js';
 import { createProfileSetupScreen } from '../presentation/screens/profile-setup/profile-setup-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
@@ -183,6 +184,21 @@ function buildLibraryScreen({
       const position = await readerPositionRepository.getPosition({ userId, bookId, accessToken });
       const rawTargetPage = position?.pageNumber ?? READER_FIRST_PAGE;
       const targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
+
+      // Writing (esta sesión): único cambio de navegación aprobado
+      // explícitamente — "al abrir una unidad, el estudiante comienza
+      // en Writing". Alcance estrictamente limitado a ESTE punto de
+      // entrada: la ruta `/book/:id/read/:n` (Worksheet) y
+      // `/book/:id/read/:n/progress-test` no cambian de significado,
+      // siguen existiendo, siguen siendo alcanzables — Writing solo
+      // decide por dónde entra el estudiante la primera vez que abre
+      // el libro desde Library, nunca reescribe ninguna otra ruta.
+      const book = getBookById(bookId);
+      if (book?.contentMode === 'worksheet' && getWriting(bookId, targetPage)) {
+        router.navigateTo(`/book/${bookId}/writing/${targetPage}`);
+        return;
+      }
+
       router.navigateTo(`/book/${bookId}/read/${targetPage}`);
     },
   });
@@ -195,6 +211,40 @@ function buildLibraryScreen({
  * Auth activa) antes de montar la pantalla — PageReaderScreen en sí
  * es completamente puro, no conoce Supabase, Auth ni Router.
  */
+/**
+ * Writing (esta sesión): composición mínima — resuelve el contenido
+ * vía getWriting() y monta writing-screen.js, sin conocer nada de
+ * PageSource/VideoSource/Assessment. El botón "Continue to Worksheet"
+ * navega a la ruta de Worksheet de siempre (`/read/:n`, sin segmento)
+ * — la misma que ya existía, sin ningún cambio.
+ */
+function buildWritingScreen({ router, bookId, unitNumber, writingResponseRepository, userId, authContract }) {
+  const accessToken = authContract.getSession()?.accessToken ?? null;
+  const writing = getWriting(bookId, unitNumber);
+
+  if (!writing) {
+    // Unidad sin Writing declarado — mismo criterio honesto que el
+    // resto de Atlas: nunca una pantalla en blanco sin explicación.
+    const fallback = document.createElement('div');
+    fallback.setAttribute('data-component', 'writing-screen');
+    fallback.setAttribute('data-part', 'unit-unavailable');
+    const message = document.createElement('p');
+    message.className = 'al-type-ui-body';
+    message.textContent = `La actividad de Writing de la Unidad ${unitNumber} todavía no está disponible.`;
+    fallback.appendChild(message);
+    return Object.freeze({ element: fallback, update: () => {}, destroy: () => fallback.remove() });
+  }
+
+  return createWritingScreen({
+    writing,
+    writingResponseRepository,
+    userId,
+    accessToken,
+    onBack: () => router.navigateTo('/library'),
+    onContinue: () => router.navigateTo(`/book/${bookId}/read/${unitNumber}`),
+  });
+}
+
 function buildPageReaderScreen({
   router,
   bookId,
@@ -537,6 +587,7 @@ function resolveScreen(navigationState, deps) {
     libraryPosition,
     pagePosition,
     assessmentPosition,
+    writingUnitPosition,
     adminSection,
     adminUserId,
   } = navigationState;
@@ -588,6 +639,16 @@ function resolveScreen(navigationState, deps) {
       context: { bookId: bookPosition },
       message: 'Este libro no está disponible. Vuelve a la Library para elegir otro.',
     });
+  }
+
+  // Writing (esta sesión): jerarquía propia, sin relación con
+  // pagePosition/assessmentPosition — se resuelve antes que el Reader
+  // por el mismo motivo que Admin se resuelve antes que el contenido:
+  // ninguno de los dos comparte campos con las rutas de contenido
+  // tradicionales, así que el orden entre ellos es solo una cuestión
+  // de claridad, no de que puedan colisionar.
+  if (bookPosition && writingUnitPosition) {
+    return buildWritingScreen({ ...fullDeps, bookId: bookPosition, unitNumber: writingUnitPosition });
   }
 
   // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): antes de
@@ -657,6 +718,7 @@ export function mountScreenRouter({
   readerPositionRepository,
   bookmarkRepository,
   studyWorkspaceRepository,
+  writingResponseRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
@@ -809,6 +871,7 @@ export function mountScreenRouter({
       readerPositionRepository,
       bookmarkRepository,
       studyWorkspaceRepository,
+      writingResponseRepository,
     });
     contentRegion.render(screen);
   }

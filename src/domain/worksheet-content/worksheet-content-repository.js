@@ -62,6 +62,28 @@ export function getAssessment(bookId, unitNumber, assessmentId) {
 }
 
 /**
+ * Resuelve la actividad Writing de una unidad, aplanada para
+ * writing-screen.js — análoga a getAssessment(), pero
+ * deliberadamente fuera de `assessments`: Writing nunca tiene
+ * `maxAttempts` ni `assessmentId` porque no es una evaluación.
+ * Devuelve `null` si la unidad no existe o no declara Writing —
+ * mismo criterio honesto que el resto de Atlas.
+ */
+export function getWriting(bookId, unitNumber) {
+  const unit = getWorksheetUnit(bookId, unitNumber);
+  if (!unit?.writing) return null;
+
+  return {
+    bookId: unit.bookId,
+    unitId: unit.unitId,
+    unitNumber: unit.unitNumber,
+    unitTitle: unit.unitTitle,
+    title: unit.writing.title,
+    instructions: unit.writing.instructions,
+  };
+}
+
+/**
  * Lista, en orden de declaración, los `assessmentId` que una unidad
  * ofrece — lo que screen-router.js necesita para saber si existe
  * "la siguiente evaluación" (ej. ¿hay Progress Test después de la

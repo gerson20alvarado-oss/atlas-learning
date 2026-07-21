@@ -20,6 +20,7 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'mode',
   'pagePosition',
   'assessmentPosition',
+  'writingUnitPosition',
   'adminSection',
   'adminUserId',
 ]);
@@ -47,6 +48,12 @@ export function createEmptyNavigationState() {
     // (compatibilidad: ningún enlace existente a `/read/:n` cambia
     // de comportamiento).
     assessmentPosition: null,
+    // Writing (esta sesión): completamente separado de
+    // `assessmentPosition` a propósito — Writing no es una
+    // evaluación, y ni siquiera el nombre del campo de routing debe
+    // sugerir que pertenece al sistema de Assessment. `null` fuera de
+    // la ruta `/book/:id/writing/:unitNumber`.
+    writingUnitPosition: null,
     // Admin Console (Sprint 14): jerarquía completamente separada de
     // la de contenido (Library → Book → Unit → Lesson) — un
     // adminSection nunca coexiste con bookPosition/unitPosition en

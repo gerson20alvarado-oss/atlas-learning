@@ -56,6 +56,7 @@
 @import url('../presentation/components/worksheet-exercises/short-answer-exercise.css');
 @import url('../presentation/components/worksheet-exercises/video-panel.css');
 @import url('../presentation/screens/assessment/assessment-screen.css');
+@import url('../presentation/screens/writing/writing-screen.css');
 
 /* Sistema de Licencias por Libro */
 @import url('../presentation/screens/license-activation/license-activation-screen.css');

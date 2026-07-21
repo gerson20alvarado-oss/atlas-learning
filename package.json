@@ -1,6 +1,6 @@
 {
   "name": "atlas-learning",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Atlas Learning — Arquitectura de Evaluaciones Independientes (Worksheet + Progress Test). Static SPA, ES Modules, sin framework (Software Architecture C1).",
   "type": "module",
   "private": true,

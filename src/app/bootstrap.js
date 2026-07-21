@@ -57,6 +57,9 @@ import { createVideoSourceRepository } from '../domain/video-source/video-source
 import { createImageSourceService } from '../image-source/image-source-contract.js';
 import { createSupabaseImageSourceAdapter } from '../image-source/adapters/supabase-image-source-adapter.js';
 import { createImageSourceRepository } from '../domain/image-source/image-source-repository.js';
+import { createWritingResponseService } from '../writing-response/writing-response-contract.js';
+import { createSupabaseWritingResponseAdapter } from '../writing-response/adapters/supabase-writing-response-adapter.js';
+import { createWritingResponseRepository } from '../domain/writing-response/writing-response-repository.js';
 import { createWorksheetAttemptService } from '../worksheet-attempt/worksheet-attempt-contract.js';
 import { createSupabaseWorksheetAttemptAdapter } from '../worksheet-attempt/adapters/supabase-worksheet-attempt-adapter.js';
 import { createWorksheetAttemptRepository } from '../domain/worksheet-attempt/worksheet-attempt-repository.js';
@@ -192,6 +195,20 @@ function bootstrap() {
   const imageSourceService = createImageSourceService(supabaseImageSourceAdapter, errorBoundary);
   const imageSourceRepository = createImageSourceRepository(imageSourceService);
 
+  // Writing (esta sesión): capacidad completamente independiente del
+  // sistema de Assessment — tabla propia `writing_responses`, mismo
+  // patrón contrato + adapter que el resto, sin relación alguna con
+  // unitAttemptRepository/worksheetAttemptRepository. Necesita
+  // supabaseAnonKey además de la URL, mismo criterio que
+  // BookmarkRepository/WorksheetAttemptRepository (escritura
+  // autenticada, no solo lectura de bucket público).
+  const supabaseWritingResponseAdapter = createSupabaseWritingResponseAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const writingResponseService = createWritingResponseService(supabaseWritingResponseAdapter, errorBoundary);
+  const writingResponseRepository = createWritingResponseRepository(writingResponseService);
+
   // WorksheetAttempt (esta sesión): persistencia de intentos de
   // ejercicios de worksheet, exclusivo de American Language Hub —
   // tabla propia (worksheet_exercise_attempts), mismo patrón que
@@ -299,6 +316,7 @@ function bootstrap() {
     readerPositionRepository,
     bookmarkRepository,
     studyWorkspaceRepository,
+    writingResponseRepository,
   });
 
   // f. El router resuelve la ruta inicial y publica route:changed.

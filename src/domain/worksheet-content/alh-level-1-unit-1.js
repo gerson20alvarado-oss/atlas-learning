@@ -42,6 +42,22 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
     assetPath: 'book-american-language-hub-1/ALH_Level1_VideoHub_U1_subtitles.mp4',
   },
 
+  // Writing (esta sesión): actividad independiente, fuera del
+  // sistema de Assessment por completo — sin maxAttempts, sin
+  // sections, sin exercises, sin assessmentId. Vive como campo
+  // hermano de `assessments`, nunca dentro de ese mapa, para que
+  // quede estructuralmente imposible que el motor de evaluación
+  // (assessment-screen.js, unit_attempt_limits,
+  // worksheet_exercise_attempts) llegue a tratarla como una
+  // evaluación más. `instructions` es el único contenido — el
+  // estudiante escribe libremente, sin respuesta única que
+  // calificar.
+  writing: {
+    title: 'Writing',
+    instructions:
+      'Write a paragraph about a country you would like to visit. Include information about its culture, traditions, typical food, famous places, and explain why you would like to visit it.',
+  },
+
   // Evoluciones independientes por unidad (esta sesión): la unidad ya
   // no tiene una sola lista de secciones — contiene un mapa de
   // evaluaciones independientes, cada una con su propio `maxAttempts`

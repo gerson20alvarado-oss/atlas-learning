@@ -1,0 +1,156 @@
+/**
+ * writing-screen.css
+ *
+ * Writing — pantalla completamente nueva, sin relación visual ni
+ * estructural con assessment-screen.css (comparten tokens del Design
+ * System, nunca selectores). El objetivo: que se sienta como un
+ * cuaderno de trabajo moderno, no como un formulario HTML con un
+ * <textarea>.
+ *
+ * `--al-shadow-paper` (ya definida en tokens.css para que la página
+ * del Reader se sienta "como una hoja física sobre un escritorio")
+ * es exactamente la pieza que le da al editor esa misma calidad
+ * física — nunca usada antes fuera del Reader.
+ *
+ * Voz de lectura para instrucciones y para lo que el estudiante
+ * escribe — está redactando un párrafo, no llenando campos de un
+ * formulario técnico.
+ */
+
+[data-component="writing-screen"] {
+  min-height: 100vh;
+  background: var(--al-surface-app);
+}
+
+[data-component="writing-screen"] [data-part="header"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4) var(--al-space-6);
+  border-bottom: var(--al-border-hairline) solid var(--al-border-whisper);
+}
+
+[data-component="writing-screen"] [data-part="back"] {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+
+[data-component="writing-screen"] [data-part="unit-number"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--al-ink-900);
+  color: var(--al-paper-0);
+  font-family: var(--al-font-ui);
+  font-weight: var(--al-weight-semibold);
+  flex-shrink: 0;
+}
+
+[data-component="writing-screen"] [data-part="unit-title"] {
+  margin: 0;
+  flex: 1;
+}
+
+[data-component="writing-screen"] [data-part="activity-title"] {
+  width: 100%;
+  margin: 0;
+  color: var(--al-text-muted);
+}
+
+[data-component="writing-screen"] [data-part="body"] {
+  max-width: var(--al-measure-reading);
+  margin: 0 auto;
+  padding: var(--al-space-8) var(--al-space-4) var(--al-space-16);
+}
+
+/* Instrucciones — mismo tratamiento que el enunciado de un ejercicio
+   de Progress Test: voz de lectura, el peso visual más alto de la
+   pantalla, porque es lo primero que el estudiante debe leer con
+   atención antes de escribir. */
+[data-component="writing-screen"] [data-part="instructions"] {
+  margin: 0 0 var(--al-space-8);
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  line-height: var(--al-leading-reading);
+  color: var(--al-text-content);
+}
+
+/* La "hoja" — misma sombra que el Reader usa para que la página del
+   libro se sienta física, aplicada aquí por primera vez fuera del
+   Reader. Es lo que separa "un textarea" de "un cuaderno". */
+[data-component="writing-screen"] [data-part="editor-wrapper"] {
+  background: var(--al-paper-0);
+  border-radius: var(--al-radius-xl);
+  box-shadow: var(--al-shadow-paper);
+  padding: var(--al-space-8) var(--al-space-6);
+  transition: box-shadow var(--al-duration-gentle) var(--al-ease-standard);
+}
+
+[data-component="writing-screen"] [data-part="editor-wrapper"]:focus-within {
+  box-shadow: var(--al-shadow-paper), 0 0 0 var(--al-border-active) var(--al-border-focus);
+}
+
+[data-component="writing-screen"] [data-part="editor"] {
+  display: block;
+  width: 100%;
+  min-height: 420px;
+  border: none;
+  outline: none;
+  resize: vertical;
+  background: transparent;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  line-height: var(--al-leading-reading);
+  color: var(--al-text-content);
+}
+
+[data-component="writing-screen"] [data-part="editor"]::placeholder {
+  color: var(--al-text-disabled);
+  font-style: italic;
+}
+
+[data-component="writing-screen"] [data-part="status-row"] {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 20px;
+  margin-top: var(--al-space-3);
+}
+
+/* Indicador de guardado — discreto a propósito (Design System de
+   esta actividad: el estudiante nunca debe pensar en guardar). Sin
+   estado "saved", invisible en flujo normal (min-height del
+   contenedor evita que la página salte al aparecer/desaparecer). */
+[data-component="writing-screen"] [data-part="save-indicator"] {
+  margin: 0;
+  color: var(--al-text-muted);
+  opacity: 0;
+  transition: opacity var(--al-duration-gentle) var(--al-ease-standard);
+}
+
+[data-component="writing-screen"] [data-part="save-indicator"]:not(:empty) {
+  opacity: 1;
+}
+
+[data-component="writing-screen"] [data-part="save-indicator"][data-state="saved"] {
+  color: var(--al-feedback-correct);
+}
+
+[data-component="writing-screen"] [data-part="continue-button"] {
+  width: 100%;
+  max-width: 280px;
+  margin: var(--al-space-8) auto 0;
+}
+
+@media (max-width: 600px) {
+  [data-component="writing-screen"] [data-part="editor-wrapper"] {
+    padding: var(--al-space-6) var(--al-space-4);
+  }
+
+  [data-component="writing-screen"] [data-part="editor"] {
+    min-height: 320px;
+  }
+}
