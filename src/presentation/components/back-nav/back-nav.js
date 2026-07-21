@@ -11,11 +11,22 @@
  * (§11.2): esto no es un botón, es la misma acción de texto con su
  * ícono correctamente construido y mejor alineado.
  *
- * Componente puro: recibe el label del padre y un callback — no
- * decide a dónde navega ni conoce el router.
+ * Refinamiento visual (esta sesión): el label se capitaliza aquí
+ * mismo (primera letra mayúscula), sin importar cómo lo pase quien
+ * llama — todos los sitios existentes ('entry', 'home', 'library',
+ * 'book', 'unit', 'lesson', y ya 'Library' en un caso) quedan
+ * corregidos de una sola vez, sin tocar ninguno de esos 8 archivos.
+ * Comportamiento sin cambios: sigue siendo el mismo callback, el
+ * mismo evento, la misma navegación — solo cambia qué texto se
+ * pinta.
  */
 
 import { createChevronIcon } from '../icons/chevron-icon.js';
+
+function capitalize(text) {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 export function createBackNav({ parentLabel, onSelect }) {
   const element = document.createElement('button');
@@ -32,7 +43,7 @@ export function createBackNav({ parentLabel, onSelect }) {
   element.appendChild(label);
 
   function render(text) {
-    label.textContent = text;
+    label.textContent = capitalize(text);
   }
 
   render(parentLabel);

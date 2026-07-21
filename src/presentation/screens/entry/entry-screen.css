@@ -3,29 +3,64 @@
  *
  * Entry (Design System, wordmark natural size — Wireframe Review
  * Principio 9). Estructura vertical simple, centrada.
+ *
+ * Refinamiento visual (esta sesión):
+ * 1. Recentrado — de un padding-top fijo (el bloque quedaba pegado
+ *    arriba) a centrado vertical real dentro del viewport
+ *    (min-height + flex), sin perder el minimalismo.
+ * 2. Cita editorial — reemplaza el antiguo subtítulo único.
+ *    Composición deliberadamente simple: sin tarjeta, sin borde, sin
+ *    sombra, sin ícono — solo tipografía y espacio en blanco, "la
+ *    primera página de un libro". La cita es voz de lectura en
+ *    cursiva (protagonista); el autor es voz de interfaz, más
+ *    pequeño, color secundario (discreto).
+ * 3. Espaciado — se revisaron únicamente los tres puntos pedidos:
+ *    logo→título, título→cita, cita→botón (comentado inline, junto a
+ *    la regla exacta que controla cada uno). El espacio interno
+ *    entre la cita y su autor es corto a propósito: se leen como una
+ *    sola unidad (cita + atribución), no como dos bloques separados.
  */
 
 [data-component="entry-screen"] {
   max-width: var(--al-measure-ui);
+  min-height: 100vh;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding-top: var(--al-space-12);
+  padding: var(--al-space-12) var(--al-space-4);
 }
 
 [data-component="entry-screen"] [data-part="logo-mark"] {
   color: var(--al-green-700);
+  /* Logo → título: sin cambios, ya tenía el aire correcto. */
   margin: 0 auto var(--al-space-4);
   display: block;
 }
 
 [data-component="entry-screen"] [data-part="wordmark"] {
   color: var(--al-text-content);
-  margin: 0 0 var(--al-space-4);
+  /* Título → cita: más generoso que antes (era space-4). */
+  margin: 0 0 var(--al-space-8);
 }
 
-[data-component="entry-screen"] [data-part="promise"] {
+[data-component="entry-screen"] [data-part="quote-block"] {
+  /* Cita → botón: el espacio más grande de los tres — la pausa
+     antes de la acción. */
+  margin: 0 0 var(--al-space-12);
+}
+
+[data-component="entry-screen"] [data-part="quote"] {
+  margin: 0 0 var(--al-space-2);
+  font-style: italic;
+  color: var(--al-text-content);
+}
+
+[data-component="entry-screen"] [data-part="quote-author"] {
+  margin: 0;
   color: var(--al-text-muted);
-  margin: 0 0 var(--al-space-8);
 }
 
 [data-component="entry-screen"] [data-part="sign-in"] {

@@ -1,10 +1,48 @@
 # Atlas Learning
 
-**Estado actual:** Rediseño visual de Library (ver sección
-siguiente). Ninguna otra pantalla se tocó — verificado explícitamente
-con `find src -newermt` antes de empaquetar.
+**Estado actual:** Refinamiento visual de Entry + `back-nav` (ver
+sección siguiente). Ninguna otra pantalla se tocó — verificado con
+`find src -newermt` antes de empaquetar.
 
-## Rediseño de Library (esta sesión, con ajuste de UX aplicado)
+## Refinamiento visual de Entry + back-nav (esta sesión)
+
+**`back-nav` (componente compartido, 8 usos en todo el proyecto)**:
+tipografía con más presencia (13px/medium → 14px/semibold), más aire
+respecto al contenido, ícono ajustado solo vía CSS propio de este
+componente (nunca tocando `chevron-icon.js`, compartido con
+`list-row`/`page-marker-layer`). El texto ahora se capitaliza dentro
+del propio componente (`capitalize()` en `render()`) — corrige
+"entry"/"home"/"library"/etc. a "Entry"/"Home"/"Library" en los 8
+lugares donde se usa, **sin tocar ninguno de esos 8 archivos**.
+
+**Entry**: recentrado vertical real (`min-height: 100vh` + flex,
+antes un `padding-top` fijo dejaba el bloque pegado arriba), botón
+"Sign In" (antes "sign in"), y el antiguo subtítulo reemplazado por
+una cita editorial:
+
+> "Learning never exhausts the mind."
+> — Leonardo da Vinci
+
+Dos elementos separados (cita + autor), nunca un solo bloque — la
+cita en voz de lectura cursiva (protagonista), el autor en voz de
+interfaz, más pequeño, color secundario. Comillas tipográficas reales
+(`\u201C \u201D`) y em dash real (`\u2014`), sin comillas decorativas,
+sin tarjeta, sin borde, sin sombra, sin ícono.
+
+**Verificado**: sintaxis de los 153 `.js`; balance de llaves de
+ambos CSS; DOM mínimo hecho a mano confirmó la capitalización
+correcta en los 7 valores reales que usa el proyecto
+('entry'→'Entry', 'Library'→'Library' idempotente, etc.), que
+`update()` sigue capitalizando, y que el clic del back-nav y del
+botón "Sign In" disparan sus callbacks exactamente igual que antes.
+Confirmé también que la cita usa los caracteres tipográficos reales
+(comillas curvas, em dash), no ASCII plano.
+
+**Pendiente de verificación manual real en navegador**: cómo se ve y
+se siente de verdad la composición editorial de la cita, y el
+recentrado vertical en distintos tamaños de pantalla.
+
+## Rediseño de Library (sesión anterior, con ajuste de UX aplicado)
 
 Solo visual: de un shelf grid de tiles pequeños (2/3/4 columnas +
 ghost slots) a una **cuadrícula adaptable** de tarjetas verticales —

@@ -1,31 +1,39 @@
 /**
  * back-nav.css
  *
- * Back-nav (Design System §15.1): type-ui-caption, text-muted,
- * hit area 44px, alineado arriba a la izquierda de su screen.
+ * Back-nav (Design System §15.1): hit area 44px, alineado arriba a
+ * la izquierda de su screen. Sigue siendo una "quiet word" (§11.2)
+ * — sin fondo, sin borde, sin convertirse en un botón visual — pero
+ * con más presencia tipográfica y más aire (esta sesión).
  *
- * Sprint 7 (Objetivo E, extensión): icono chevron-left real +
- * label; padding horizontal generoso para un hit-target más cómodo,
- * sin fondo ni borde — sigue siendo una "quiet word" (§11.2), no un
- * botón. Estado pressed añadido junto al hover ya existente.
+ * Refinamiento visual (esta sesión): de al-size-13/weight-medium (se
+ * sentía "técnico y provisional") a al-size-14/weight-semibold, con
+ * letter-spacing sutil — más cerca de al-type-ui-label que de una
+ * caption, sin dejar de ser discreto. El ícono se ajusta solo aquí
+ * (nunca en chevron-icon.js, compartido con list-row/page-marker) vía
+ * un tamaño CSS propio de este componente. Más aire respecto al
+ * borde superior y al contenido que sigue.
  */
 
 [data-component="back-nav"] {
   display: inline-flex;
   align-items: center;
-  gap: var(--al-space-1);
+  gap: var(--al-space-2);
   min-height: var(--al-hit-target-min);
-  padding: var(--al-space-1) var(--al-space-2) var(--al-space-1) 0;
+  padding: var(--al-space-3) var(--al-space-2) var(--al-space-3) 0;
   font-family: var(--al-font-ui);
-  font-size: var(--al-size-13);
-  font-weight: var(--al-weight-medium);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-semibold);
+  letter-spacing: 0.1px;
   color: var(--al-text-muted);
-  margin-bottom: var(--al-space-2);
+  margin-bottom: var(--al-space-4);
   transition: color var(--al-duration-fast) var(--al-ease-standard);
 }
 
 [data-component="back-nav"] [data-part="icon"] {
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
 [data-component="back-nav"]:hover {
