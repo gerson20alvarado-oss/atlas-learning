@@ -52,12 +52,11 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
   // evaluación más. `instructions` es el único contenido — el
   // estudiante escribe libremente, sin respuesta única que
   // calificar.
-  writing: {
-    title: 'Writing',
-    instructions:
-      'Write a paragraph about a country you would like to visit. Include information about its culture, traditions, typical food, famous places, and explain why you would like to visit it.',
-  },
-
+writing: {
+  title: 'Writing',
+  instructions:
+    'Write a paragraph about the most disturbing event you have ever experienced. Describe what happened, where it took place, how you felt during the event, and explain why it was so disturbing to you.',
+},
   // Evoluciones independientes por unidad (esta sesión): la unidad ya
   // no tiene una sola lista de secciones — contiene un mapa de
   // evaluaciones independientes, cada una con su propio `maxAttempts`
