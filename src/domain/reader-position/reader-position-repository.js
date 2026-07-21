@@ -21,8 +21,8 @@ export function createReaderPositionRepository(readerPositionService) {
     return position ?? null;
   }
 
-  async function savePosition({ userId, bookId, pageNumber, accessToken }) {
-    return readerPositionService.savePosition({ userId, bookId, pageNumber, accessToken });
+  async function savePosition({ userId, bookId, pageNumber, lastActivity, accessToken }) {
+    return readerPositionService.savePosition({ userId, bookId, pageNumber, lastActivity, accessToken });
   }
 
   async function getMostRecentPosition({ userId, accessToken }) {

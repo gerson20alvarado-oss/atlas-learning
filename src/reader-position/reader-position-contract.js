@@ -27,9 +27,9 @@ export function createReaderPositionService(adapter, errorBoundary) {
     }
   }
 
-  async function savePosition({ userId, bookId, pageNumber, accessToken }) {
+  async function savePosition({ userId, bookId, pageNumber, lastActivity, accessToken }) {
     try {
-      await adapter.savePosition({ userId, bookId, pageNumber, accessToken });
+      await adapter.savePosition({ userId, bookId, pageNumber, lastActivity, accessToken });
       return true;
     } catch (err) {
       errorBoundary.reportRecoverable({ reason: 'reader-position-save-failed', userId, bookId, pageNumber, err: String(err) });

@@ -185,18 +185,40 @@ function buildLibraryScreen({
       const rawTargetPage = position?.pageNumber ?? READER_FIRST_PAGE;
       const targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
 
-      // Writing (esta sesión): único cambio de navegación aprobado
-      // explícitamente — "al abrir una unidad, el estudiante comienza
-      // en Writing". Alcance estrictamente limitado a ESTE punto de
-      // entrada: la ruta `/book/:id/read/:n` (Worksheet) y
-      // `/book/:id/read/:n/progress-test` no cambian de significado,
-      // siguen existiendo, siguen siendo alcanzables — Writing solo
-      // decide por dónde entra el estudiante la primera vez que abre
-      // el libro desde Library, nunca reescribe ninguna otra ruta.
+      // Recordar / restaurar última actividad (esta sesión): si el
+      // estudiante ya tenía una actividad guardada para esta unidad
+      // (Writing/Worksheet/Progress Test/futuras — ver
+      // buildPageReaderScreen/buildWritingScreen, que son quienes la
+      // guardan), vuelve exactamente ahí, en vez de reiniciar en
+      // Writing cada vez. Alcance estrictamente limitado a libros
+      // contentMode 'worksheet' — Hi! Korean nunca entra a este
+      // bloque, cae directo a la línea de siempre más abajo, sin
+      // ningún cambio de comportamiento.
       const book = getBookById(bookId);
-      if (book?.contentMode === 'worksheet' && getWriting(bookId, targetPage)) {
-        router.navigateTo(`/book/${bookId}/writing/${targetPage}`);
-        return;
+      if (book?.contentMode === 'worksheet') {
+        const lastActivity = position?.lastActivity ?? null;
+
+        if (lastActivity === 'writing' && getWriting(bookId, targetPage)) {
+          router.navigateTo(`/book/${bookId}/writing/${targetPage}`);
+          return;
+        }
+
+        if (lastActivity && lastActivity !== 'writing' && getAssessment(bookId, targetPage, lastActivity)) {
+          const url =
+            lastActivity === 'worksheet'
+              ? `/book/${bookId}/read/${targetPage}`
+              : `/book/${bookId}/read/${targetPage}/${lastActivity}`;
+          router.navigateTo(url);
+          return;
+        }
+
+        // Sin actividad previa registrada (primera vez que el
+        // estudiante abre esta unidad): comportamiento ya aprobado
+        // antes — entra por Writing si la unidad la declara.
+        if (getWriting(bookId, targetPage)) {
+          router.navigateTo(`/book/${bookId}/writing/${targetPage}`);
+          return;
+        }
       }
 
       router.navigateTo(`/book/${bookId}/read/${targetPage}`);
@@ -218,7 +240,15 @@ function buildLibraryScreen({
  * navega a la ruta de Worksheet de siempre (`/read/:n`, sin segmento)
  * — la misma que ya existía, sin ningún cambio.
  */
-function buildWritingScreen({ router, bookId, unitNumber, writingResponseRepository, userId, authContract }) {
+function buildWritingScreen({
+  router,
+  bookId,
+  unitNumber,
+  writingResponseRepository,
+  readerPositionRepository,
+  userId,
+  authContract,
+}) {
   const accessToken = authContract.getSession()?.accessToken ?? null;
   const writing = getWriting(bookId, unitNumber);
 
@@ -234,6 +264,17 @@ function buildWritingScreen({ router, bookId, unitNumber, writingResponseReposit
     fallback.appendChild(message);
     return Object.freeze({ element: fallback, update: () => {}, destroy: () => fallback.remove() });
   }
+
+  // Recordar última actividad (esta sesión) — mismo criterio que en
+  // buildPageReaderScreen: efecto secundario del despacho, nunca de
+  // writing-screen.js (no se tocó).
+  readerPositionRepository?.savePosition({
+    userId,
+    bookId,
+    pageNumber: unitNumber,
+    lastActivity: 'writing',
+    accessToken,
+  });
 
   return createWritingScreen({
     writing,
@@ -311,6 +352,21 @@ function buildPageReaderScreen({
           onSelect: () => router.navigateTo(`/book/${bookId}/read/${pageNumber}/${nextAssessmentId}`),
         }
       : undefined;
+
+    // Recordar última actividad (esta sesión): efecto secundario del
+    // despacho, no de la pantalla — assessment-screen.js no se tocó.
+    // Reutiliza ReaderPosition (ya existía para Hi! Korean, ver
+    // docstring del contrato) con un campo aditivo (`lastActivity`)
+    // que ese Reader nunca escribe, así que su comportamiento no
+    // cambia en absoluto — la rama de abajo (`createPageReaderScreen`)
+    // sigue exactamente igual.
+    readerPositionRepository?.savePosition({
+      userId,
+      bookId,
+      pageNumber,
+      lastActivity: resolvedAssessmentId,
+      accessToken,
+    });
 
     return createAssessmentScreen({
       assessment,

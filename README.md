@@ -1,12 +1,48 @@
 # Atlas Learning
 
-**Estado actual:** Navegación rápida entre actividades (Quick
-Activity Nav) implementada como componente flotante independiente —
-ver sección siguiente. Worksheet, Progress Test y Writing permanecen
-completamente intactos: verificado explícitamente que ningún archivo
-de esos tres módulos se tocó en esta sesión.
+**Estado actual:** Dos bugs puntuales corregidos (ver sección
+siguiente) — ninguna funcionalidad nueva, ningún refactor.
 
-## Quick Activity Nav (esta sesión)
+## Corrección de 2 bugs puntuales (esta sesión)
+
+**Bug 1 — "Watch the video" aparecía en Progress Test.** Causa raíz:
+`getAssessment()` copia `unit.video` (campo de nivel de unidad) a
+cualquier evaluación por igual. Corrección de una sola condición en
+`assessment-screen.js`: `if (assessment.video && assessment.assessmentId
+=== 'worksheet')`. Nada más se tocó.
+
+**Bug 2 — el Reader siempre volvía a Writing, nunca recordaba la
+última actividad.** Causa raíz: para libros American Language Hub,
+nunca se llamaba a `readerPositionRepository.savePosition()` — solo
+Hi! Korean lo hacía. Solución: columna aditiva `last_activity` (no
+`activity_id` — nombre elegido para representar "última ubicación
+del estudiante", no una referencia al sistema de Assessment) en
+`reader_positions`, con `savePosition`/`getPosition` extendidos con
+un parámetro opcional del mismo nombre. Se guarda desde
+`screen-router.js` (`buildPageReaderScreen`/`buildWritingScreen`, al
+despachar cada pantalla) y se restaura en `onSelectBook` — nunca
+desde `assessment-screen.js` ni `writing-screen.js`, que no se
+tocaron.
+
+**Hi! Korean, verificado explícitamente sin cambios**: `find
+src -newermt` confirmó que `page-reader-screen.js` no aparece entre
+los archivos tocados. Prueba de extremo a extremo con datos en
+memoria confirmó que una llamada a `savePosition` sin `lastActivity`
+(como hace Hi! Korean, sin modificar esa línea) sigue guardando
+`last_activity: null` y `pageNumber` funciona idéntico a como
+funcionaba antes.
+
+**Verificado**: sintaxis de los 153 `.js`; simulación completa de
+los 4 escenarios de restauración (sin posición guardada, última vez
+en Worksheet, en Progress Test, en Writing) — los 4 devuelven
+exactamente la URL esperada. Smoke test de servidor sobre los 5
+archivos tocados.
+
+**Pendiente**: correr
+`docs/reader-position-last-activity-migration.sql` en Supabase antes
+de probar en pantalla.
+
+## Quick Activity Nav (sesión anterior)
 
 FAB flotante (esquina inferior derecha) que abre un panel para saltar
 rápido entre las actividades (Writing/Worksheet/Progress Test) de la

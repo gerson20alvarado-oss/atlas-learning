@@ -140,7 +140,13 @@ export function createAssessmentScreen({
     body.removeAttribute('data-side-panel-open');
   }
 
-  if (assessment.video) {
+  // Bug fix (esta sesión): "Watch the video" es exclusivo de
+  // Worksheet — Progress Test nunca debe mostrarlo, aunque
+  // `assessment.video` llegue poblado (getAssessment() copia
+  // unit.video a cualquier evaluación por igual). Único cambio: se
+  // agrega la comprobación de assessmentId a esta condición, nada
+  // más se tocó.
+  if (assessment.video && assessment.assessmentId === 'worksheet') {
     const watchButton = document.createElement('button');
     watchButton.type = 'button';
     watchButton.setAttribute('data-part', 'watch-video');

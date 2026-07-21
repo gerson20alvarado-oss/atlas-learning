@@ -25,30 +25,37 @@ export function createSupabaseReaderPositionAdapter({ supabaseUrl, supabaseAnonK
     assertConfigured();
     const url =
       `${supabaseUrl}/rest/v1/reader_positions?user_id=eq.${encodeURIComponent(userId)}` +
-      `&book_id=eq.${encodeURIComponent(bookId)}&select=page_number`;
+      `&book_id=eq.${encodeURIComponent(bookId)}&select=page_number,last_activity`;
     const response = await fetchImpl(url, { headers: authHeaders(accessToken) });
     if (!response.ok) {
       throw new Error(`Lectura de ReaderPosition falló con estado ${response.status}`);
     }
     const rows = await response.json();
     if (!rows[0]) return null;
-    return { pageNumber: rows[0].page_number };
+    return { pageNumber: rows[0].page_number, lastActivity: rows[0].last_activity ?? null };
   }
 
-  async function savePosition({ userId, bookId, pageNumber, accessToken }) {
+  async function savePosition({ userId, bookId, pageNumber, lastActivity, accessToken }) {
     assertConfigured();
+    const body = {
+      user_id: userId,
+      book_id: bookId,
+      page_number: pageNumber,
+      updated_at: new Date().toISOString(),
+    };
+    // Solo se incluye si quien llama la pasó explícitamente — Hi!
+    // Korean nunca la pasa (page-reader-screen.js no se tocó), así
+    // que su upsert queda exactamente igual que antes de esta
+    // sesión, byte por byte.
+    if (lastActivity !== undefined) body.last_activity = lastActivity;
+
     const response = await fetchImpl(`${supabaseUrl}/rest/v1/reader_positions`, {
       method: 'POST',
       headers: authHeaders(accessToken, {
         'Content-Type': 'application/json',
         Prefer: 'resolution=merge-duplicates',
       }),
-      body: JSON.stringify({
-        user_id: userId,
-        book_id: bookId,
-        page_number: pageNumber,
-        updated_at: new Date().toISOString(),
-      }),
+      body: JSON.stringify(body),
     });
     if (!response.ok) {
       throw new Error(`Guardar ReaderPosition falló con estado ${response.status}`);
