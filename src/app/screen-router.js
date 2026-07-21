@@ -169,9 +169,15 @@ function buildLibraryScreen({
     // domain/content/library-catalog.js); si no existe todavía para
     // un libro dado, book-card conserva su estado neutro sin cambios.
     coverUrl: book.coverAssetPath ? runtimeConfig.resolveAssetPath(book.coverAssetPath) : null,
+    // Última actividad (esta sesión, rediseño de Library): arranca en
+    // `null` — se resuelve después, de forma asíncrona (ver más
+    // abajo), para no demorar el primer render de la pantalla ni un
+    // instante. book-card.js ya sabe ocultar la sección completa
+    // cuando llega `null`.
+    lastActivity: null,
   }));
 
-  return createLibraryScreen({
+  const screen = createLibraryScreen({
     books,
     onBack: () => router.navigateTo('/'),
     onActivateLicense: () => onShowLicenseActivation?.(),
@@ -224,6 +230,43 @@ function buildLibraryScreen({
       router.navigateTo(`/book/${bookId}/read/${targetPage}`);
     },
   });
+
+  // Última actividad (esta sesión, rediseño de Library): se resuelve
+  // después de devolver la pantalla — mismo patrón que
+  // assessment-screen.js usa para cargar sus propios datos tras
+  // montarse — para no bloquear el primer render de Library.
+  // Reutiliza EXCLUSIVAMENTE lo que ya existe:
+  // readerPositionRepository.getPosition() (mismo método que ya usa
+  // onSelectBook arriba, sin ningún método nuevo) + getWriting()/
+  // getAssessment() (ya usados también arriba). Únicamente libros
+  // contentMode 'worksheet' disparan la llamada — Hi! Korean nunca
+  // la ejecuta, así que no se ve afectado en absoluto.
+  (async () => {
+    const accessToken = authContract.getSession()?.accessToken ?? null;
+    const updatedBooks = await Promise.all(
+      authorizedBooks.map(async (book) => {
+        const base = books.find((b) => b.id === book.id);
+        if (book.contentMode !== 'worksheet') return base;
+
+        const position = await readerPositionRepository.getPosition({ userId, bookId: book.id, accessToken });
+        if (!position?.lastActivity) return base;
+
+        const unitNumber = position.pageNumber;
+        const activityId = position.lastActivity;
+        const activityContent =
+          activityId === 'writing'
+            ? getWriting(book.id, unitNumber)
+            : getAssessment(book.id, unitNumber, activityId);
+        const activityTitle = activityId === 'writing' ? activityContent?.title : activityContent?.assessmentTitle;
+        if (!activityTitle) return base;
+
+        return { ...base, lastActivity: `${activityTitle} • Unit ${unitNumber}` };
+      }),
+    );
+    screen.update({ books: updatedBooks });
+  })();
+
+  return screen;
 }
 
 /**

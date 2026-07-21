@@ -1,14 +1,24 @@
 /**
  * presentation/screens/library/library-screen.js
  *
- * Library screen (Wireframe Review §2.2; Design System §7.3, §13.1,
- * §13.3): grid de portadas, no una lista. Progreso susurro por
- * portada, sin otra metadata. Ghost slots completan la primera fila
- * cuando hay menos libros que columnas — el estante asume compañía
- * (WR P4) sin fingir inventario infinito.
+ * Rediseño de Library (esta sesión, ajustado tras feedback de UX):
+ * de una cuadrícula de portadas pequeñas (shelf grid + ghost slots)
+ * a una cuadrícula adaptable de tarjetas con más presencia
+ * (book-card.js rediseñado) — biblioteca personal premium, inspirada
+ * en Apple Books/Notion/Linear: cada libro tiene protagonismo, pero
+ * sigue sintiéndose parte de una colección, nunca una lista infinita
+ * ni una sola tarjeta que ocupa toda la pantalla.
  *
- * "N libros es la regla" (C8): este componente siempre itera una
- * colección, incluso cuando `books` tiene un único elemento.
+ * "N libros es la regla" (C8) se conserva intacta: este componente
+ * sigue iterando siempre una colección, incluso con un único
+ * elemento — sin ghost slots, que ya no hacen falta: `auto-fill` +
+ * `justify-content: start` (ver library-screen.css) ya resuelve por
+ * su cuenta que una fila incompleta no se estire, sin necesitar
+ * relleno artificial.
+ *
+ * `lastActivity` (esta sesión): campo opcional más en cada `book`,
+ * ya resuelto por quien compone (`buildLibraryScreen`) — este
+ * archivo solo lo pasa a book-card.js, nunca sabe de dónde viene.
  *
  * Componente puro con el contrato {element, update, destroy}. Recibe
  * `books` ya cargados y validados por quien compone la screen
@@ -18,23 +28,6 @@
 
 import { createBackNav } from '../../components/back-nav/back-nav.js';
 import { createBookCard } from '../../components/book-card/book-card.js';
-import { createGhostSlot } from '../../components/ghost-slot/ghost-slot.js';
-
-// Espejo de Design System §8.1 (breakpoints) y §7.3 (columnas del
-// shelf grid por breakpoint). No se recalculan desde CSS para poder
-// saber, en JS, cuántos ghost slots completan la primera fila.
-const SHELF_BREAKPOINTS = Object.freeze([
-  { query: '(min-width: 1024px)', columns: 4 },
-  { query: '(min-width: 600px)', columns: 3 },
-  { query: '(min-width: 0px)', columns: 2 },
-]);
-
-function resolveColumnsForCurrentViewport() {
-  for (const { query, columns } of SHELF_BREAKPOINTS) {
-    if (window.matchMedia(query).matches) return columns;
-  }
-  return 2;
-}
 
 export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLicense }) {
   const element = document.createElement('div');
@@ -45,12 +38,22 @@ export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLic
   const headerRow = document.createElement('div');
   headerRow.setAttribute('data-part', 'header-row');
 
+  const headingGroup = document.createElement('div');
+  headingGroup.setAttribute('data-part', 'heading-group');
+
   const heading = document.createElement('h1');
   heading.setAttribute('data-part', 'title');
-  heading.className = 'al-type-title';
+  heading.className = 'al-type-display';
   heading.textContent = 'Library';
 
-  headerRow.appendChild(heading);
+  const subheading = document.createElement('p');
+  subheading.setAttribute('data-part', 'subtitle');
+  subheading.className = 'al-type-ui-body';
+  subheading.textContent = 'Your personal collection of interactive textbooks.';
+
+  headingGroup.appendChild(heading);
+  headingGroup.appendChild(subheading);
+  headerRow.appendChild(headingGroup);
 
   // Punto de entrada único a la activación de licencias — siempre
   // visible, con cero libros o con diez (Arquitectura de Licencias,
@@ -59,9 +62,14 @@ export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLic
   const activateButton = document.createElement('button');
   activateButton.type = 'button';
   activateButton.setAttribute('data-part', 'activate-license');
-  activateButton.textContent = '+ Activate a License Key';
+  activateButton.textContent = 'Activate License Key';
   activateButton.addEventListener('click', () => onActivateLicense?.());
   headerRow.appendChild(activateButton);
+
+  const sectionLabel = document.createElement('p');
+  sectionLabel.setAttribute('data-part', 'section-label');
+  sectionLabel.className = 'al-type-ui-caption';
+  sectionLabel.textContent = 'Currently studying';
 
   const shelf = document.createElement('div');
   shelf.setAttribute('data-part', 'shelf');
@@ -69,46 +77,33 @@ export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLic
 
   element.appendChild(backNav.element);
   element.appendChild(headerRow);
+  element.appendChild(sectionLabel);
   element.appendChild(shelf);
 
   let currentBooks = books;
   let childComponents = [];
-  const mediaQueryLists = SHELF_BREAKPOINTS.map(({ query }) => window.matchMedia(query));
 
   function renderShelf() {
     childComponents.forEach((child) => child.destroy());
     childComponents = [];
     shelf.innerHTML = '';
+    sectionLabel.hidden = currentBooks.length === 0;
 
     for (const book of currentBooks) {
       const card = createBookCard({
         title: book.title,
         progress: book.progress,
         coverUrl: book.coverUrl ?? null,
+        lastActivity: book.lastActivity ?? null,
         onSelect: () => onSelectBook?.(book.id),
       });
       card.element.setAttribute('role', 'listitem');
       shelf.appendChild(card.element);
       childComponents.push(card);
     }
-
-    const columns = resolveColumnsForCurrentViewport();
-    const ghostCount = Math.max(0, columns - currentBooks.length);
-    for (let i = 0; i < ghostCount; i += 1) {
-      const ghost = createGhostSlot();
-      ghost.element.setAttribute('role', 'listitem');
-      shelf.appendChild(ghost.element);
-      childComponents.push(ghost);
-    }
   }
 
   renderShelf();
-
-  function handleViewportChange() {
-    renderShelf();
-  }
-
-  mediaQueryLists.forEach((mql) => mql.addEventListener('change', handleViewportChange));
 
   function update(nextProps = {}) {
     if (nextProps.books) {
@@ -118,7 +113,6 @@ export function createLibraryScreen({ books, onBack, onSelectBook, onActivateLic
   }
 
   function destroy() {
-    mediaQueryLists.forEach((mql) => mql.removeEventListener('change', handleViewportChange));
     childComponents.forEach((child) => child.destroy());
     backNav.destroy();
     element.remove();

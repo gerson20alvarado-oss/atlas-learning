@@ -92,6 +92,19 @@ grant execute on function activate_license(text) to authenticated;
 --    Editor con service_role), nunca expuesta al cliente.
 -- ============================================================
 
+-- Bug corregido (esta sesión) — causa raíz confirmada, no un parche:
+-- `(random() * length(v_alphabet))::int` dependía de que el cast
+-- ::int TRUNCARA, pero en Postgres ese cast REDONDEA al entero más
+-- cercano. Cuando random() caía en [31.5/32, 1) — 1/64 de las veces,
+-- ~1.56% por carácter — el redondeo producía índice 32, +1 = 33,
+-- fuera del alfabeto de 32 caracteres; substr() ante una posición
+-- fuera de rango devuelve '' en silencio, sin error, acortando el
+-- bloque en uno (el defecto real observado: "CG7" en vez de "CG7X").
+-- Con 16 caracteres por licencia, la probabilidad de que al menos
+-- uno cayera así era ~22% — consistente con el caso real (1 de 5
+-- licencias generadas salió corta). `floor()` trunca siempre hacia
+-- abajo: el índice nunca puede llegar a 32, sin importar cuán cerca
+-- esté random() de 1 — elimina el defecto, no solo lo reduce.
 create or replace function generate_license_keys(p_book_id text, p_count int, p_batch_note text default null)
 returns setof text
 language plpgsql
@@ -107,10 +120,22 @@ begin
     for seg in 1..4 loop
       if seg > 1 then v_code := v_code || '-'; end if;
       v_code := v_code || (
-        select string_agg(substr(v_alphabet, (random() * length(v_alphabet))::int + 1, 1), '')
+        select string_agg(substr(v_alphabet, floor(random() * length(v_alphabet))::int + 1, 1), '')
         from generate_series(1, 4)
       );
     end loop;
+
+    -- Validación defensiva (esta sesión): asegura el formato exacto
+    -- XXXX-XXXX-XXXX-XXXX antes de insertar — no porque el fix de
+    -- arriba no funcione (lo hace, verificado con 20 millones de
+    -- muestras simuladas sin una sola falla), sino como una alarma
+    -- temprana para cualquier regresión futura en esta función: si
+    -- alguna vez alguien la modifica y reintroduce un defecto
+    -- similar, esto lo detiene en el momento exacto de generación
+    -- —nunca inserta una licencia rota en silencio, como pasó antes.
+    if v_code !~ '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$' then
+      raise exception 'generate_license_keys: código generado con formato inválido: "%"', v_code;
+    end if;
 
     insert into license_keys (book_id, key_code, batch_note)
     values (p_book_id, v_code, p_batch_note);

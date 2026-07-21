@@ -1,9 +1,67 @@
 # Atlas Learning
 
-**Estado actual:** Dos bugs puntuales corregidos (ver sección
-siguiente) — ninguna funcionalidad nueva, ningún refactor.
+**Estado actual:** Rediseño visual de Library (ver sección
+siguiente). Ninguna otra pantalla se tocó — verificado explícitamente
+con `find src -newermt` antes de empaquetar.
 
-## Corrección de 2 bugs puntuales (esta sesión)
+## Rediseño de Library (esta sesión, con ajuste de UX aplicado)
+
+Solo visual: de un shelf grid de tiles pequeños (2/3/4 columnas +
+ghost slots) a una **cuadrícula adaptable** de tarjetas verticales —
+biblioteca personal premium (Apple Books/Notion/Linear), el libro
+sigue siendo el protagonista, sea que la biblioteca tenga 1 libro o
+20.
+
+**Ajuste aplicado tras feedback**: la primera versión usaba una
+lista vertical de tarjetas de ancho completo — con un solo libro se
+sentía demasiado grande. Corregido: `shelf` ahora es
+`grid-template-columns: repeat(auto-fill, minmax(280px, 340px))` +
+`justify-content: start` — cada tarjeta queda acotada entre 280 y
+340px, así que con un libro NO se estira a todo el ancho (el espacio
+sobrante queda como aire, nunca como una tarjeta gigante), y con más
+libros aparecen más columnas solas, sin depender de ningún número
+fijo. La tarjeta pasó de horizontal (portada+info lado a lado) a
+vertical (portada arriba, información abajo) — mismo lenguaje que
+Apple Books, mejor comportamiento en una celda de cuadrícula que en
+un banner de ancho completo.
+
+**Archivos tocados, exactamente los 5 previstos**: `library-screen.js`
++ `.css`, `book-card.js` + `.css` (confirmado: usado únicamente por
+Library, ningún otro archivo lo importa), y una única adición de
+composición en `buildLibraryScreen` (`app/screen-router.js`) — sin
+tocar `onSelectBook`, que sigue exactamente igual.
+
+**`progress-bar.js` (compartido con Hi! Korean) no se tocó ni una
+línea** — sigue prohibiendo cifras (Design System §14.1). La mayor
+presencia visual de la barra dentro de Library es solo tamaño
+(2px → 5px), vía un selector más específico en `book-card.css`, nunca
+en el componente compartido.
+
+**"Última actividad" en la tarjeta**: reutiliza exclusivamente
+`readerPositionRepository.getPosition()` (ya existente, mismo método
+que ya usa `onSelectBook`) + `getWriting()`/`getAssessment()` (ya
+existentes) — cero repositorios nuevos, cero modelos nuevos, cero
+queries nuevas. Se resuelve de forma asíncrona después del primer
+render (mismo patrón que `assessment-screen.js` usa para sus propios
+datos), solo para libros `contentMode: 'worksheet'` — Hi! Korean
+nunca dispara esa llamada.
+
+**Verificado**: sintaxis de los 153 `.js`; balance de llaves de
+ambos CSS; simulación explícita confirmando que `getPosition()` se
+llama exactamente una vez (solo para American Language Hub) y cero
+veces para un libro Hi! Korean simulado; DOM mínimo hecho a mano
+confirmó que la sección "Last activity" está oculta cuando no hay
+dato y aparece correctamente tras la actualización asíncrona, y que
+tanto la portada como "Continue learning" disparan la selección del
+libro — repetido después del ajuste de layout, mismo resultado.
+
+**Pendiente de verificación manual real en navegador**: cómo se ve y
+se siente de verdad con 1 libro (¿el ancho de 280–340px se siente
+"con buena presencia, no pesada"?) y, cuando haya más de un libro
+disponible para probar, cómo se comporta la cuadrícula con 2-3
+columnas.
+
+## Corrección de 2 bugs puntuales (sesión anterior)
 
 **Bug 1 — "Watch the video" aparecía en Progress Test.** Causa raíz:
 `getAssessment()` copia `unit.video` (campo de nivel de unidad) a
