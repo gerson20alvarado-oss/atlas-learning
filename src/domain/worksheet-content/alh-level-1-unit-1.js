@@ -1,8 +1,9 @@
 /**
  * domain/worksheet-content/alh-level-1-unit-1.js
  *
- * Unidad 1 — "My city" (American Language Hub Level 1, Video Hub
- * Worksheets). Contenido real, transcrito del PDF proporcionado por
+ * Unidad 1 — "Arrivals" (nombre oficial del libro; "My city" era un
+ * nombre de trabajo usado antes de confirmarlo) (American Language
+ * Hub Level 1, Video Hub Worksheets). Contenido real, transcrito del PDF proporcionado por
  * el usuario — texto de enunciados y opciones verbatim, respuestas
  * oficiales confirmadas explícitamente por el usuario en esta sesión
  * (no inventadas, no derivadas por inferencia).
@@ -28,7 +29,7 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
   bookId: 'book-american-language-hub-1',
   unitId: 'unit-alh1-01',
   unitNumber: 1,
-  unitTitle: 'My city',
+  unitTitle: 'Arrivals',
 
   // Video del Video Hub — recurso a nivel de unidad, no de un
   // ejercicio específico (varios ejercicios de Comprehension lo

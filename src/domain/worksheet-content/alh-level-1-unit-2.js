@@ -1,8 +1,10 @@
 /**
  * domain/worksheet-content/alh-level-1-unit-2.js
  *
- * Unidad 2 — "The Odulai family" (American Language Hub Level 1,
- * Video Hub Worksheets). Contenido real, transcrito de
+ * Unidad 2 — "People" (nombre oficial del libro; "The Odulai family"
+ * era un nombre de trabajo usado antes de confirmarlo) (American
+ * Language Hub Level 1, Video Hub Worksheets). Contenido real,
+ * transcrito de
  * ALH_VideoHub_Level1_Worksheets-2.pdf y de Progress Test Unit 2 —
  * texto de enunciados y opciones verbatim, respuestas oficiales
  * confirmadas explícitamente por el usuario en esta sesión (no
@@ -21,7 +23,7 @@ export const ALH_LEVEL_1_UNIT_2 = Object.freeze({
   bookId: 'book-american-language-hub-1',
   unitId: 'unit-alh1-02',
   unitNumber: 2,
-  unitTitle: 'The Odulai family',
+  unitTitle: 'People',
 
   video: {
     label: 'Watch the video',
