@@ -137,6 +137,21 @@ const ROUTES = Object.freeze([
       writingUnitPosition: Number(match[2]),
     }),
   },
+  {
+    // My Vocabulary (esta sesión): mismo criterio exacto que
+    // Writing — forma de URL propia, deliberadamente distinta de
+    // "/read/:n" y de "/writing/:n". Exclusiva de libros que
+    // declaren 'vocabulary' en `enabledActivities`
+    // (library-catalog.js) — la ruta en sí no lo valida, eso lo
+    // decide screen-router.js.
+    pattern: /^\/book\/([^/]+)\/vocabulary\/(\d+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      libraryPosition: 'library',
+      bookPosition: match[1],
+      vocabularyUnitPosition: Number(match[2]),
+    }),
+  },
   // Admin Console (Sprint 14): jerarquía propia, sin relación con
   // Library/Book/Unit/Lesson — de ahí que ninguna de estas rutas
   // pueble bookPosition/unitPosition/etc. El acceso real (¿esta

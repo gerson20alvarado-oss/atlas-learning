@@ -21,6 +21,7 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'pagePosition',
   'assessmentPosition',
   'writingUnitPosition',
+  'vocabularyUnitPosition',
   'adminSection',
   'adminUserId',
 ]);
@@ -54,6 +55,11 @@ export function createEmptyNavigationState() {
     // sugerir que pertenece al sistema de Assessment. `null` fuera de
     // la ruta `/book/:id/writing/:unitNumber`.
     writingUnitPosition: null,
+    // My Vocabulary (esta sesión): mismo criterio exacto que
+    // writingUnitPosition — campo propio, sin relación con
+    // assessmentPosition ni con writingUnitPosition. `null` fuera de
+    // la ruta `/book/:id/vocabulary/:unitNumber`.
+    vocabularyUnitPosition: null,
     // Admin Console (Sprint 14): jerarquía completamente separada de
     // la de contenido (Library → Book → Unit → Lesson) — un
     // adminSection nunca coexiste con bookPosition/unitPosition en

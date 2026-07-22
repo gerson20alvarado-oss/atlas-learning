@@ -942,6 +942,19 @@ export const LIBRARY_CATALOG = Object.freeze({
       // screen-router.js sigue siendo exactamente el de siempre,
       // sin ningún cambio, sin necesidad de declarar nada.
       contentMode: 'worksheet',
+      // Capacidades personales sin contenido editorial por unidad
+      // (esta sesión): My Vocabulary no tiene nada que declarar
+      // unidad por unidad (a diferencia de Writing/Worksheet/
+      // Progress Test, que sí dependen de que cada unidad declare su
+      // propio contenido en `unit.writing`/`unit.assessments`) — es
+      // 100% generado por el estudiante. Por eso su habilitación vive
+      // aquí, a nivel de libro, como una lista — nunca mezclada con
+      // el mecanismo de "el contenido de la unidad decide" que rige
+      // a las otras tres. Si el día de mañana se agrega una segunda
+      // capacidad de este mismo tipo (Speaking, Journal, Notes — ya
+      // nombradas como candidatas futuras), es una palabra más en
+      // este arreglo, no un campo booleano nuevo por capacidad.
+      enabledActivities: ['vocabulary'],
       // `units: []` a propósito, no un olvido: este libro no usa el
       // modelo Content Model de Lesson/Section/ContentBlock que
       // Hi! Korean sí usa — su contenido vive en su propio módulo

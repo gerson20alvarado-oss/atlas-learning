@@ -60,6 +60,9 @@ import { createImageSourceRepository } from '../domain/image-source/image-source
 import { createWritingResponseService } from '../writing-response/writing-response-contract.js';
 import { createSupabaseWritingResponseAdapter } from '../writing-response/adapters/supabase-writing-response-adapter.js';
 import { createWritingResponseRepository } from '../domain/writing-response/writing-response-repository.js';
+import { createVocabularyEntryService } from '../vocabulary-entry/vocabulary-entry-contract.js';
+import { createSupabaseVocabularyEntryAdapter } from '../vocabulary-entry/adapters/supabase-vocabulary-entry-adapter.js';
+import { createVocabularyEntryRepository } from '../domain/vocabulary-entry/vocabulary-entry-repository.js';
 import { createWorksheetAttemptService } from '../worksheet-attempt/worksheet-attempt-contract.js';
 import { createSupabaseWorksheetAttemptAdapter } from '../worksheet-attempt/adapters/supabase-worksheet-attempt-adapter.js';
 import { createWorksheetAttemptRepository } from '../domain/worksheet-attempt/worksheet-attempt-repository.js';
@@ -210,6 +213,17 @@ function bootstrap() {
   const writingResponseService = createWritingResponseService(supabaseWritingResponseAdapter, errorBoundary);
   const writingResponseRepository = createWritingResponseRepository(writingResponseService);
 
+  // My Vocabulary (esta sesión): capacidad exclusiva de American
+  // Language Hub — tabla propia `vocabulary_entries`, mismo patrón
+  // contrato + adapter que el resto, sin relación alguna con
+  // ninguna otra capacidad de Atlas.
+  const supabaseVocabularyEntryAdapter = createSupabaseVocabularyEntryAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const vocabularyEntryService = createVocabularyEntryService(supabaseVocabularyEntryAdapter, errorBoundary);
+  const vocabularyEntryRepository = createVocabularyEntryRepository(vocabularyEntryService);
+
   // WorksheetAttempt (esta sesión): persistencia de intentos de
   // ejercicios de worksheet, exclusivo de American Language Hub —
   // tabla propia (worksheet_exercise_attempts), mismo patrón que
@@ -318,6 +332,7 @@ function bootstrap() {
     bookmarkRepository,
     studyWorkspaceRepository,
     writingResponseRepository,
+    vocabularyEntryRepository,
   });
 
   // Navegación rápida entre actividades (esta sesión): componente

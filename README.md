@@ -1,10 +1,83 @@
 # Atlas Learning
 
-**Estado actual:** Consolidación de `back-nav` como única
-implementación oficial (ver sección siguiente). Admin Console
-deliberadamente sin tocar — pendiente de revisión aparte.
+**Estado actual:** "My Vocabulary" implementado — capacidad nueva,
+exclusiva de American Language Hub (ver sección siguiente). Reader,
+Writing, Worksheet, Progress Test, Library, Home, Admin, App Shell y
+Authentication quedaron sin tocar — confirmado con `find src
+-newermt` antes de empaquetar.
 
-## Consolidación de back-nav — eliminando implementaciones duplicadas (esta sesión)
+## My Vocabulary (esta sesión)
+
+Cuaderno personal de vocabulario, exclusivo de American Language
+Hub — sin intentos, sin calificación, sin relación con Assessment ni
+con Writing. Precedido de 6 rondas de diseño (contrato conceptual,
+UX, auditoría de reutilización, arquitectura) antes de escribir una
+sola línea de código.
+
+**Persistencia**: tabla nueva `vocabulary_entries` — ver
+`docs/vocabulary-entries-schema.sql`. Restricción de unicidad
+normalizada (sin duplicados por unidad, decisión de producto ya
+cerrada) resuelta con un índice único sobre `lower(trim(term))`.
+Primera capacidad de Atlas (junto con Bookmarks) que expone DELETE
+real desde el cliente.
+
+**Capa de dominio** (`vocabulary-entry/`): mismo patrón contrato +
+adapter + repository de siempre. El adapter traduce el código
+`23505` de Postgres (violación de unicidad) a
+`{success: false, reason: 'duplicate'}` — primera vez que Atlas
+necesita interpretar un código de error específico de la base de
+datos, nunca deja escapar un error crudo hacia la pantalla.
+
+**Componentes nuevos**:
+- `inline-action-button.js`/`.css` — genérico, deliberadamente **no**
+  exclusivo de Vocabulary (decisión de arquitectura explícita: vive
+  al mismo nivel que `primary-button.js`, disponible para cualquier
+  futura acción inline equivalente). `primary-button.js` permanece
+  intacto — su responsabilidad sigue siendo únicamente la acción
+  dominante de una pantalla.
+- `vocabulary-word-row.js`/`.css` — específico de esta funcionalidad;
+  edición inline (Enter confirma, Escape cancela), control "Remove"
+  invisible hasta interactuar.
+
+**Habilitación a nivel de libro**: `library-catalog.js` gana
+`enabledActivities: ['vocabulary']` en American Language Hub —
+colección, no un booleano por capacidad (decisión explícita para que
+Speaking/Journal/Notes, ya nombradas como candidatas futuras, no
+requieran un campo nuevo cada una). Hi! Korean simplemente no
+declara el campo — cero condición especial en su código.
+
+**Routing**: `/book/:id/vocabulary/:unitNumber`, con su propio campo
+`vocabularyUnitPosition` en Navigation State — mismo criterio que
+`writingUnitPosition`, nunca reutilizando el campo de otra actividad.
+
+**Integración con Quick Activity Nav**: `mount-quick-activity-nav.js`
+gana un bucle genérico sobre `book.enabledActivities` (vía
+`PERSONAL_ACTIVITY_DEFINITIONS`) — agregar una futura capacidad de
+este tipo es una entrada más en ese mapa, cero ramas de código
+nuevas. Probado con el contenido real: Unit 1 resuelve exactamente
+Writing → Worksheet → Progress Test → My Vocabulary, en orden.
+
+**Deliberadamente fuera de esta implementación**: My Vocabulary no
+participa del mecanismo de "última actividad" que ya usan Writing/
+Worksheet/Progress Test (`readerPositionRepository`) — esa lógica de
+restauración en `onSelectBook` no conoce esta ruta, y ampliarla
+quedó fuera de alcance (ningún comportamiento de navegación
+existente se modificó). Se alcanza únicamente vía Quick Activity Nav.
+
+**Verificado**: sintaxis de los 159 `.js`; balance de llaves de los 3
+CSS nuevos; smoke test de servidor; simulación completa con datos en
+memoria de agregar/duplicado/editar/eliminar/deshacer — los 8
+escenarios probados pasan exactamente como se diseñaron; prueba de
+rutas confirmando que `/vocabulary/:n` es independiente y que
+Writing/Worksheet/Progress Test no cambiaron; prueba contra el
+contenido real confirmando que "My Vocabulary" aparece con la URL
+correcta para Unit 1 y que un libro sin `enabledActivities` (Hi!
+Korean) queda protegido sin ninguna condición especial.
+
+**Pendiente**: correr `docs/vocabulary-entries-schema.sql` en
+Supabase antes de probar en pantalla real.
+
+## Consolidación de back-nav — eliminando implementaciones duplicadas (sesión anterior)
 
 Tras el rediseño visual de `back-nav`, se hizo un barrido completo
 del proyecto (`grep` de patrones `'‹ '`/`'← '` y de `data-part="back"`

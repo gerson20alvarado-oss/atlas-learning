@@ -1,0 +1,66 @@
+/**
+ * vocabulary-word-row.css
+ *
+ * Cada palabra es una línea suelta, nunca una fila de tabla — sin
+ * `border-bottom`, sin fondo alterno, sin columnas. El control
+ * "Remove" permanece invisible hasta que se interactúa con la fila
+ * (hover/foco) — en reposo, la lista muestra solo palabras.
+ */
+
+[data-component="vocabulary-word-row"] {
+  padding: var(--al-space-2) 0;
+}
+
+[data-component="vocabulary-word-row"] [data-part="display"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--al-space-4);
+}
+
+[data-component="vocabulary-word-row"] [data-part="term"] {
+  flex: 1;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  color: var(--al-text-content);
+  cursor: pointer;
+}
+
+[data-component="vocabulary-word-row"] [data-part="remove"] {
+  flex-shrink: 0;
+  padding: var(--al-space-1) var(--al-space-2);
+  background: none;
+  border: none;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--al-duration-fast) var(--al-ease-standard),
+    color var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="vocabulary-word-row"]:hover [data-part="remove"],
+[data-component="vocabulary-word-row"] [data-part="remove"]:focus-visible {
+  opacity: 1;
+}
+
+[data-component="vocabulary-word-row"] [data-part="remove"]:hover {
+  color: var(--al-text-content);
+}
+
+[data-component="vocabulary-word-row"] [data-part="edit-input"] {
+  width: 100%;
+  height: var(--al-input-height);
+  padding: 0 var(--al-space-3);
+  border: var(--al-border-hairline) solid var(--al-border-focus);
+  border-radius: var(--al-radius-md);
+  background: var(--al-paper-0);
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  color: var(--al-text-content);
+}

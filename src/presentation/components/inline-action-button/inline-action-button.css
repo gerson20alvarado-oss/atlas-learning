@@ -1,0 +1,35 @@
+/**
+ * inline-action-button.css
+ *
+ * Mismos colores que primary-button.js (`--al-action-primary`,
+ * `--al-text-on-action`) — misma familia visual de "acción", pero
+ * auto-ancho y con la altura de un campo de texto
+ * (`--al-input-height`), para vivir junto a un input en vez de
+ * ocupar el ancho completo de la pantalla.
+ */
+
+[data-component="inline-action-button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--al-input-height);
+  padding: 0 var(--al-space-6);
+  background: var(--al-action-primary);
+  color: var(--al-text-on-action);
+  border: none;
+  border-radius: var(--al-radius-md);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-14);
+  font-weight: var(--al-weight-medium);
+  cursor: pointer;
+  transition: background var(--al-duration-fast) var(--al-ease-standard);
+}
+
+[data-component="inline-action-button"]:hover:not(:disabled) {
+  background: var(--al-action-primary-hover);
+}
+
+[data-component="inline-action-button"]:disabled {
+  background: var(--al-action-disabled);
+  cursor: default;
+}

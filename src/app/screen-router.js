@@ -52,7 +52,8 @@ import { createLearningSessionScreen } from '../presentation/screens/learning-se
 import { createPageReaderScreen } from '../presentation/screens/page-reader/page-reader-screen.js';
 import { createAssessmentScreen } from '../presentation/screens/assessment/assessment-screen.js';
 import { createWritingScreen } from '../presentation/screens/writing/writing-screen.js';
-import { getAssessment, listAssessmentIds, getWriting } from '../domain/worksheet-content/worksheet-content-repository.js';
+import { createVocabularyScreen } from '../presentation/screens/vocabulary/vocabulary-screen.js';
+import { getAssessment, listAssessmentIds, getWriting, getWorksheetUnit } from '../domain/worksheet-content/worksheet-content-repository.js';
 import { createLicenseActivationScreen } from '../presentation/screens/license-activation/license-activation-screen.js';
 import { createProfileSetupScreen } from '../presentation/screens/profile-setup/profile-setup-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
@@ -209,6 +210,14 @@ function buildLibraryScreen({
           return;
         }
 
+        // My Vocabulary (esta sesión): mismo criterio exacto que
+        // 'writing' — se verifica que el libro tenga la capacidad
+        // habilitada y que la unidad exista, antes de restaurar.
+        if (lastActivity === 'vocabulary' && book.enabledActivities?.includes('vocabulary') && getWorksheetUnit(bookId, targetPage)) {
+          router.navigateTo(`/book/${bookId}/vocabulary/${targetPage}`);
+          return;
+        }
+
         if (lastActivity && lastActivity !== 'writing' && getAssessment(bookId, targetPage, lastActivity)) {
           const url =
             lastActivity === 'worksheet'
@@ -283,6 +292,71 @@ function buildLibraryScreen({
  * navega a la ruta de Worksheet de siempre (`/read/:n`, sin segmento)
  * — la misma que ya existía, sin ningún cambio.
  */
+/**
+ * My Vocabulary (esta sesión): mismo molde exacto que
+ * buildWritingScreen — resuelve el contenido y monta
+ * vocabulary-screen.js, sin conocer nada de Assessment/Writing.
+ * Deliberadamente SIN guardar "última actividad" vía
+ * readerPositionRepository: esa mecánica está diseñada para la
+ * secuencia Writing→Worksheet→Progress Test y su lógica de
+ * restauración en `onSelectBook` no conoce la ruta de Vocabulary —
+ * ampliarla queda fuera del alcance de esta implementación (no se
+ * modifica ningún comportamiento de navegación existente). My
+ * Vocabulary se alcanza únicamente vía Quick Activity Nav.
+ */
+function buildVocabularyScreen({
+  router,
+  bookId,
+  unitNumber,
+  vocabularyEntryRepository,
+  readerPositionRepository,
+  userId,
+  authContract,
+}) {
+  const accessToken = authContract.getSession()?.accessToken ?? null;
+  const book = getBookById(bookId);
+  const unit = getWorksheetUnit(bookId, unitNumber);
+
+  if (!book?.enabledActivities?.includes('vocabulary') || !unit) {
+    // Libro sin la capacidad habilitada, o unidad inexistente —
+    // mismo criterio honesto que el resto de Atlas: nunca una
+    // pantalla en blanco sin explicación.
+    const fallback = document.createElement('div');
+    fallback.setAttribute('data-component', 'vocabulary-screen');
+    fallback.setAttribute('data-part', 'unit-unavailable');
+    const message = document.createElement('p');
+    message.className = 'al-type-ui-body';
+    message.textContent = `My Vocabulary no está disponible para esta unidad.`;
+    fallback.appendChild(message);
+    return Object.freeze({ element: fallback, update: () => {}, destroy: () => fallback.remove() });
+  }
+
+  // Recordar última actividad (esta sesión, agregado a pedido):
+  // mismo criterio exacto que buildWritingScreen/buildPageReaderScreen
+  // — efecto secundario del despacho, nunca de vocabulary-screen.js
+  // (no se tocó). onSelectBook ya sabe traducir 'vocabulary' de
+  // vuelta a esta misma ruta.
+  readerPositionRepository?.savePosition({
+    userId,
+    bookId,
+    pageNumber: unitNumber,
+    lastActivity: 'vocabulary',
+    accessToken,
+  });
+
+  return createVocabularyScreen({
+    vocabulary: {
+      bookId: unit.bookId,
+      unitNumber: unit.unitNumber,
+      unitTitle: unit.unitTitle,
+    },
+    vocabularyEntryRepository,
+    userId,
+    accessToken,
+    onBack: () => router.navigateTo('/library'),
+  });
+}
+
 function buildWritingScreen({
   router,
   bookId,
@@ -687,6 +761,7 @@ function resolveScreen(navigationState, deps) {
     pagePosition,
     assessmentPosition,
     writingUnitPosition,
+    vocabularyUnitPosition,
     adminSection,
     adminUserId,
   } = navigationState;
@@ -748,6 +823,12 @@ function resolveScreen(navigationState, deps) {
   // de claridad, no de que puedan colisionar.
   if (bookPosition && writingUnitPosition) {
     return buildWritingScreen({ ...fullDeps, bookId: bookPosition, unitNumber: writingUnitPosition });
+  }
+
+  // My Vocabulary (esta sesión): mismo criterio exacto que Writing —
+  // jerarquía propia, se resuelve antes que el Reader.
+  if (bookPosition && vocabularyUnitPosition) {
+    return buildVocabularyScreen({ ...fullDeps, bookId: bookPosition, unitNumber: vocabularyUnitPosition });
   }
 
   // Nuevo Reader (Sprint Proposal — Nuevo Reader, Etapa 7): antes de
@@ -818,6 +899,7 @@ export function mountScreenRouter({
   bookmarkRepository,
   studyWorkspaceRepository,
   writingResponseRepository,
+  vocabularyEntryRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
@@ -971,6 +1053,7 @@ export function mountScreenRouter({
       bookmarkRepository,
       studyWorkspaceRepository,
       writingResponseRepository,
+      vocabularyEntryRepository,
     });
     contentRegion.render(screen);
   }

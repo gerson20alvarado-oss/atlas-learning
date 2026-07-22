@@ -1,0 +1,126 @@
+/**
+ * vocabulary-screen.css
+ *
+ * Mismo lenguaje "cuaderno" que writing-screen.css: sombra de papel
+ * (`--al-shadow-paper`), voz de lectura para el contenido real,
+ * mucho aire. Sin tabla, sin líneas divisorias entre palabras — cada
+ * una es una línea suelta (ver vocabulary-word-row.css).
+ */
+
+[data-component="vocabulary-screen"] {
+  min-height: 100vh;
+  background: var(--al-surface-app);
+}
+
+[data-component="vocabulary-screen"] [data-part="header"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4) var(--al-space-6);
+  border-bottom: var(--al-border-hairline) solid var(--al-border-whisper);
+}
+
+[data-component="vocabulary-screen"] [data-part="unit-number"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--al-ink-900);
+  color: var(--al-paper-0);
+  font-family: var(--al-font-ui);
+  font-weight: var(--al-weight-semibold);
+  flex-shrink: 0;
+}
+
+[data-component="vocabulary-screen"] [data-part="unit-title"] {
+  margin: 0;
+  flex: 1;
+}
+
+[data-component="vocabulary-screen"] [data-part="activity-title"] {
+  width: 100%;
+  margin: 0;
+  color: var(--al-text-muted);
+}
+
+[data-component="vocabulary-screen"] [data-part="body"] {
+  max-width: var(--al-measure-reading);
+  margin: 0 auto;
+  padding: var(--al-space-8) var(--al-space-4) var(--al-space-16);
+}
+
+/* La "hoja" de agregar — misma sombra que Writing usa para su
+   editor, aplicada aquí a la fila de entrada en vez de a un lienzo
+   de texto completo. */
+[data-component="vocabulary-screen"] [data-part="add-row"] {
+  display: flex;
+  gap: var(--al-space-3);
+  padding: var(--al-space-4);
+  margin-bottom: var(--al-space-3);
+  background: var(--al-paper-0);
+  border-radius: var(--al-radius-xl);
+  box-shadow: var(--al-shadow-paper);
+}
+
+[data-component="vocabulary-screen"] [data-part="add-input"] {
+  flex: 1;
+  height: var(--al-input-height);
+  padding: 0 var(--al-space-3);
+  border: none;
+  background: transparent;
+  font-family: var(--al-font-reading);
+  font-size: var(--al-size-18);
+  color: var(--al-text-content);
+}
+
+[data-component="vocabulary-screen"] [data-part="add-input"]:focus {
+  outline: none;
+}
+
+[data-component="vocabulary-screen"] [data-part="add-input"]::placeholder {
+  color: var(--al-text-disabled);
+  font-style: italic;
+}
+
+[data-component="vocabulary-screen"] [data-part="status"] {
+  margin: 0 0 var(--al-space-4);
+  color: var(--al-text-muted);
+}
+
+[data-component="vocabulary-screen"] [data-part="status"][data-tone="error"] {
+  color: var(--al-feedback-incorrect);
+}
+
+[data-component="vocabulary-screen"] [data-part="undo"] {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--al-text-content);
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  font-weight: var(--al-weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La lista vive dentro de la misma "hoja" que el campo de agregar —
+   se siente como una sola página de cuaderno, no como dos bloques
+   separados. */
+[data-component="vocabulary-screen"] [data-part="list"] {
+  padding: 0 var(--al-space-4);
+  background: var(--al-paper-0);
+  border-radius: var(--al-radius-xl);
+}
+
+[data-component="vocabulary-screen"] [data-part="list"]:not(:empty) {
+  box-shadow: var(--al-shadow-card);
+}
+
+[data-component="vocabulary-screen"] [data-part="empty-state"] {
+  padding: var(--al-space-8) var(--al-space-4);
+  text-align: center;
+  color: var(--al-text-muted);
+}

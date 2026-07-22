@@ -30,9 +30,27 @@ import { EVENT_NAMES } from '../core/events/event-names.js';
 const NEIGHBOR_RADIUS = 1; // unidad anterior y siguiente, además de la actual
 
 /**
+ * Capacidades personales sin contenido editorial por unidad (esta
+ * sesión): a diferencia de Writing/Worksheet/Progress Test (que se
+ * resuelven mirando qué declara CADA unidad), estas se habilitan a
+ * nivel de libro (`book.enabledActivities`, ver
+ * `library-catalog.js`) y aplican por igual a todas sus unidades.
+ * Agregar una futura capacidad de este mismo tipo (Speaking,
+ * Journal, Notes — ya nombradas como candidatas) es una entrada más
+ * aquí, nunca una rama de código nueva en `resolveUnitActivities`.
+ */
+const PERSONAL_ACTIVITY_DEFINITIONS = Object.freeze({
+  vocabulary: {
+    label: 'My Vocabulary',
+    buildUrl: (bookId, unitNumber) => `/book/${bookId}/vocabulary/${unitNumber}`,
+  },
+});
+
+/**
  * Resuelve las actividades reales de una unidad (Writing + cada
- * evaluación declarada, en orden), o `null` si la unidad no existe
- * en el contenido — nunca una unidad "fantasma" en el panel.
+ * evaluación declarada + cada capacidad personal habilitada a nivel
+ * de libro, en ese orden), o `null` si la unidad no existe en el
+ * contenido — nunca una unidad "fantasma" en el panel.
  */
 function resolveUnitActivities({ bookId, unitNumber, currentActivityId }) {
   const unit = getWorksheetUnit(bookId, unitNumber);
@@ -62,6 +80,18 @@ function resolveUnitActivities({ bookId, unitNumber, currentActivityId }) {
       label: assessment.assessmentTitle,
       url,
       isActive: currentActivityId === assessmentId,
+    });
+  });
+
+  const book = getBookById(bookId);
+  (book?.enabledActivities ?? []).forEach((activityId) => {
+    const definition = PERSONAL_ACTIVITY_DEFINITIONS[activityId];
+    if (!definition) return; // id desconocido — degrada omitiéndolo, nunca un error
+    activities.push({
+      id: activityId,
+      label: definition.label,
+      url: definition.buildUrl(bookId, unitNumber),
+      isActive: currentActivityId === activityId,
     });
   });
 
@@ -96,7 +126,8 @@ function buildUnitsProp({ bookId, currentUnitNumber, currentActivityId }) {
  * aparece en Hi! Korean, Library, Admin, etc.).
  */
 function resolveCurrentActivity(navigationState) {
-  const { bookPosition, pagePosition, assessmentPosition, writingUnitPosition } = navigationState;
+  const { bookPosition, pagePosition, assessmentPosition, writingUnitPosition, vocabularyUnitPosition } =
+    navigationState;
   if (!bookPosition) return null;
 
   const book = getBookById(bookPosition);
@@ -104,6 +135,10 @@ function resolveCurrentActivity(navigationState) {
 
   if (writingUnitPosition != null) {
     return { bookId: bookPosition, currentUnitNumber: writingUnitPosition, currentActivityId: 'writing' };
+  }
+
+  if (vocabularyUnitPosition != null) {
+    return { bookId: bookPosition, currentUnitNumber: vocabularyUnitPosition, currentActivityId: 'vocabulary' };
   }
 
   if (pagePosition != null) {
