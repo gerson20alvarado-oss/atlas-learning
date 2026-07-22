@@ -53,10 +53,10 @@ export const ALH_LEVEL_1_UNIT_1 = Object.freeze({
   // estudiante escribe libremente, sin respuesta única que
   // calificar.
   writing: {
-  title: 'Writing',
-  instructions:
-    'Write a paragraph about the most disturbing event you have ever experienced. Describe what happened, where it took place, how you felt during the event, and explain why it was so disturbing to you.',
-},
+    title: 'Writing',
+    instructions:
+      'Write a paragraph about the most disturbing event you have ever experienced. Describe what happened, where it took place, how you felt during the event, and explain why it was so disturbing to you.',
+  },
 
   // Evoluciones independientes por unidad (esta sesión): la unidad ya
   // no tiene una sola lista de secciones — contiene un mapa de

@@ -20,10 +20,12 @@
  */
 
 import { ALH_LEVEL_1_UNIT_1 } from './alh-level-1-unit-1.js';
+import { ALH_LEVEL_1_UNIT_2 } from './alh-level-1-unit-2.js';
 
 const UNITS_BY_BOOK = Object.freeze({
   'book-american-language-hub-1': Object.freeze({
     1: ALH_LEVEL_1_UNIT_1,
+    2: ALH_LEVEL_1_UNIT_2,
   }),
 });
 

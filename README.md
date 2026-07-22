@@ -1,12 +1,50 @@
 # Atlas Learning
 
-**Estado actual:** "My Vocabulary" implementado — capacidad nueva,
-exclusiva de American Language Hub (ver sección siguiente). Reader,
-Writing, Worksheet, Progress Test, Library, Home, Admin, App Shell y
-Authentication quedaron sin tocar — confirmado con `find src
--newermt` antes de empaquetar.
+**Estado actual:** Unidad 2 de American Language Hub agregada (ver
+sección siguiente) — confirma en la práctica lo que la arquitectura
+prometía: solo 2 archivos tocados, cero cambios de código de
+aplicación.
 
-## My Vocabulary (esta sesión)
+## Unidad 2 — "The Odulai family" (esta sesión)
+
+Contenido real transcrito de `ALH_VideoHub_Level1_Worksheets-2.pdf`
+(Worksheet) y `Progress_Test_Unit_2.pdf`, con respuestas oficiales
+confirmadas por el usuario en ambos casos — mismo rigor exacto que
+la Unidad 1.
+
+**Archivos tocados, exactamente 2**: `alh-level-1-unit-2.js` (nuevo)
++ una línea de registro en `worksheet-content-repository.js`. Cero
+componentes nuevos, cero cambios a `assessment-screen.js`,
+`screen-router.js`, `mount-quick-activity-nav.js` ni ninguna ruta —
+la arquitectura construida para la Unidad 1 ya estaba diseñada para
+esto exactamente.
+
+**Sin campo `writing`, a propósito**: la consigna de Writing de la
+Unidad 1 la definió el usuario directamente, nunca vino de un PDF —
+no se inventó una para la Unidad 2. `getWriting()` devuelve `null`
+para esta unidad, y el Quick Activity Nav ya degrada correctamente
+(confirmado con una prueba real): Unit 2 muestra Worksheet/Progress
+Test/My Vocabulary, sin Writing, hasta que el usuario proporcione la
+consigna.
+
+**Progress Test Unit 2**: 50 puntos exactos (5+5+5+10+5+5+5+10),
+coincide con el "Total: /50" impreso — mismos 3 tipos de ejercicio ya
+existentes (`shortAnswer`, `choice`, `matching`), ningún componente
+nuevo hizo falta. `AUTHENTIC ENGLISH A` del Worksheet, a diferencia
+de su equivalente en la Unidad 1, sí tiene una respuesta real que
+calificar (match de 3 hechos con su información adicional) — se
+transcribió como `matching`, tipo distinto al `discussion` usado en
+el mismo lugar de la Unidad 1, porque el contenido real así lo pedía.
+
+**Verificado**: sintaxis de los 160 `.js`; confirmado con `find src
+-newermt` que solo se tocaron los 2 archivos esperados; prueba
+contra datos reales confirmando 50 ítems calificables en el Progress
+Test, el orden correcto exacto de `comp-c` (verificado ítem por
+ítem contra la respuesta confirmada), y que el Quick Activity Nav ya
+resuelve ambas unidades lado a lado sin ningún cambio de código;
+confirmado que Unidad 1 no sufrió ninguna regresión.
+
+## My Vocabulary (sesión anterior)
 
 Cuaderno personal de vocabulario, exclusivo de American Language
 Hub — sin intentos, sin calificación, sin relación con Assessment ni
