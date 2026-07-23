@@ -78,7 +78,7 @@ export function createSupabaseAuthAdapter({ supabaseUrl, supabaseAnonKey, fetchI
     });
   }
 
-  // Restablecimiento de Contraseña (esta sesión): endpoint oficial de
+  // Restablecimiento de Contraseña (sesión anterior): endpoint oficial de
   // Supabase Auth para actualizar el usuario autenticado por el
   // `access_token` de recuperación — mismo estilo `fetch` directo que
   // el resto de este archivo, ninguna dependencia nueva. Deliberadamente
@@ -102,5 +102,23 @@ export function createSupabaseAuthAdapter({ supabaseUrl, supabaseAnonKey, fetchI
     }
   }
 
-  return Object.freeze({ signInWithPassword, refreshSession, signOut, updatePassword });
+  // Forgot Password (esta sesión): endpoint oficial de Supabase Auth
+  // para disparar el correo de recuperación — mismo estilo `fetch`
+  // directo que el resto del archivo. Supabase responde 200 tanto si
+  // el correo existe como si no (por diseño, para no filtrar qué
+  // correos están registrados) — este adapter no interpreta eso,
+  // solo confirma que la solicitud fue aceptada por el servidor.
+  async function requestPasswordRecovery({ email }) {
+    assertConfigured();
+    const response = await fetchImpl(`${supabaseUrl}/auth/v1/recover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: supabaseAnonKey },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase recover falló con estado ${response.status}`);
+    }
+  }
+
+  return Object.freeze({ signInWithPassword, refreshSession, signOut, updatePassword, requestPasswordRecovery });
 }

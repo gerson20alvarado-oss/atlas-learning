@@ -19,7 +19,7 @@ import { createPrimaryButton } from '../../components/primary-button/primary-but
 import { createStateView } from '../../components/state-views/state-views.js';
 import { createBackNav } from '../../components/back-nav/back-nav.js';
 
-export function createLoginScreen({ onBack, onSubmit }) {
+export function createLoginScreen({ onBack, onSubmit, onForgotPassword }) {
   const element = document.createElement('div');
   element.setAttribute('data-component', 'login-screen');
 
@@ -59,6 +59,16 @@ export function createLoginScreen({ onBack, onSubmit }) {
   });
   signInButton.element.setAttribute('data-part', 'sign-in');
 
+  // Forgot Password (esta sesión): único agregado a este archivo —
+  // enlace discreto, mismo `data-part` convention del resto de la
+  // pantalla. No navega por sí mismo: reporta hacia arriba, igual
+  // que `onSubmit`/`onBack`.
+  const forgotPasswordLink = document.createElement('button');
+  forgotPasswordLink.type = 'button';
+  forgotPasswordLink.setAttribute('data-part', 'forgot-password');
+  forgotPasswordLink.textContent = 'Forgot your password?';
+  forgotPasswordLink.addEventListener('click', () => onForgotPassword?.());
+
   // Objetivo B (Sprint 7, §22.5): silencioso los primeros 400ms — la
   // mayoría de los intentos de login resuelven dentro de esa
   // ventana. Solo si la llamada real a Auth tarda más, aparece el
@@ -76,6 +86,7 @@ export function createLoginScreen({ onBack, onSubmit }) {
   element.appendChild(errorMessage);
   element.appendChild(loadingView.element);
   element.appendChild(signInButton.element);
+  element.appendChild(forgotPasswordLink);
 
   async function handleSubmit() {
     errorMessage.hidden = true;

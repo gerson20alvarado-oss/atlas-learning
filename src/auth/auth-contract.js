@@ -120,5 +120,29 @@ export function createAuthContract({ adapter, storage, errorBoundary }) {
     }
   }
 
-  return Object.freeze({ getSession, signIn, signOut, refreshToken, onAuthStateChange, updatePasswordForRecovery });
+  // Forgot Password (esta sesión): dispara el correo de recuperación
+  // — sin sesión, sin token, sin efecto sobre `cachedSession`. Mismo
+  // criterio de "siempre éxito genérico" que Supabase ya aplica en su
+  // propio endpoint (nunca confirma ni niega si el correo existe,
+  // por seguridad) — este contrato solo propaga ese mismo criterio
+  // hacia la pantalla.
+  async function requestPasswordReset(email) {
+    try {
+      await adapter.requestPasswordRecovery({ email });
+      return { success: true, error: null };
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'auth-request-password-reset-failed', err: String(err) });
+      return { success: false, error: 'No pudimos enviar el correo. Intenta de nuevo.' };
+    }
+  }
+
+  return Object.freeze({
+    getSession,
+    signIn,
+    signOut,
+    refreshToken,
+    onAuthStateChange,
+    updatePasswordForRecovery,
+    requestPasswordReset,
+  });
 }

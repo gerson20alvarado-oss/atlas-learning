@@ -59,6 +59,7 @@ import { createProfileSetupScreen } from '../presentation/screens/profile-setup/
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
 import { createEntryScreen } from '../presentation/screens/entry/entry-screen.js';
 import { createResetPasswordScreen } from '../presentation/screens/reset-password/reset-password-screen.js';
+import { createForgotPasswordScreen } from '../presentation/screens/forgot-password/forgot-password-screen.js';
 import { createLoginScreen } from '../presentation/screens/login/login-screen.js';
 import { createLinkingDecisionScreen } from '../presentation/screens/account-linking/linking-decision-screen.js';
 import { createStateView } from '../presentation/components/state-views/state-views.js';
@@ -923,7 +924,7 @@ export function mountScreenRouter({
   vocabularyEntryRepository,
 }) {
   let lastNavigationState = null;
-  let authUiStage = 'entry'; // 'entry' | 'login' — solo relevante antes de autenticarse
+  let authUiStage = 'entry'; // 'entry' | 'login' | 'forgot-password' — solo relevante antes de autenticarse
   // Sistema de Licencias por Libro (esta sesión): 'shelf' | 'activate'
   // — mismo criterio que authUiStage, un estado local de UI, no una
   // ruta de hash nueva. Activar una licencia no es "navegar a un
@@ -978,24 +979,42 @@ export function mountScreenRouter({
     const authSession = authContract.getSession();
 
     if (!authSession) {
-      const screen =
-        authUiStage === 'login'
-          ? createLoginScreen({
-              onBack: () => {
-                authUiStage = 'entry';
-                render();
-              },
-              onSubmit: async (email, password) => {
-                const { error } = await authContract.signIn(email, password);
-                return { error };
-              },
-            })
-          : createEntryScreen({
-              onSignIn: () => {
-                authUiStage = 'login';
-                render();
-              },
-            });
+      let screen;
+      if (authUiStage === 'forgot-password') {
+        // Forgot Password (esta sesión): tercer valor de authUiStage,
+        // mismo mecanismo exacto que ya distingue Entry de Login —
+        // no es una arquitectura nueva, es una extensión del mismo
+        // estado local de UI que ya existía.
+        screen = createForgotPasswordScreen({
+          onBack: () => {
+            authUiStage = 'login';
+            render();
+          },
+          onRequestReset: (email) => authContract.requestPasswordReset(email),
+        });
+      } else if (authUiStage === 'login') {
+        screen = createLoginScreen({
+          onBack: () => {
+            authUiStage = 'entry';
+            render();
+          },
+          onSubmit: async (email, password) => {
+            const { error } = await authContract.signIn(email, password);
+            return { error };
+          },
+          onForgotPassword: () => {
+            authUiStage = 'forgot-password';
+            render();
+          },
+        });
+      } else {
+        screen = createEntryScreen({
+          onSignIn: () => {
+            authUiStage = 'login';
+            render();
+          },
+        });
+      }
       contentRegion.render(screen);
       return;
     }

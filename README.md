@@ -1,10 +1,54 @@
 # Atlas Learning
 
-**Estado actual:** Restablecimiento de Contraseña implementado (ver
-sección siguiente) — flujo oficial de recuperación de Supabase,
-funcionalidad completamente aislada.
+**Estado actual:** Forgot Password implementado — completa el flujo
+de recuperación de contraseña iniciado la sesión anterior (ver
+sección siguiente).
 
-## Restablecimiento de Contraseña (esta sesión)
+## Forgot Password (esta sesión)
+
+Completa el flujo: la sesión anterior implementó qué pasa *después*
+de abrir el enlace de Supabase (Reset Password); esta agrega cómo
+*solicitarlo* desde Atlas.
+
+**Enlace en Login**: "Forgot your password?" bajo el botón Sign In —
+único agregado a `login-screen.js`, el resto del archivo (email,
+password, `handleSubmit`, back-nav) no se tocó.
+
+**Pantalla nueva** (`forgot-password-screen.js`/`.css`): mismo
+lenguaje visual exacto que Login/Reset Password. El enlace "volver"
+reutiliza `back-nav.js` tal cual, mostrando "‹ Sign In" — se
+consideró explícitamente usar texto literal "Back to Sign In", pero
+se descartó para no introducir una segunda convención de "volver" en
+el proyecto (Atlas ya tiene una sola: ícono + nombre del padre, nunca
+la palabra "back").
+
+**Auth**: una función nueva en cada capa —
+`requestPasswordRecovery()` en el adapter (endpoint oficial
+`POST /auth/v1/recover` de Supabase, mismo estilo `fetch` directo que
+el resto del archivo) y `requestPasswordReset()` en el contrato.
+Ninguna función existente de ninguno de los dos archivos se tocó.
+
+**Sin ruta nueva**: a diferencia de Reset Password (que sí necesita
+una URL propia porque llega desde un correo externo), esta pantalla
+se alcanza solo desde un clic dentro de Login — mismo mecanismo
+`authUiStage` que ya distinguía Entry de Login, extendido con un
+tercer valor (`'forgot-password'`). `route-table.js`/
+`navigation-state.js` no se tocaron.
+
+**Encontrado y corregido durante la verificación**: la primera
+versión pasaba `parentLabel: 'sign in'` a `back-nav.js`, que solo
+capitaliza la primera letra de todo el string (no cada palabra) —
+salía "Sign in", no "Sign In". Corregido pasando el texto ya
+capitalizado correctamente.
+
+**Verificado**: sintaxis de los 162 `.js`; confirmado con `find src
+-newermt` el alcance exacto (8 archivos, ninguno fuera del plan);
+prueba funcional con DOM mínimo confirmando que el enlace de Login
+dispara el callback sin afectar el resto de esa pantalla, que
+`back-nav` muestra "Sign In" correctamente y dispara `onBack`,
+validación de email vacío, y el flujo de éxito completo.
+
+## Restablecimiento de Contraseña (sesión anterior)
 
 Pantalla dedicada para el enlace de recuperación de contraseña de
 Supabase, con el mismo lenguaje visual exacto de Login/Profile

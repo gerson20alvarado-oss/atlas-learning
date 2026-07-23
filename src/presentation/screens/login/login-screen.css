@@ -59,3 +59,25 @@
 [data-component="login-screen"] [data-part="loading"] {
   margin-top: var(--al-space-2);
 }
+
+/* Forgot Password (esta sesión): único agregado a este archivo —
+   mismo tratamiento discreto de texto que ya usa "Remove" en
+   vocabulary-word-row.css/el toggle de reset-password-screen.css:
+   sin fondo, sin borde, voz de interfaz más pequeña, color muted. */
+[data-component="login-screen"] [data-part="forgot-password"] {
+  display: block;
+  width: 100%;
+  margin-top: var(--al-space-3);
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--al-font-ui);
+  font-size: var(--al-size-13);
+  color: var(--al-text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+[data-component="login-screen"] [data-part="forgot-password"]:hover {
+  color: var(--al-text-content);
+}
