@@ -312,6 +312,15 @@ export function createPageReaderScreen({
   function goToPage(pageNumber) {
     if (pageNumber < firstPage || pageNumber > lastPage) return;
     currentPage = pageNumber;
+    // Bug fix (esta sesión): mantiene la URL sincronizada con la
+    // página real, para que un refresh restaure la posición correcta
+    // en vez de la última página en la que el hash cambió de verdad
+    // (savePosition() ya guardaba bien en Supabase — el problema era
+    // que la URL nunca avanzaba). `history.replaceState` actualiza la
+    // barra de direcciones sin disparar "hashchange" — a diferencia
+    // de `router.navigateTo()`, no reconstruye la pantalla en cada
+    // página; ningún otro archivo necesita tocarse para esto.
+    window.history.replaceState(null, '', `#/book/${bookId}/read/${currentPage}`);
     renderCurrentPage();
   }
 
