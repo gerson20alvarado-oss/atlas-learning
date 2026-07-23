@@ -67,14 +67,14 @@ export function createSupabaseReaderPositionAdapter({ supabaseUrl, supabaseAnonK
     assertConfigured();
     const url =
       `${supabaseUrl}/rest/v1/reader_positions?user_id=eq.${encodeURIComponent(userId)}` +
-      `&select=book_id,page_number&order=updated_at.desc&limit=1`;
+      `&select=book_id,page_number,last_activity&order=updated_at.desc&limit=1`;
     const response = await fetchImpl(url, { headers: authHeaders(accessToken) });
     if (!response.ok) {
       throw new Error(`Lectura de la posición más reciente falló con estado ${response.status}`);
     }
     const rows = await response.json();
     if (!rows[0]) return null;
-    return { bookId: rows[0].book_id, pageNumber: rows[0].page_number };
+    return { bookId: rows[0].book_id, pageNumber: rows[0].page_number, lastActivity: rows[0].last_activity ?? null };
   }
 
   /**

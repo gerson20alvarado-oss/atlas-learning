@@ -744,11 +744,53 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
       const bookIsAuthorized =
         position?.bookId && licenseRepository.isBookOwned(ownedBookIds, position.bookId);
 
-      if (bookIsAuthorized) {
-        router.navigateTo(`/book/${position.bookId}/read/${position.pageNumber}`);
-      } else {
+      if (!bookIsAuthorized) {
         router.navigateTo('/library');
+        return;
       }
+
+      const bookId = position.bookId;
+      const targetPage = position.pageNumber;
+      const book = getBookById(bookId);
+
+      // Bug fix (esta sesión): antes, esta rama solo sabía construir
+      // `/read/:n` (Worksheet), sin importar qué actividad fue
+      // realmente la última visitada — mismo criterio de resolución
+      // que ya usa `onSelectBook` (buildLibraryScreen, más arriba en
+      // este archivo), mantenido local a propósito (sin extraer una
+      // función compartida: no existía ninguna previamente, y esto
+      // no amerita ese refactor por sí solo).
+      if (book?.contentMode === 'worksheet') {
+        const lastActivity = position.lastActivity ?? null;
+
+        if (lastActivity === 'writing' && getWriting(bookId, targetPage)) {
+          router.navigateTo(`/book/${bookId}/writing/${targetPage}`);
+          return;
+        }
+
+        if (
+          lastActivity === 'vocabulary' &&
+          book.enabledActivities?.includes('vocabulary') &&
+          getWorksheetUnit(bookId, targetPage)
+        ) {
+          router.navigateTo(`/book/${bookId}/vocabulary/${targetPage}`);
+          return;
+        }
+
+        if (lastActivity && lastActivity !== 'writing' && getAssessment(bookId, targetPage, lastActivity)) {
+          const url =
+            lastActivity === 'worksheet'
+              ? `/book/${bookId}/read/${targetPage}`
+              : `/book/${bookId}/read/${targetPage}/${lastActivity}`;
+          router.navigateTo(url);
+          return;
+        }
+      }
+
+      // Hi! Korean, o una unidad/actividad que ya no se puede
+      // resolver (contenido cambiado, etc.): mismo destino de
+      // siempre — sin ningún cambio de comportamiento para ese caso.
+      router.navigateTo(`/book/${bookId}/read/${targetPage}`);
     },
   });
 }
