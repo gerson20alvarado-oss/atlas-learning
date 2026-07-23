@@ -1,4 +1,4 @@
-# Atlas Learning
+# Atlas Learning 2
 
 **Estado actual:** Forgot Password implementado — completa el flujo
 de recuperación de contraseña iniciado la sesión anterior (ver
