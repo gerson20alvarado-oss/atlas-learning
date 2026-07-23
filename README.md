@@ -1,11 +1,59 @@
 # Atlas Learning
 
-**Estado actual:** Unidad 2 de American Language Hub agregada (ver
-sección siguiente) — confirma en la práctica lo que la arquitectura
-prometía: solo 2 archivos tocados, cero cambios de código de
-aplicación.
+**Estado actual:** Restablecimiento de Contraseña implementado (ver
+sección siguiente) — flujo oficial de recuperación de Supabase,
+funcionalidad completamente aislada.
 
-## Unidad 2 — "The Odulai family" (esta sesión)
+## Restablecimiento de Contraseña (esta sesión)
+
+Pantalla dedicada para el enlace de recuperación de contraseña de
+Supabase, con el mismo lenguaje visual exacto de Login/Profile
+Setup — cero tokens de diseño nuevos.
+
+**El problema real que resuelve**: Atlas enruta por hash (GitHub
+Pages no resuelve paths del lado servidor). El enlace de
+recuperación de Supabase *también* entrega sus parámetros por el
+fragmento hash — sin traducción, el router de Atlas interpretaría
+ese fragmento como una ruta desconocida y lo perdería en silencio.
+
+**Los 5 parámetros de Supabase se preservan íntegros** (`access_token`,
+`refresh_token`, `expires_in`, `token_type`, `type`) — nunca
+reducidos a un solo campo, por decisión explícita del usuario. El
+fragmento original completo viaja re-codificado como un segmento de
+ruta (`/reset-password/:params`) y se interpreta recién en
+`screen-router.js` vía `parseRecoveryHashParams()` — único lugar de
+todo el proyecto que sabe qué es este formato.
+
+**Aislamiento de sesión, verificado explícitamente**: el
+`access_token` de recuperación se usa de forma transitoria — jamás
+toca `cachedSession` ni `persist()` en `auth-contract.js`. Confirmado
+con una prueba real: tras `updatePasswordForRecovery()`, `getSession()`
+sigue devolviendo `null` y cero escrituras a `storage`. El estudiante
+queda forzado a iniciar sesión de verdad con la contraseña nueva.
+
+**Archivos tocados**: 2 nuevos (`reset-password-screen.js`/`.css`) +
+6 con una adición mínima y puntual cada uno (`supabase-auth-adapter.js`
+gana `updatePassword()`, `auth-contract.js` gana
+`updatePasswordForRecovery()` — ninguna función existente de
+cualquiera de los dos se tocó; `route-table.js`/`navigation-state.js`
+ganan una ruta y un campo; `screen-router.js` gana una rama al
+inicio de `render()`, antes de la lógica de Entry/Login/Profile
+Setup/Library, que permanece intacta; `bootstrap.js` gana la función
+de traducción del hash, documentada inline explicando la colisión
+Hash Routing vs. fragmento de Supabase). Ninguna otra pantalla,
+componente compartido, ruta existente o funcionalidad de
+autenticación se modificó.
+
+**Verificado**: sintaxis de los 161 `.js`; confirmado con `find src
+-newermt` el alcance exacto; prueba de extremo a extremo desde un
+hash real de Supabase hasta los 5 parámetros parseados sin pérdida;
+6 escenarios de la pantalla probados con DOM mínimo (contraseña
+corta, contraseñas no coincidentes, mostrar/ocultar, éxito con
+redirect diferido, fallo real, `destroy()`); prueba explícita
+confirmando que la sesión normal nunca se contamina con el token de
+recuperación.
+
+## Unidad 2 — "People" (sesión anterior)
 
 Contenido real transcrito de `ALH_VideoHub_Level1_Worksheets-2.pdf`
 (Worksheet) y `Progress_Test_Unit_2.pdf`, con respuestas oficiales

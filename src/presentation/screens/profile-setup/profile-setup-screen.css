@@ -70,3 +70,12 @@
 [data-component="profile-setup-screen"] [data-part="loading"] {
   margin-top: var(--al-space-2);
 }
+
+/* Pie de página legal (esta sesión) — mismo criterio exacto que
+   entry-screen.css: discreto, tipografía más pequeña ya definida,
+   color muted, con su propio espacio para no competir con el
+   formulario. */
+[data-component="profile-setup-screen"] [data-part="footer"] {
+  margin: var(--al-space-12) 0 0;
+  color: var(--al-text-muted);
+}

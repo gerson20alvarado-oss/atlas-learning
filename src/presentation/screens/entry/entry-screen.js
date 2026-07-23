@@ -64,10 +64,16 @@ export function createEntryScreen({ onSignIn }) {
   });
   signInButton.element.setAttribute('data-part', 'sign-in');
 
+  const footer = document.createElement('p');
+  footer.setAttribute('data-part', 'footer');
+  footer.className = 'al-type-ui-caption';
+  footer.textContent = '© 2026 Atlas Learning · All rights reserved.';
+
   element.appendChild(logoMark);
   element.appendChild(wordmark);
   element.appendChild(quoteBlock);
   element.appendChild(signInButton.element);
+  element.appendChild(footer);
 
   function update() {}
 

@@ -58,6 +58,7 @@ import { createLicenseActivationScreen } from '../presentation/screens/license-a
 import { createProfileSetupScreen } from '../presentation/screens/profile-setup/profile-setup-screen.js';
 import { createHomeScreen } from '../presentation/screens/home/home-screen.js';
 import { createEntryScreen } from '../presentation/screens/entry/entry-screen.js';
+import { createResetPasswordScreen } from '../presentation/screens/reset-password/reset-password-screen.js';
 import { createLoginScreen } from '../presentation/screens/login/login-screen.js';
 import { createLinkingDecisionScreen } from '../presentation/screens/account-linking/linking-decision-screen.js';
 import { createStateView } from '../presentation/components/state-views/state-views.js';
@@ -751,6 +752,26 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
   });
 }
 
+/**
+ * Restablecimiento de Contraseña (esta sesión): interpreta el
+ * fragmento ORIGINAL completo que Supabase entrega en su enlace de
+ * recuperación — nunca se asume que solo `access_token` importa.
+ * `URLSearchParams` (API nativa del navegador, sin dependencia
+ * nueva) ya sabe leer este formato tal cual Supabase lo entrega.
+ * Único lugar de todo el proyecto que interpreta este formato — ni
+ * route-table.js ni navigation-state.js saben qué es Supabase.
+ */
+function parseRecoveryHashParams(raw) {
+  const params = new URLSearchParams(raw ?? '');
+  return {
+    accessToken: params.get('access_token'),
+    refreshToken: params.get('refresh_token'),
+    expiresIn: params.get('expires_in'),
+    tokenType: params.get('token_type'),
+    type: params.get('type'),
+  };
+}
+
 function resolveScreen(navigationState, deps) {
   const {
     bookPosition,
@@ -933,6 +954,27 @@ export function mountScreenRouter({
   let isAdmin = false;
 
   function render() {
+    // Restablecimiento de Contraseña (esta sesión): se resuelve antes
+    // que cualquier otro estado, incluida la ausencia de sesión — un
+    // enlace de recuperación de Supabase debe mostrar esta pantalla
+    // sin importar si ya había o no una sesión previa en este
+    // dispositivo. El `access_token` de recuperación es transitorio
+    // (ver auth-contract.js#updatePasswordForRecovery) — nunca se
+    // convierte en la sesión normal de `authContract`.
+    if (lastNavigationState?.passwordRecoveryParams) {
+      const recoveryParams = parseRecoveryHashParams(lastNavigationState.passwordRecoveryParams);
+      const screen = createResetPasswordScreen({
+        onUpdatePassword: (newPassword) =>
+          authContract.updatePasswordForRecovery({ accessToken: recoveryParams.accessToken, newPassword }),
+        onSuccess: () => {
+          authUiStage = 'login';
+          router.navigateTo('/');
+        },
+      });
+      contentRegion.render(screen);
+      return;
+    }
+
     const authSession = authContract.getSession();
 
     if (!authSession) {

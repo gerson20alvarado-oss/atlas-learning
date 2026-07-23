@@ -103,5 +103,22 @@ export function createAuthContract({ adapter, storage, errorBoundary }) {
     };
   }
 
-  return Object.freeze({ getSession, signIn, signOut, refreshToken, onAuthStateChange });
+  // Restablecimiento de Contraseña (esta sesión): usa el
+  // `access_token` de recuperación de Supabase de forma transitoria
+  // — deliberadamente NO toca `cachedSession` ni `persist()`. El
+  // objetivo del flujo (confirmado con el usuario) es que, tras
+  // actualizar la contraseña, el estudiante quede forzado a iniciar
+  // sesión de verdad con la contraseña nueva — nunca queda "ya
+  // conectado" a partir de este token transitorio.
+  async function updatePasswordForRecovery({ accessToken, newPassword }) {
+    try {
+      await adapter.updatePassword({ accessToken, newPassword });
+      return { success: true, error: null };
+    } catch (err) {
+      errorBoundary.reportRecoverable({ reason: 'auth-update-password-failed', err: String(err) });
+      return { success: false, error: 'No pudimos actualizar tu contraseña. Intenta de nuevo.' };
+    }
+  }
+
+  return Object.freeze({ getSession, signIn, signOut, refreshToken, onAuthStateChange, updatePasswordForRecovery });
 }

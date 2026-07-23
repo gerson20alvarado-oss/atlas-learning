@@ -342,6 +342,30 @@ function bootstrap() {
   // lectura, no por dependencia real entre ambos.
   mountQuickActivityNav({ eventBus, mountElement, router });
 
+  // Restablecimiento de Contraseña (esta sesión) — traducción del
+  // hash de recuperación de Supabase: Atlas usa Hash Routing
+  // (Sprint 1 Plan §8.2, ver core/router/router.js) porque GitHub
+  // Pages no resuelve paths del lado servidor — el router interpreta
+  // TODO lo que sigue al "#" de la URL como una ruta de la
+  // aplicación. El flujo oficial de recuperación de contraseña de
+  // Supabase también usa el fragmento hash para entregar sus
+  // parámetros (access_token, refresh_token, expires_in, token_type,
+  // type=recovery), lo cual colisiona directamente con el mecanismo
+  // de enrutamiento de Atlas: sin esta traducción, el router
+  // intentaría matchear ese fragmento como una ruta desconocida y lo
+  // perdería en silencio (mismo camino que cualquier "ruta no
+  // reconocida"). Se preserva el fragmento ORIGINAL completo tal cual
+  // Supabase lo entrega — nunca reducido a un solo parámetro — y se
+  // reencapsula como un único segmento de la ruta
+  // `/reset-password/:params` (ver core/router/route-table.js), que
+  // el router sí sabe reconocer. Debe correr antes de `router.start()`
+  // para que la primera resolución de ruta ya vea el hash traducido.
+  (function translateSupabaseRecoveryHash() {
+    const rawHash = window.location.hash.replace(/^#/, '');
+    if (!rawHash.includes('type=recovery')) return;
+    window.location.hash = `/reset-password/${encodeURIComponent(rawHash)}`;
+  })();
+
   // f. El router resuelve la ruta inicial y publica route:changed.
   router.start();
 

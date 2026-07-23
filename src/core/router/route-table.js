@@ -152,6 +152,23 @@ const ROUTES = Object.freeze([
       vocabularyUnitPosition: Number(match[2]),
     }),
   },
+  {
+    // Restablecimiento de Contraseña (esta sesión): el segmento
+    // capturado es el fragmento ORIGINAL completo que Supabase
+    // entregó en su enlace de recuperación (access_token,
+    // refresh_token, expires_in, token_type, type=recovery),
+    // re-codificado en app/bootstrap.js#translateSupabaseRecoveryHash
+    // para poder viajar como parte de una ruta — nunca reducido a un
+    // solo campo aquí. Esta ruta no tiene ninguna relación con
+    // Library/Book/Unit — es alcanzable incluso sin sesión activa
+    // (screen-router.js la resuelve antes que cualquier otro
+    // estado).
+    pattern: /^\/reset-password\/([^/]+)\/?$/,
+    toNavigationState: (match) => ({
+      ...createEmptyNavigationState(),
+      passwordRecoveryParams: decodeURIComponent(match[1]),
+    }),
+  },
   // Admin Console (Sprint 14): jerarquía propia, sin relación con
   // Library/Book/Unit/Lesson — de ahí que ninguna de estas rutas
   // pueble bookPosition/unitPosition/etc. El acceso real (¿esta

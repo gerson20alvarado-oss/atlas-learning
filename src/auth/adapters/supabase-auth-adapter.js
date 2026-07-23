@@ -78,5 +78,29 @@ export function createSupabaseAuthAdapter({ supabaseUrl, supabaseAnonKey, fetchI
     });
   }
 
-  return Object.freeze({ signInWithPassword, refreshSession, signOut });
+  // Restablecimiento de Contraseña (esta sesión): endpoint oficial de
+  // Supabase Auth para actualizar el usuario autenticado por el
+  // `access_token` de recuperación — mismo estilo `fetch` directo que
+  // el resto de este archivo, ninguna dependencia nueva. Deliberadamente
+  // no pasa por `toAuthSession()` ni por ningún flujo de sesión: el
+  // `access_token` de recuperación se usa una sola vez, de forma
+  // transitoria, nunca se persiste como sesión normal (ver
+  // auth-contract.js#updatePasswordForRecovery).
+  async function updatePassword({ accessToken, newPassword }) {
+    assertConfigured();
+    const response = await fetchImpl(`${supabaseUrl}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ password: newPassword }),
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase update-password falló con estado ${response.status}`);
+    }
+  }
+
+  return Object.freeze({ signInWithPassword, refreshSession, signOut, updatePassword });
 }

@@ -75,6 +75,11 @@ export function createProfileSetupScreen({ onSubmit }) {
   loadingView.element.setAttribute('data-part', 'loading');
   loadingView.element.hidden = true;
 
+  const footer = document.createElement('p');
+  footer.setAttribute('data-part', 'footer');
+  footer.className = 'al-type-ui-caption';
+  footer.textContent = '© 2026 Atlas Learning · All rights reserved.';
+
   element.appendChild(logoMark);
   element.appendChild(heading);
   element.appendChild(subheading);
@@ -85,6 +90,7 @@ export function createProfileSetupScreen({ onSubmit }) {
   element.appendChild(errorMessage);
   element.appendChild(loadingView.element);
   element.appendChild(continueButton.element);
+  element.appendChild(footer);
 
   async function handleSubmit() {
     const firstName = firstNameInput.value.trim();

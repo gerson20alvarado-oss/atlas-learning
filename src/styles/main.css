@@ -65,6 +65,7 @@
 /* Sistema de Licencias por Libro */
 @import url('../presentation/screens/license-activation/license-activation-screen.css');
 @import url('../presentation/screens/profile-setup/profile-setup-screen.css');
+@import url('../presentation/screens/reset-password/reset-password-screen.css');
 @import url('../presentation/components/resource-panels/study-workspace-sheet.css');
 @import url('../presentation/components/resource-panels/transcript-panel.css');
 @import url('../presentation/screens/page-reader/page-reader-screen.css');

@@ -22,6 +22,7 @@ const NAVIGATION_STATE_KEYS = Object.freeze([
   'assessmentPosition',
   'writingUnitPosition',
   'vocabularyUnitPosition',
+  'passwordRecoveryParams',
   'adminSection',
   'adminUserId',
 ]);
@@ -60,6 +61,17 @@ export function createEmptyNavigationState() {
     // assessmentPosition ni con writingUnitPosition. `null` fuera de
     // la ruta `/book/:id/vocabulary/:unitNumber`.
     vocabularyUnitPosition: null,
+    // Restablecimiento de Contraseña (esta sesión): el fragmento
+    // ORIGINAL completo que Supabase entrega en su enlace de
+    // recuperación (access_token, refresh_token, expires_in,
+    // token_type, type=recovery), preservado tal cual — nunca
+    // reducido a un solo campo — y re-codificado únicamente para
+    // sobrevivir como segmento de ruta (ver
+    // app/bootstrap.js#translateSupabaseRecoveryHash para el porqué
+    // de esta traducción). Se interpreta recién en
+    // screen-router.js, nunca aquí — este archivo no sabe qué es
+    // Supabase.
+    passwordRecoveryParams: null,
     // Admin Console (Sprint 14): jerarquía completamente separada de
     // la de contenido (Library → Book → Unit → Lesson) — un
     // adminSection nunca coexiste con bookPosition/unitPosition en
