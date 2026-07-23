@@ -60,6 +60,18 @@ export function mountAppShell({ eventBus, mountElement, router, authContract, pr
       onConfirm: async () => {
         closeSignOutConfirm();
         await authContract.signOut();
+        // Bug fix (esta sesión): tras cerrar sesión, se navega
+        // explícitamente a la ruta pública raíz — antes, el hash
+        // nunca cambiaba, así que si el estudiante cerraba sesión
+        // desde dentro de un libro, la Navigation State seguía
+        // apuntando ahí. `/` resuelve a una Navigation State vacía
+        // (route-table.js), sin bookPosition — screen-router.js ya
+        // decide Entry vs. Login según authUiStage (sin cambios en
+        // esa lógica), y el ROUTE_CHANGED resultante es lo que ya
+        // hace que mount-quick-activity-nav.js se oculte solo, por
+        // el mismo mecanismo que ya usa en Library/Home/Admin —
+        // ninguna dependencia nueva a onAuthStateChange.
+        router.navigateTo('/');
       },
     });
     mountElement.appendChild(signOutConfirm.element);

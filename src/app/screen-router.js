@@ -1188,7 +1188,23 @@ export function mountScreenRouter({
       profileRepository.isAdmin({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
         isAdmin = result;
       }),
-    ]).then(render);
+    ])
+      .then(render)
+      // Bug fix (esta sesión): sin este `.catch()`, si cualquiera de
+      // las cuatro promesas de arriba fallaba (ej. una llamada de
+      // red tras un deploy), `Promise.all` se rechazaba completo y
+      // `.then(render)` nunca se ejecutaba — el estudiante quedaba
+      // congelado en lo que el primer render() (el del arranque, con
+      // hasProfileCompleted todavía en su valor por defecto `false`)
+      // ya había mostrado: "Let's set up your profile", para
+      // siempre. El error se registra (nunca se silencia, sigue
+      // siendo visible para diagnóstico vía errorBoundary) y de
+      // todas formas se llama a render() — con lo que sí se haya
+      // alcanzado a resolver antes del fallo, en vez de con nada.
+      .catch((err) => {
+        errorBoundary.reportRecoverable({ reason: 'startup-resolution-failed', err: String(err) });
+        render();
+      });
   }
 
   return Object.freeze({
