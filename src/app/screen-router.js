@@ -1217,19 +1217,58 @@ export function mountScreenRouter({
   // cada arranque, igual que las otras dos.
   const cachedSession = authContract.getSession();
   if (cachedSession) {
+    // ============================================================
+    // INSTRUMENTACIÓN TEMPORAL DE DIAGNÓSTICO (a remover después de
+    // confirmar la causa raíz) — no cambia ningún comportamiento: cada
+    // "tap" solo registra en consola y vuelve a lanzar/resolver
+    // exactamente lo mismo, para que Promise.all() se comporte
+    // idéntico a como ya se comporta hoy.
+    // ============================================================
+    const __diagStart = Date.now();
+    console.warn('[DIAG] Arranque con sesión cacheada', {
+      now: new Date(__diagStart).toISOString(),
+      expiresAt: cachedSession.expiresAt ? new Date(cachedSession.expiresAt).toISOString() : null,
+      accessTokenYaExpirado: cachedSession.expiresAt ? __diagStart > cachedSession.expiresAt : 'sin expiresAt',
+      msFaltantesParaExpirar: cachedSession.expiresAt ? cachedSession.expiresAt - __diagStart : null,
+    });
+
+    function __diagTap(label, promise) {
+      return promise
+        .then((result) => {
+          console.warn(`[DIAG] ${label} -> ÉXITO`, { msDesdeArranque: Date.now() - __diagStart });
+          return result;
+        })
+        .catch((err) => {
+          console.warn(`[DIAG] ${label} -> FALLÓ`, {
+            msDesdeArranque: Date.now() - __diagStart,
+            mensaje: String(err),
+          });
+          throw err;
+        });
+    }
+
     Promise.all([
-      accountLinkingFlow.run(cachedSession),
-      licenseRepository
-        .getOwnedBookIds({ userId: cachedSession.userId, accessToken: cachedSession.accessToken })
-        .then((ids) => {
-          ownedBookIds = ids;
+      __diagTap('accountLinkingFlow.run', accountLinkingFlow.run(cachedSession)),
+      __diagTap(
+        'licenseRepository.getOwnedBookIds',
+        licenseRepository
+          .getOwnedBookIds({ userId: cachedSession.userId, accessToken: cachedSession.accessToken })
+          .then((ids) => {
+            ownedBookIds = ids;
+          }),
+      ),
+      __diagTap(
+        'profileRepository.hasProfile',
+        profileRepository.hasProfile({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
+          hasProfileCompleted = result;
         }),
-      profileRepository.hasProfile({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
-        hasProfileCompleted = result;
-      }),
-      profileRepository.isAdmin({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
-        isAdmin = result;
-      }),
+      ),
+      __diagTap(
+        'profileRepository.isAdmin',
+        profileRepository.isAdmin({ userId: cachedSession.userId, accessToken: cachedSession.accessToken }).then((result) => {
+          isAdmin = result;
+        }),
+      ),
     ])
       .then(render)
       // Bug fix (esta sesión): sin este `.catch()`, si cualquiera de
