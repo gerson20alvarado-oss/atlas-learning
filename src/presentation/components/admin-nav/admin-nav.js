@@ -18,6 +18,7 @@ const SECTIONS = Object.freeze([
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'users', label: 'Users' },
   { key: 'licenses', label: 'Licenses' },
+  { key: 'unit-availability', label: 'Content Availability' },
   { key: 'worksheet-attempts', label: 'Worksheet Attempts' },
   { key: 'reader-progress', label: 'Reader Progress' },
   { key: 'bookmarks', label: 'Bookmarks' },

@@ -1,10 +1,90 @@
-# Atlas Learning 
+# Atlas Learning
 
-**Estado actual:** Forgot Password implementado — completa el flujo
-de recuperación de contraseña iniciado la sesión anterior (ver
-sección siguiente).
+**Estado actual:** Disponibilidad de Unidades implementada —
+capacidad nueva del dominio Acceso (ver sección siguiente). Precedida
+de 5 rondas de diseño (arquitectura, especificación funcional, UX,
+plan de implementación) antes de escribir una sola línea de código.
 
-## Forgot Password (esta sesión)
+## Disponibilidad de Unidades (esta sesión)
+
+El administrador puede habilitar/deshabilitar unidades individuales
+de un libro desde Admin Console — los estudiantes solo ven las
+habilitadas, en cualquier punto de entrada (Library, Quick Activity
+Nav, Continue Learning, URL directa).
+
+**Decisión de arquitectura ya cerrada**: pertenece al dominio Acceso
+(capacidad hermana de Licencias), nunca al dominio Contenido — mismo
+criterio ya usado para "¿quién puede llegar a X?". Genérica en su
+modelo (cualquier libro `contentMode: 'worksheet'` es elegible, no
+solo American Language Hub por nombre) sin construir de más para
+tipos de elemento que no existen todavía (capítulos, exámenes).
+
+**Modelo de datos invertido, deliberado**: la tabla `disabled_units`
+guarda las unidades DESHABILITADAS, nunca las habilitadas — así, la
+ausencia de configuración significa "todo habilitado" de forma
+natural, sin ningún caso especial en el código. Es exactamente el
+default seguro que exige la especificación funcional aprobada.
+
+**Un solo punto de control real**: el gate vive dentro de
+`resolveScreen()`, en el mismo lugar exacto que el Control de Acceso
+por Libro ya existente (Licencias) — antes de cualquier despacho a
+Writing/Vocabulary/Worksheet/Progress Test. Una unidad deshabilitada
+es indistinguible de una inexistente para el estudiante, en
+cualquier vía de entrada, incluida la URL directa.
+
+**Contenido no se modificó, ni un carácter**: la enumeración de
+unidades de un libro (`listWorksheetUnitsForBook`) y de libros
+elegibles (`listEligibleBooksForAvailability`) viven como funciones
+de composición en `screen-router.js`, reutilizando exclusivamente
+`getWorksheetUnit`/`getLibrary`, ya exportados — cero métodos nuevos
+agregados a `worksheet-content-repository.js` ni a
+`content-repository.js`.
+
+**Admin sin CSS nuevo, a propósito**: se descubrió que ninguna
+pantalla de Admin en el proyecto tiene su propio CSS — para mantener
+esa consistencia, la pantalla nueva tampoco lo tiene.
+
+**Archivos nuevos (6)**: `unit-availability/` (contrato + adapter),
+`domain/unit-availability/unit-availability-repository.js`,
+`admin-unit-availability-screen.js`,
+`docs/unit-availability-schema.sql`.
+
+**Archivos modificados (6), cada uno con una adición puntual**:
+`admin-nav.js` (una entrada más), `screen-router.js` (el gate, los
+dos helpers de composición, la caché `disabledUnitsByBook` con su
+default deliberadamente invertido respecto a
+`hasProfileCompleted`/`isAdmin`, y el ajuste de reanudación en
+`onSelectBook`/`buildHomeScreen`), `mount-quick-activity-nav.js`
+(filtra unidades deshabilitadas), `bootstrap.js` (instanciación y
+cableado).
+
+**Verificado**: sintaxis de los 166 `.js`; confirmado con `find src
+-newermt` que Contenido, Licencias, Hi! Korean, y las 5 pantallas
+educativas (Writing/Worksheet/Progress Test/Vocabulary/Assessment)
+tienen cero archivos tocados; pruebas funcionales completas de la
+capa de dominio (normalización, default seguro ante fallo de red,
+guardado, manejo de error); el gate central probado con datos reales
+confirmando explícitamente que Hi! Korean nunca lo atraviesa aunque
+comparta el mismo número de unidad/página que una unidad deshabilitada
+de ALH; el Quick Activity Nav probado tratando una unidad
+deshabilitada exactamente como una inexistente; los dos mecanismos de
+reanudación probados con la última posición cayendo en una unidad ya
+deshabilitada; la pantalla de Admin probada de extremo a extremo
+(estado inicial, cambio pendiente, guardado con mensaje reflejando
+exactamente qué cambió, y un fallo de guardado que preserva los
+cambios pendientes sin descartarlos).
+
+**Limitación conocida, documentada honestamente**: si la última
+posición conocida cae en una unidad deshabilitada, `onSelectBook`
+cae a la Unidad 1 sin verificar si esa también está deshabilitada
+(caso borde de "todas las unidades deshabilitadas a la vez") — el
+gate central sigue impidiendo cualquier fuga de contenido en ese
+caso, pero la experiencia no sería ideal (mostraría el mismo
+"no disponible" en vez de caer a Library directamente). No se
+resolvió por mantenerse dentro de "cambio mínimo" — documentado aquí
+en vez de expandir el alcance sin aprobación.
+
+## Forgot Password (sesión anterior)
 
 Completa el flujo: la sesión anterior implementó qué pasa *después*
 de abrir el enlace de Supabase (Reset Password); esta agrega cómo

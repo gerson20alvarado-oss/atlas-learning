@@ -51,10 +51,16 @@ const PERSONAL_ACTIVITY_DEFINITIONS = Object.freeze({
  * evaluación declarada + cada capacidad personal habilitada a nivel
  * de libro, en ese orden), o `null` si la unidad no existe en el
  * contenido — nunca una unidad "fantasma" en el panel.
+ *
+ * Disponibilidad de Unidades (esta sesión): una unidad deshabilitada
+ * se trata exactamente igual que una unidad inexistente — `null`,
+ * nunca aparece en el panel. Mismo criterio de "la existencia
+ * decide" que ya rige el resto de esta función.
  */
-function resolveUnitActivities({ bookId, unitNumber, currentActivityId }) {
+function resolveUnitActivities({ bookId, unitNumber, currentActivityId, unitAvailabilityRepository, disabledUnitsByBook }) {
   const unit = getWorksheetUnit(bookId, unitNumber);
   if (!unit) return null;
+  if (unitAvailabilityRepository.isUnitDisabled(disabledUnitsByBook, bookId, unitNumber)) return null;
 
   const activities = [];
 
@@ -105,7 +111,7 @@ function resolveUnitActivities({ bookId, unitNumber, currentActivityId }) {
   };
 }
 
-function buildUnitsProp({ bookId, currentUnitNumber, currentActivityId }) {
+function buildUnitsProp({ bookId, currentUnitNumber, currentActivityId, unitAvailabilityRepository, disabledUnitsByBook }) {
   const units = [];
   for (let n = currentUnitNumber - NEIGHBOR_RADIUS; n <= currentUnitNumber + NEIGHBOR_RADIUS; n++) {
     if (n < 1) continue;
@@ -113,6 +119,8 @@ function buildUnitsProp({ bookId, currentUnitNumber, currentActivityId }) {
       bookId,
       unitNumber: n,
       currentActivityId: n === currentUnitNumber ? currentActivityId : null,
+      unitAvailabilityRepository,
+      disabledUnitsByBook,
     });
     if (resolved) units.push({ ...resolved, isCurrent: n === currentUnitNumber });
   }
@@ -152,22 +160,41 @@ function resolveCurrentActivity(navigationState) {
   return null;
 }
 
-export function mountQuickActivityNav({ eventBus, mountElement, router }) {
+export function mountQuickActivityNav({ eventBus, mountElement, router, unitAvailabilityRepository, authContract }) {
   const nav = createQuickActivityNav({
     units: [],
     onSelect: (url) => router.navigateTo(url),
   });
   mountElement.appendChild(nav.element);
 
+  // Disponibilidad de Unidades (esta sesión): se resuelve una sola
+  // vez al montar — este widget vive fuera de screen-router.js, sin
+  // acceso a su caché ya resuelta, así que mantiene la suya propia.
+  // Default seguro mientras se resuelve: `{}` (nada deshabilitado),
+  // igual que en screen-router.js — un estudiante podría ver, por un
+  // instante, una unidad que el administrador deshabilitó hace poco;
+  // nunca al revés. El gate real (screen-router.js) sigue siendo la
+  // única fuente de verdad — este widget solo decide qué ofrecer,
+  // nunca qué permitir.
+  let disabledUnitsByBook = {};
+  let lastNavigationState = null;
+
   function refresh(navigationState) {
+    lastNavigationState = navigationState;
     const current = resolveCurrentActivity(navigationState);
     if (!current) {
       nav.update({ units: [], currentUnitNumber: null });
       return;
     }
-    const units = buildUnitsProp(current);
+    const units = buildUnitsProp({ ...current, unitAvailabilityRepository, disabledUnitsByBook });
     nav.update({ units, currentUnitNumber: current.currentUnitNumber });
   }
+
+  const accessToken = authContract.getSession()?.accessToken ?? null;
+  unitAvailabilityRepository.getDisabledUnitsByBook({ accessToken }).then((byBook) => {
+    disabledUnitsByBook = byBook;
+    if (lastNavigationState) refresh(lastNavigationState);
+  });
 
   const unsubscribe = eventBus.subscribe(EVENT_NAMES.ROUTE_CHANGED, refresh);
 

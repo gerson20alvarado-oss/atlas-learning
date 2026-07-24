@@ -42,6 +42,9 @@ import { createSupabaseAccountSnapshotAdapter } from '../remote-account-snapshot
 import { createLicenseService } from '../license/license-contract.js';
 import { createSupabaseLicenseAdapter } from '../license/adapters/supabase-license-adapter.js';
 import { createLicenseRepository } from '../domain/license/license-repository.js';
+import { createUnitAvailabilityService } from '../unit-availability/unit-availability-contract.js';
+import { createSupabaseUnitAvailabilityAdapter } from '../unit-availability/adapters/supabase-unit-availability-adapter.js';
+import { createUnitAvailabilityRepository } from '../domain/unit-availability/unit-availability-repository.js';
 import { createProfileService } from '../profile/profile-contract.js';
 import { createSupabaseProfileAdapter } from '../profile/adapters/supabase-profile-adapter.js';
 import { createProfileRepository } from '../domain/profile/profile-repository.js';
@@ -143,6 +146,18 @@ function bootstrap() {
   });
   const licenseService = createLicenseService(supabaseLicenseAdapter, errorBoundary);
   const licenseRepository = createLicenseRepository(licenseService);
+
+  // Disponibilidad de Unidades (esta sesión): capacidad hermana de
+  // Licencias dentro del dominio Acceso — decisión de arquitectura
+  // ya cerrada (Contenido nunca sabe qué está permitido, Acceso
+  // nunca describe qué existe). Tabla propia `disabled_units`, sin
+  // relación con license_keys.
+  const supabaseUnitAvailabilityAdapter = createSupabaseUnitAvailabilityAdapter({
+    supabaseUrl: runtimeConfig.env.supabaseUrl,
+    supabaseAnonKey: runtimeConfig.env.supabaseAnonKey,
+  });
+  const unitAvailabilityService = createUnitAvailabilityService(supabaseUnitAvailabilityAdapter, errorBoundary);
+  const unitAvailabilityRepository = createUnitAvailabilityRepository(unitAvailabilityService);
 
   // Perfil de Usuario (esta sesión): mismo patrón contrato + adapter
   // que el resto de la infraestructura remota. A diferencia de
@@ -333,6 +348,7 @@ function bootstrap() {
     studyWorkspaceRepository,
     writingResponseRepository,
     vocabularyEntryRepository,
+    unitAvailabilityRepository,
   });
 
   // Navegación rápida entre actividades (esta sesión): componente
@@ -340,7 +356,7 @@ function bootstrap() {
   // monta en content-region, solo observa route:changed desde
   // afuera. Se monta después de screen-router.js por orden de
   // lectura, no por dependencia real entre ambos.
-  mountQuickActivityNav({ eventBus, mountElement, router });
+  mountQuickActivityNav({ eventBus, mountElement, router, unitAvailabilityRepository, authContract });
 
   // Restablecimiento de Contraseña (esta sesión) — traducción del
   // hash de recuperación de Supabase: Atlas usa Hash Routing

@@ -75,6 +75,7 @@ import { createAdminDashboardScreen } from '../presentation/screens/admin/admin-
 import { createAdminUsersScreen } from '../presentation/screens/admin/admin-users-screen.js';
 import { createAdminUserDetailScreen } from '../presentation/screens/admin/admin-user-detail-screen.js';
 import { createAdminLicensesScreen } from '../presentation/screens/admin/admin-licenses-screen.js';
+import { createAdminUnitAvailabilityScreen } from '../presentation/screens/admin/admin-unit-availability-screen.js';
 import { createAdminWorksheetAttemptsScreen } from '../presentation/screens/admin/admin-worksheet-attempts-screen.js';
 import { createAdminReaderProgressScreen } from '../presentation/screens/admin/admin-reader-progress-screen.js';
 import { createAdminBookmarksScreen } from '../presentation/screens/admin/admin-bookmarks-screen.js';
@@ -148,6 +149,8 @@ function buildLibraryScreen({
   runtimeConfig,
   licenseRepository,
   ownedBookIds,
+  unitAvailabilityRepository,
+  disabledUnitsByBook,
   readerPositionRepository,
   userId,
   authContract,
@@ -192,7 +195,23 @@ function buildLibraryScreen({
       const accessToken = authContract.getSession()?.accessToken ?? null;
       const position = await readerPositionRepository.getPosition({ userId, bookId, accessToken });
       const rawTargetPage = position?.pageNumber ?? READER_FIRST_PAGE;
-      const targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
+      let targetPage = Math.min(Math.max(rawTargetPage, READER_FIRST_PAGE), READER_LAST_PAGE);
+
+      // Disponibilidad de Unidades (esta sesión): si la última
+      // posición conocida cae exactamente en una unidad que el
+      // administrador deshabilitó después, nunca se intenta
+      // restaurar ahí — se trata como si no hubiera ninguna posición
+      // guardada, cayendo al mismo comportamiento de "primera vez"
+      // que ya existe más abajo (Writing si la unidad de destino la
+      // declara, o el Reader normal). Acotado a libros
+      // `contentMode: 'worksheet'` — Hi! Korean nunca pasa por aquí.
+      const targetBook = getBookById(bookId);
+      if (
+        targetBook?.contentMode === 'worksheet' &&
+        unitAvailabilityRepository.isUnitDisabled(disabledUnitsByBook, bookId, targetPage)
+      ) {
+        targetPage = READER_FIRST_PAGE;
+      }
 
       // Recordar / restaurar última actividad (esta sesión): si el
       // estudiante ya tenía una actividad guardada para esta unidad
@@ -665,6 +684,7 @@ function buildAdminScreen({
   accessToken,
   profileRepository,
   licenseRepository,
+  unitAvailabilityRepository,
   unitAttemptRepository,
   readerPositionRepository,
   bookmarkRepository,
@@ -702,6 +722,13 @@ function buildAdminScreen({
     });
   } else if (adminSection === 'licenses') {
     screen = createAdminLicensesScreen({ accessToken, licenseRepository });
+  } else if (adminSection === 'unit-availability') {
+    screen = createAdminUnitAvailabilityScreen({
+      accessToken,
+      unitAvailabilityRepository,
+      eligibleBooks: listEligibleBooksForAvailability(),
+      listUnitsForBook: listWorksheetUnitsForBook,
+    });
   } else if (adminSection === 'worksheet-attempts') {
     screen = createAdminWorksheetAttemptsScreen({ accessToken, unitAttemptRepository });
   } else if (adminSection === 'reader-progress') {
@@ -727,7 +754,15 @@ function buildAdminScreen({
   return Object.freeze({ element, update: () => {}, destroy });
 }
 
-function buildHomeScreen({ router, readerPositionRepository, licenseRepository, userId, authContract }) {
+function buildHomeScreen({
+  router,
+  readerPositionRepository,
+  licenseRepository,
+  unitAvailabilityRepository,
+  disabledUnitsByBook,
+  userId,
+  authContract,
+}) {
   // ReaderPosition, Supabase puro (esta sesión): Home ya no necesita
   // conocer la posición de antemano — ni estado de carga, ni
   // distinción visual entre "hay algo" y "no hay nada". El botón
@@ -752,6 +787,21 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
       const bookId = position.bookId;
       const targetPage = position.pageNumber;
       const book = getBookById(bookId);
+
+      // Disponibilidad de Unidades (esta sesión): mismo criterio
+      // exacto que onSelectBook (buildLibraryScreen) — si la última
+      // posición conocida cae en una unidad ya deshabilitada, nunca
+      // se intenta resolver ahí. Aquí, a diferencia de Library, ya
+      // existe un destino de respaldo establecido para el caso
+      // análogo (libro no autorizado) — se reutiliza el mismo, en
+      // vez de inventar uno nuevo.
+      if (
+        book?.contentMode === 'worksheet' &&
+        unitAvailabilityRepository.isUnitDisabled(disabledUnitsByBook, bookId, targetPage)
+      ) {
+        router.navigateTo('/library');
+        return;
+      }
 
       // Bug fix (esta sesión): antes, esta rama solo sabía construir
       // `/read/:n` (Worksheet), sin importar qué actividad fue
@@ -804,6 +854,39 @@ function buildHomeScreen({ router, readerPositionRepository, licenseRepository, 
  * Único lugar de todo el proyecto que interpreta este formato — ni
  * route-table.js ni navigation-state.js saben qué es Supabase.
  */
+/**
+ * Disponibilidad de Unidades (esta sesión): enumera las unidades
+ * reales de un libro probando `getWorksheetUnit(bookId, n)` desde
+ * n=1 hasta la primera que no exista — reutiliza exclusivamente una
+ * función ya exportada por worksheet-content-repository.js, sin
+ * agregarle ningún método nuevo a ese archivo (el dominio Contenido
+ * no se modifica). Asume unidades contiguas desde 1, igual que ya
+ * asume el resto de Atlas (Quick Activity Nav, por ejemplo).
+ */
+function listWorksheetUnitsForBook(bookId) {
+  const units = [];
+  for (let n = 1; ; n++) {
+    const unit = getWorksheetUnit(bookId, n);
+    if (!unit) break;
+    units.push({ unitNumber: unit.unitNumber, unitTitle: unit.unitTitle });
+  }
+  return units;
+}
+
+/**
+ * Disponibilidad de Unidades (esta sesión): libros elegibles para
+ * esta funcionalidad — únicamente `contentMode: 'worksheet'`, mismo
+ * criterio ya usado en todos los demás gates de esta sesión. Hi!
+ * Korean nunca aparece aquí, sin ninguna condición especial: su
+ * catálogo simplemente no declara ese campo. Genérico a propósito
+ * (recomendación de arquitectura ya aprobada): si un segundo libro
+ * de este tipo aparece en el futuro, aparece aquí solo.
+ */
+function listEligibleBooksForAvailability() {
+  const { books } = getLibrary();
+  return books.filter((book) => book.contentMode === 'worksheet').map((book) => ({ id: book.id, title: book.title }));
+}
+
 function parseRecoveryHashParams(raw) {
   const params = new URLSearchParams(raw ?? '');
   return {
@@ -857,6 +940,7 @@ function resolveScreen(navigationState, deps) {
       accessToken,
       profileRepository: deps.profileRepository,
       licenseRepository: deps.licenseRepository,
+      unitAvailabilityRepository: deps.unitAvailabilityRepository,
       unitAttemptRepository: deps.unitAttemptRepository,
       readerPositionRepository: deps.readerPositionRepository,
       bookmarkRepository: deps.bookmarkRepository,
@@ -877,6 +961,33 @@ function resolveScreen(navigationState, deps) {
       context: { bookId: bookPosition },
       message: 'Este libro no está disponible. Vuelve a la Library para elegir otro.',
     });
+  }
+
+  // Disponibilidad de Unidades (esta sesión, dominio Acceso): mismo
+  // criterio exacto que el Control de Acceso por Libro de arriba —
+  // un único punto de control aquí, antes de dispatchar a cualquier
+  // screen que dependa de una unidad, en vez de repetir la
+  // verificación en cada una (Writing/Vocabulary/Worksheet/Progress
+  // Test comparten este mismo gate). Acotado a libros
+  // `contentMode: 'worksheet'` — Hi! Korean nunca entra aquí, cae
+  // directo a su despacho de siempre, sin ninguna condición especial
+  // en su propio código.
+  {
+    const requestedUnitNumber = writingUnitPosition ?? vocabularyUnitPosition ?? pagePosition;
+    const requestedBook = bookPosition ? getBookById(bookPosition) : null;
+    if (
+      bookPosition &&
+      requestedUnitNumber != null &&
+      requestedBook?.contentMode === 'worksheet' &&
+      deps.unitAvailabilityRepository.isUnitDisabled(deps.disabledUnitsByBook, bookPosition, requestedUnitNumber)
+    ) {
+      return notFoundView({
+        errorBoundary: deps.errorBoundary,
+        reason: 'unit-not-available',
+        context: { bookId: bookPosition, unitNumber: requestedUnitNumber },
+        message: 'Esta unidad no está disponible todavía.',
+      });
+    }
   }
 
   // Writing (esta sesión): jerarquía propia, sin relación con
@@ -964,6 +1075,7 @@ export function mountScreenRouter({
   studyWorkspaceRepository,
   writingResponseRepository,
   vocabularyEntryRepository,
+  unitAvailabilityRepository,
 }) {
   let lastNavigationState = null;
   let authUiStage = 'entry'; // 'entry' | 'login' | 'forgot-password' — solo relevante antes de autenticarse
@@ -995,6 +1107,17 @@ export function mountScreenRouter({
   // y ya es el mismo tipo de parpadeo que el resto de Atlas acepta;
   // un falso positivo nunca lo sería.
   let isAdmin = false;
+  // Disponibilidad de Unidades (esta sesión, dominio Acceso):
+  // deliberadamente lo opuesto al criterio de arriba — objeto vacío
+  // por defecto, que con el modelo invertido de esta tabla
+  // (`disabled_units` guarda lo deshabilitado, nunca lo habilitado)
+  // significa "nada deshabilitado en ningún libro todavía". Es el
+  // default exigido explícitamente por la especificación funcional
+  // aprobada: un libro sin ninguna configuración debe comportarse
+  // como completamente habilitado, nunca bloqueado por ausencia de
+  // dato — lo opuesto de "denegar por defecto" a propósito, no un
+  // descuido de simetría con hasProfileCompleted/isAdmin.
+  let disabledUnitsByBook = {};
 
   function render() {
     // Restablecimiento de Contraseña (esta sesión): se resuelve antes
@@ -1141,6 +1264,8 @@ export function mountScreenRouter({
       authContract,
       licenseRepository,
       ownedBookIds,
+      unitAvailabilityRepository,
+      disabledUnitsByBook,
       isAdmin,
       onShowLicenseActivation: () => {
         libraryUiStage = 'activate';
@@ -1185,6 +1310,14 @@ export function mountScreenRouter({
         userId: authSession.userId,
         accessToken: authSession.accessToken,
       });
+      // Disponibilidad de Unidades (esta sesión): dato global, no
+      // por usuario, pero se refresca en el mismo punto exacto que
+      // el resto — así un cambio hecho por el administrador mientras
+      // el estudiante no tenía sesión ya se ve reflejado en su
+      // próximo inicio de sesión, sin esperar a un segundo evento.
+      disabledUnitsByBook = await unitAvailabilityRepository.getDisabledUnitsByBook({
+        accessToken: authSession.accessToken,
+      });
     } else {
       // Logout, o cambio a una cuenta distinta en el mismo
       // dispositivo: nunca debe sobrevivir ni la lista de libros
@@ -1196,6 +1329,11 @@ export function mountScreenRouter({
       // mismo dispositivo — mismo criterio exacto que las dos
       // líneas de arriba.
       isAdmin = false;
+      // Disponibilidad de Unidades: deliberadamente NO se resetea
+      // aquí — a diferencia de ownedBookIds/hasProfileCompleted/
+      // isAdmin (datos de ESTE usuario), la disponibilidad es global,
+      // igual para cualquier estudiante; conservarla tras un logout
+      // no expone nada de la cuenta anterior.
     }
     render();
   });
@@ -1269,6 +1407,13 @@ export function mountScreenRouter({
           isAdmin = result;
         }),
       ),
+      // Disponibilidad de Unidades (esta sesión): mismo punto de
+      // resolución que las otras — se agrega sin envolver en la
+      // instrumentación temporal de diagnóstico de arriba, que
+      // investiga un bug no relacionado con esta funcionalidad.
+      unitAvailabilityRepository.getDisabledUnitsByBook({ accessToken: cachedSession.accessToken }).then((byBook) => {
+        disabledUnitsByBook = byBook;
+      }),
     ])
       .then(render)
       // Bug fix (esta sesión): sin este `.catch()`, si cualquiera de
