@@ -210,6 +210,18 @@ const ROUTES = Object.freeze([
     }),
   },
   {
+    // Disponibilidad de Unidades (esta sesión) — bug fix: este patrón
+    // faltaba por completo. admin-nav.js ya navegaba a
+    // `/admin/unit-availability` (mismo mecanismo que las demás
+    // secciones), pero sin este patrón el router nunca lo reconocía
+    // y caía a la ruta vacía — de ahí que el clic terminara en Home.
+    pattern: /^\/admin\/unit-availability\/?$/,
+    toNavigationState: () => ({
+      ...createEmptyNavigationState(),
+      adminSection: 'unit-availability',
+    }),
+  },
+  {
     pattern: /^\/admin\/worksheet-attempts\/?$/,
     toNavigationState: () => ({
       ...createEmptyNavigationState(),
